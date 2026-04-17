@@ -3,7 +3,10 @@
     "allow": [
       "Bash(pip install:*)",
       "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\('App created OK'\\)\")",
-      "Bash(python run.py)"
+      "Bash(python run.py)",
+      "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\([r.rule for r in app.url_map.iter_rules\\(\\) if 'reports' in r.rule]\\)\")",
+      "Bash(python -c \"from app import create_app; app=create_app\\(\\); from app.models import Report, User; ctx=app.app_context\\(\\); ctx.push\\(\\); print\\('users:', User.query.count\\(\\), '| reports:', Report.query.count\\(\\)\\); ctx.pop\\(\\)\")",
+      "Bash(python -c \"from app import create_app; app=create_app\\(\\); print\\([r.rule for r in app.url_map.iter_rules\\(\\) if 'report' in r.rule.lower\\(\\)]\\)\")"
     ],
     "additionalDirectories": [
       "d:\\CITS3403\\cits3403-project\\app"
