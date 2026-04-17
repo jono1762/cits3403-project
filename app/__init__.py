@@ -8,6 +8,7 @@ login_manager = LoginManager()
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# the 5 report categories + marker colour for each 
 DEFAULT_CATEGORIES = [
     ('Weather',   '#3498db'),
     ('Noisiness', '#9b59b6'),
@@ -16,9 +17,10 @@ DEFAULT_CATEGORIES = [
     ('Emergency', '#e74c3c'),
 ]
 
+# fill the categories table on first run so the Report form has valid Foreign Keys
 def seed_categories():
     if Category.query.first() is not None:
-        return
+        return  # already seeded, skip
     for name, color in DEFAULT_CATEGORIES:
         db.session.add(Category(name=name, marker_color=color))
     db.session.commit()
@@ -37,6 +39,6 @@ def create_app():
     with app.app_context():
         from . import routes
         db.create_all()
-        seed_categories()
+        seed_categories()  # make sure default categories exist
 
     return app
