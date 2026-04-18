@@ -6,7 +6,13 @@
       "Bash(python run.py)",
       "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\([r.rule for r in app.url_map.iter_rules\\(\\) if 'reports' in r.rule]\\)\")",
       "Bash(python -c \"from app import create_app; app=create_app\\(\\); from app.models import Report, User; ctx=app.app_context\\(\\); ctx.push\\(\\); print\\('users:', User.query.count\\(\\), '| reports:', Report.query.count\\(\\)\\); ctx.pop\\(\\)\")",
-      "Bash(python -c \"from app import create_app; app=create_app\\(\\); print\\([r.rule for r in app.url_map.iter_rules\\(\\) if 'report' in r.rule.lower\\(\\)]\\)\")"
+      "Bash(python -c \"from app import create_app; app=create_app\\(\\); print\\([r.rule for r in app.url_map.iter_rules\\(\\) if 'report' in r.rule.lower\\(\\)]\\)\")",
+      "Bash(rm -f app.db)",
+      "Bash(python -c \"from app import create_app; app=create_app\\(\\); from app.models import State, City, Category; ctx=app.app_context\\(\\); ctx.push\\(\\); print\\('states:', State.query.count\\(\\), '| cities:', City.query.count\\(\\), '| categories:', Category.query.count\\(\\)\\); print\\('sample:', [\\(s.code, [c.name for c in s.cities]\\) for s in State.query.limit\\(2\\)]\\); ctx.pop\\(\\)\")",
+      "Bash(python -c \"from app import create_app; app=create_app\\(\\); from app.models import State, Suburb, Category; ctx=app.app_context\\(\\); ctx.push\\(\\); print\\('states:', State.query.count\\(\\), '| suburbs:', Suburb.query.count\\(\\), '| categories:', Category.query.count\\(\\)\\); print\\('routes:', [r.rule for r in app.url_map.iter_rules\\(\\) if 'report' in r.rule.lower\\(\\)]\\); ctx.pop\\(\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(grep -i \"\\\\.db$\")",
+      "Bash(git check-ignore *)"
     ],
     "additionalDirectories": [
       "d:\\CITS3403\\cits3403-project\\app"

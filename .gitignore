@@ -65,6 +65,9 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
+# local SQLite databases — never commit, they change on every run
+*.db
+
 # user-uploaded report media — keep the folder, ignore contents
 app/static/uploads/*
 !app/static/uploads/.gitkeep
