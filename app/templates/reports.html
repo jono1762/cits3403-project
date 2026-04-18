@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Create New Report</h1>
+<p class="text-muted">Share real-time conditions in your area.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><strong>Submit a report</strong></div>
+            <div class="card-body">
+                <form id="report-form">
+                    <div class="mb-3">
+                        <label class="form-label">State <span class="text-danger">*</span></label>
+                        <select id="state_id" class="form-select" required>
+                            <option value="" disabled selected>Select a state...</option>
+                            {% for state in states %}
+                                <option value="{{ state.id }}">{{ state.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Suburb <span class="text-danger">*</span></label>
+                        <select id="suburb_id" class="form-select" required disabled>
+                            <option value="" disabled selected>Choose a state first...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Specific Address <span class="text-muted">(optional)</span></label>
+                        <input id="address" type="text" class="form-control" maxlength="200"
+                               placeholder="e.g. corner of Hay St and William St, near bus stop">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Category <span class="text-danger">*</span></label>
+                        <select id="category_id" class="form-select" required>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" style="color: {{ cat.marker_color }}">
+                                    {{ cat.id }} — {{ cat.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="What's going on here?"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Attach Image/Video <span class="text-muted">(optional, up to 5 files, 20MB total)</span></label>
+                        <input id="media" type="file" class="form-control" accept="image/*,video/*" multiple>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><strong>Last API response</strong></div>
+            <div class="card-body">
+                <p id="status-line" class="text-muted mb-2">(no request yet)</p>
+                <pre id="response-box" class="bg-light p-2 mb-0" style="min-height: 150px;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// pre-loaded lookup: { stateId: [{id, name}, ...] } — populated from the server on page load
+const SUBURBS_BY_STATE = {{ suburbs_by_state | tojson }};
+
+const stateSelect = document.getElementById('state_id');
+const suburbSelect = document.getElementById('suburb_id');
+
+// when the user picks a state, repopulate the suburb dropdown with matching suburbs
+stateSelect.addEventListener('change', () => {
+    const stateId = stateSelect.value;
+    const suburbs = SUBURBS_BY_STATE[stateId] || [];
+
+    suburbSelect.innerHTML = '<option value="" disabled selected>Select a suburb...</option>';
+    for (const sub of suburbs) {
+        const opt = document.createElement('option');
+        opt.value = sub.id;
+        opt.textContent = sub.name;
+        suburbSelect.appendChild(opt);
+    }
+    suburbSelect.disabled = suburbs.length === 0;
+});
+
+document.getElementById('report-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    // use FormData so we can send both text fields and uploaded files in one request
+    const payload = new FormData();
+    payload.append('suburb_id', suburbSelect.value);
+    payload.append('category_id', document.getElementById('category_id').value);
+    payload.append('address', document.getElementById('address').value);
+    payload.append('description', document.getElementById('description').value);
+
+    const mediaInput = document.getElementById('media');
+    for (const file of mediaInput.files) {
+        payload.append('media', file);
+    }
+
+    const response = await fetch('/api/reports', {
+        method: 'POST',
+        body: payload,    // browser sets multipart/form-data + boundary automatically
+    });
+
+    const body = await response.json().catch(() => ({}));
+    document.getElementById('status-line').textContent =
+        `HTTP ${response.status} ${response.statusText}`;
+    document.getElementById('response-box').textContent =
+        JSON.stringify(body, null, 2);
+});
+</script>
+{% endblock %}
