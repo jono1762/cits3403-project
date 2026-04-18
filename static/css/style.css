@@ -3,9 +3,14 @@
 }
 
 input {
-    width: 1000px;
+    width: 60%;
 }
 
 select {
-    width: 200px;
+    width: 20%;
+}
+
+img {
+    width: 80%;
+    cursor: crosshair;
 }
