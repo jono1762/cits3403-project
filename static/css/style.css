@@ -1,16 +1,35 @@
 * {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 5px;
 }
 
-input {
-    width: 60%;
+#map {
+    width: 70%;
 }
 
-select {
-    width: 20%;
+#searchBar {
+    width: 70%;
+    border-radius: 5px;
 }
 
-img {
-    width: 80%;
-    cursor: crosshair;
+#suggestions {
+    width: 70%;
+    list-style: none;
+    position: absolute;
+    padding-left: 0px;
+    background-color: white;
+    border: solid 1px black;
+    border-radius: 5px;
+}
+
+#suggestions:empty {
+    display: none;
+}
+
+#suggestions li {
+    border-bottom: solid 1px grey;
+}
+
+#suggestions li:last-child {
+    border-bottom: none;
 }

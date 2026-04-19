@@ -10,15 +10,53 @@
     <h1>Global Map</h1>
     <p>Explore situation reports worldwide</p>
 
-    <input type="text" name="city" placeholder="Search for a city or country...">
-    <select name="country" id="country">
-        <option value="australia">Australia</option>
-    </select>
+    <input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its country...">
+    <ul id="suggestions"></ul>
 
     <br>
     <br>
-    <img src="../static/images/world-map.png" alt="World Map">
+    <img src="../static/images/world-map.png" alt="World Map" id="map">
 
-    <script src="index.js"></script>
+    <script>
+        const searchBar = document.getElementById("searchBar");
+        const cities = ["Perth, Australia", "Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia", "Adelaide, Australia"];
+        const suggestions = document.getElementsByTagName("ul")[0];
+        var clicked = false;
+
+        function search() {
+            if (clicked) {
+                suggestions.innerHTML = "";
+                clicked = false;
+                return;
+            }
+            clicked = true;
+
+            const query = searchBar.value.toLowerCase();
+            const filteredCities = cities.filter((item) => item.toLowerCase().includes(query));
+
+            suggestions.innerHTML = "";
+            const length = filteredCities.length < 5 ? filteredCities.length : 5;
+            for (let i = 0; i < length; i++) {
+                const suggestion = document.createElement("li");
+                suggestion.textContent = filteredCities[i];
+                suggestions.appendChild(suggestion); 
+            }
+        }
+
+        function autocomplete(event) {
+            if (event.target.tagName === "LI") {
+                searchBar.value = event.target.textContent;
+                suggestions.innerHTML = "";
+
+                // Stub - will replace with functionality to visit reports page for corresponding location
+                alert("Welcome to " + searchBar.value + "!")
+            }
+        }
+
+        // document.addEventListener("DOMContentLoaded", () => {suggestions.style.borderStyle = "none"});
+        searchBar.addEventListener("click", search);
+        searchBar.addEventListener("keyup", search);
+        suggestions.addEventListener("click", function () { autocomplete(event)});
+    </script>
   </body>
 </html>
