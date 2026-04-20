@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Explorer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/css/style.css">
+  </head>
+  <body>
+    <div class="container" id="mapPage">
+        <h1>Global Map</h1>
+        <p>Explore situation reports worldwide</p>
+
+        <div class="search-wrapper">
+            <input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its country...">
+            <ul id="suggestions"></ul>
+        </div>
+
+        <div class="map-wrapper">
+            <img src="../static/images/world-map.png" alt="World Map" id="map" draggable="false">
+            <div class="zoom-controls">
+                <button type="button" onclick="zoom(true)">+</button>
+                <button type="button" onclick="zoom(false)">-</button>
+                <button type="button" onclick="resetMap()">Reset</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const searchBar = document.getElementById("searchBar");
+        const cities = ["Perth, Australia", "Sydney, Australia", "New York, United States of America", "New Delhi, India", "Tokyo, Japan"];
+        cities.sort();
+        const suggestions = document.getElementById("suggestions");
+        const map = document.getElementById("map");
+        let mapScale = 1;
+        let mapOffsetX = 0;
+        let mapOffsetY = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        var clicked = false;
+
+        function search() {
+            if (clicked && event.type === "click") {
+                suggestions.innerHTML = "";
+                clicked = false;
+                return;
+            }
+            clicked = true;
+
+            const query = searchBar.value.toLowerCase();
+            const filteredCities = cities.filter((item) => item.toLowerCase().includes(query));
+
+            suggestions.innerHTML = "";
+            const length = filteredCities.length < 5 ? filteredCities.length : 5;
+            for (let i = 0; i < length; i++) {
+                const suggestion = document.createElement("li");
+                suggestion.textContent = filteredCities[i];
+                suggestions.appendChild(suggestion); 
+            }
+        }
+
+        function autocomplete(event) {
+            if (event.target.tagName === "LI") {
+                searchBar.value = event.target.textContent;
+                suggestions.innerHTML = "";
+
+                // Stub - will replace with functionality to visit reports page for corresponding location
+                alert("Welcome to " + searchBar.value + "!")
+            }
+        }
+
+        function minimise() {
+            if (event.type === "click" && event.target != searchBar) {
+                suggestions.innerHTML = "";
+                clicked = false;
+                return;
+            }
+        }
+
+        function zoom(zoomIn) {
+            mapScale = zoomIn ? Math.min(mapScale + 0.1, 2) : Math.max(mapScale - 0.1, 0.5);
+            updateMapTransform();
+        }
+
+        function resetMap() {
+            mapScale = 1;
+            mapOffsetX = 0;
+            mapOffsetY = 0;
+            updateMapTransform();
+        }
+
+        function updateMapTransform() {
+            map.style.transform = "translate(" + mapOffsetX + "px, " + mapOffsetY + "px) scale(" + mapScale + ")";
+        }
+
+        function startDrag(event) {
+            if (event.button !== 0) {
+                return;
+            }
+
+            event.preventDefault();
+            isDragging = true;
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+            map.style.cursor = "grabbing";
+        }
+
+        function dragMap(event) {
+            if (!isDragging || event.buttons !== 1) {
+                return;
+            }
+
+            mapOffsetX += event.clientX - lastMouseX;
+            mapOffsetY += event.clientY - lastMouseY;
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+            updateMapTransform();
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            map.style.cursor = "grab";
+        }
+
+        searchBar.addEventListener("click", search);
+        searchBar.addEventListener("keyup", search);
+        document.body.addEventListener("click", minimise)
+        suggestions.addEventListener("click", function () { autocomplete(event)});
+        map.addEventListener("mousedown", startDrag);
+        document.addEventListener("mousemove", dragMap);
+        document.addEventListener("mouseup", stopDrag);
+        map.style.cursor = "grab";
+        updateMapTransform();
+    </script>
+  </body>
+</html>

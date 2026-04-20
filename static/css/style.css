@@ -4,25 +4,40 @@
 }
 
 #map {
-    width: 70%;
+    width: 100%;
+    display: block;
+    margin: 0;
+    transform-origin: center center;
+    transition: transform 0.15s ease;
 }
 
 #searchBar {
-    width: 70%;
+    width: 100%;
     border-radius: 5px;
+    display: block;
+    margin: 0;
+    box-sizing: border-box;
 }
 
-ul {
-    width: 58%;
-    list-style: none;
-    position: absolute;
-    padding-left: 0;
+.search-wrapper {
+    position: relative;
+    width: 70%;
+    margin: 5px;
 }
 
 #suggestions {
+    width: 100%;
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
     background-color: white;
     border: solid 1px black;
     border-radius: 5px;
+    box-sizing: border-box;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 2;
 }
 
 #suggestions:empty {
@@ -35,4 +50,42 @@ ul {
 
 #suggestions li:last-child {
     border-bottom: none;
+}
+
+.map-wrapper {
+    position: relative;
+    width: 70%;
+    margin: 5px;
+    background-color: black;
+    overflow: hidden;
+    border-radius: 5px;
+}
+
+.map-wrapper,
+#map {
+    cursor: grab;
+}
+
+#map:active {
+    cursor: grabbing;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 1;
+}
+
+.zoom-controls button {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
 }
