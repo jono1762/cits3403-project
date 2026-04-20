@@ -22,12 +22,13 @@
     
     <script>
         const searchBar = document.getElementById("searchBar");
-        const cities = ["Perth, Australia", "Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia", "Adelaide, Australia"];
+        const cities = ["Perth, Australia", "Sydney, Australia", "New York, United States of America", "New Delhi, India", "Tokyo, Japan"];
+        cities.sort();
         const suggestions = document.getElementById("suggestions");
         var clicked = false;
 
         function search() {
-            if (clicked) {
+            if (clicked && event.type === "click") {
                 suggestions.innerHTML = "";
                 clicked = false;
                 return;
@@ -56,9 +57,17 @@
             }
         }
 
-        // document.addEventListener("DOMContentLoaded", () => {suggestions.style.borderStyle = "none"});
+        function minimise() {
+            if (event.type === "click" && event.target != searchBar) {
+                suggestions.innerHTML = "";
+                clicked = false;
+                return;
+            }
+        }
+
         searchBar.addEventListener("click", search);
         searchBar.addEventListener("keyup", search);
+        document.body.addEventListener("click", minimise)
         suggestions.addEventListener("click", function () { autocomplete(event)});
     </script>
   </body>
