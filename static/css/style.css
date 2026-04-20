@@ -21,10 +21,11 @@ body {
 
 #map {
     width: 100%;
+    height: clamp(24rem, 65vh, 44rem);
     display: block;
     margin: 0;
-    transform-origin: center center;
-    transition: transform 0.15s ease;
+    border-radius: inherit;
+    z-index: 0;
 }
 
 #searchBar {
@@ -39,6 +40,32 @@ body {
 .search-wrapper {
     position: relative;
     width: 100%;
+}
+
+.search-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.search-input-area {
+    position: relative;
+    flex: 1;
+}
+
+#searchButton {
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid #333;
+    background-color: #f2f2f2;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.map-note {
+    margin: 0;
+    color: #555;
+    font-size: 0.95rem;
 }
 
 #suggestions {
@@ -81,10 +108,6 @@ body {
     cursor: grab;
 }
 
-#map:active {
-    cursor: grabbing;
-}
-
 .zoom-controls {
     position: absolute;
     top: 10px;
@@ -92,7 +115,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    z-index: 1;
+    z-index: 1000;
 }
 
 .zoom-controls button {
@@ -104,6 +127,10 @@ body {
     justify-content: center;
     border-radius: var(--radius);
     font-size: 1rem;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #333;
+    color: #111;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 #mapPage {
