@@ -12,11 +12,14 @@
     border-radius: 5px;
 }
 
-#suggestions {
+ul {
     width: 70%;
     list-style: none;
     position: absolute;
-    padding-left: 0px;
+    padding-left: 0;
+}
+
+#suggestions {
     background-color: white;
     border: solid 1px black;
     border-radius: 5px;
