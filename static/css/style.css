@@ -1,0 +1,147 @@
+ :root {
+    --page-width: 1100px;
+    --page-gap: clamp(0.75rem, 2vw, 1rem);
+    --control-size: clamp(2.25rem, 6vw, 2.75rem);
+    --radius: 0.5rem;
+ }
+
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    padding: var(--page-gap);
+}
+
+#map {
+    width: 100%;
+    height: clamp(24rem, 65vh, 44rem);
+    display: block;
+    margin: 0;
+    border-radius: inherit;
+    z-index: 0;
+}
+
+#searchBar {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border-radius: var(--radius);
+    display: block;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.search-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.search-input-area {
+    position: relative;
+    flex: 1;
+}
+
+#searchButton {
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid #333;
+    background-color: #f2f2f2;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.map-note {
+    margin: 0;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+#suggestions {
+    width: 100%;
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+    background-color: white;
+    border: solid 1px black;
+    border-radius: var(--radius);
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 2;
+}
+
+#suggestions:empty {
+    display: none;
+}
+
+#suggestions li {
+    border-bottom: solid 1px grey;
+    padding: 0.5rem 0.75rem;
+}
+
+#suggestions li:last-child {
+    border-bottom: none;
+}
+
+.map-wrapper {
+    position: relative;
+    width: 100%;
+    background-color: black;
+    overflow: hidden;
+    border-radius: var(--radius);
+}
+
+.map-wrapper,
+#map {
+    cursor: grab;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 1000;
+}
+
+.zoom-controls button {
+    inline-size: var(--control-size);
+    block-size: var(--control-size);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #333;
+    color: #111;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+#mapPage {
+    width: min(100%, var(--page-width));
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--page-gap);
+}
+
+#mapPage h1,
+#mapPage p {
+    margin: 0;
+}
