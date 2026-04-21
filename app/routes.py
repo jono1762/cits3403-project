@@ -91,7 +91,47 @@ def profile_page():
         .limit(5)
         .all()
     )
-    return render_template('profile.html', recent_reports=recent_reports)
+    return render_template(
+        'profile.html',
+        user=current_user,
+        recent_reports=recent_reports,
+        is_own_profile=True,
+    )
+
+# /users/<username> — view someone else's profile (read-only, no edit buttons)
+@app.route('/users/<username>')
+@login_required
+def user_profile_page(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    recent_reports = (
+        Report.query
+        .filter_by(user_id=user.id)
+        .order_by(Report.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    return render_template(
+        'profile.html',
+        user=user,
+        recent_reports=recent_reports,
+        is_own_profile=(user.id == current_user.id),
+    )
+
+# /search — find users by username substring (case-insensitive)
+@app.route('/search')
+@login_required
+def search_users_page():
+    q = (request.args.get('q') or '').strip()
+    users = []
+    if q:
+        users = (
+            User.query
+            .filter(User.username.ilike(f'%{q}%'))
+            .order_by(User.username)
+            .limit(20)
+            .all()
+        )
+    return render_template('search.html', q=q, users=users)
 
 # /reports/<id>/edit — GET renders the edit form, POST saves changes
 # only the original author can edit; everyone else gets 403

@@ -5,14 +5,17 @@
 {% endblock %}
 
 {% block content %}
-<h1>My Profile</h1>
+<h1>{{ "My Profile" if is_own_profile else user.username + "'s Profile" }}</h1>
 
 <div class="card mb-4">
     <div class="card-body">
-        <h5 class="card-title">{{ current_user.username }}</h5>
-        <p class="card-text mb-1"><strong>Email:</strong> {{ current_user.email }}</p>
-        <p class="card-text mb-1"><strong>Trust score:</strong> {{ current_user.trust_score }}</p>
-        <p class="card-text mb-0"><strong>Reports submitted:</strong> {{ current_user.reports | length }}</p>
+        <h5 class="card-title">{{ user.username }}</h5>
+        {# email is private — only shown on your own profile #}
+        {% if is_own_profile %}
+            <p class="card-text mb-1"><strong>Email:</strong> {{ user.email }}</p>
+        {% endif %}
+        <p class="card-text mb-1"><strong>Trust score:</strong> {{ user.trust_score }}</p>
+        <p class="card-text mb-0"><strong>Reports submitted:</strong> {{ user.reports | length }}</p>
     </div>
 </div>
 
@@ -27,7 +30,10 @@
                         {{ r.suburb.name }}, {{ r.suburb.state.code }}
                         <span class="text-muted">— {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
                     </div>
-                    <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    {# Edit button only shown on your own profile — can't edit others' posts #}
+                    {% if is_own_profile %}
+                        <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    {% endif %}
                 </div>
                 {% if r.description %}<div class="mt-1">{{ r.description }}</div>{% endif %}
 
@@ -98,6 +104,6 @@
         {% endfor %}
     </ul>
 {% else %}
-    <p class="text-muted">You haven't submitted any reports yet.</p>
+    <p class="text-muted">{{ "You haven't submitted any reports yet." if is_own_profile else user.username + " hasn't submitted any reports yet." }}</p>
 {% endif %}
 {% endblock %}
