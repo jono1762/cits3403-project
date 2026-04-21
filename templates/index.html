@@ -11,7 +11,7 @@
   <body>
     <div class="container" id="mapPage">
         <h1>Global Map</h1>
-                <p>Explore situation reports worldwide</p>
+        <p>Explore situation reports worldwide</p>
 
         <div class="search-wrapper">
             <div class="search-row">
@@ -187,11 +187,12 @@
         }
 
         searchBar.addEventListener("click", onSearchBarClick);
+        searchBar.addEventListener("input", search);
         searchBar.addEventListener("keydown", onSearchBarKeyDown);
         searchButton.addEventListener("click", onSearchSubmit);
         document.body.addEventListener("click", minimise);
         suggestions.addEventListener("click", autocomplete);
-                initializeCityMarkers();
+        initializeCityMarkers();
     </script>
   </body>
 </html>
