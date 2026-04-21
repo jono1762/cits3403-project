@@ -1,6 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    /* make the carousel arrows very obvious — solid dark circles, scale up on hover */
+    .carousel-control-prev,
+    .carousel-control-next {
+        width: 60px;
+        opacity: 1;
+    }
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 0.6);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        background-size: 60%;
+        background-position: center;
+        transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    .carousel-control-prev:hover .carousel-control-prev-icon,
+    .carousel-control-next:hover .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 0.9);
+        transform: scale(1.2);
+    }
+    /* indicator dots stay visible on any background */
+    .carousel-indicators [data-bs-target] {
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.4);
+    }
+</style>
+
 <h1>My Profile</h1>
 
 <div class="card mb-4">
@@ -23,22 +52,51 @@
                 {% if r.description %}<div class="mt-1">{{ r.description }}</div>{% endif %}
 
                 {% if r.media %}
-                    <div class="row g-2 mt-2">
-                        {% for m in r.media %}
-                            <div class="col-12 col-md-6">
-                                {% if m.media_type == 'image' %}
-                                    <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
-                                         class="rounded border"
-                                         style="width: 100%; height: 350px; object-fit: cover;"
-                                         alt="{{ m.original_name }}">
-                                {% else %}
-                                    <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
-                                           controls
-                                           class="rounded border"
-                                           style="width: 100%; height: 350px; object-fit: cover;"></video>
-                                {% endif %}
+                    <div id="carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
+                        {# dots at the top showing which slide you're on, 1 per media item #}
+                        {% if r.media | length > 1 %}
+                            <div class="carousel-indicators">
+                                {% for m in r.media %}
+                                    <button type="button"
+                                            data-bs-target="#carousel-{{ r.id }}"
+                                            data-bs-slide-to="{{ loop.index0 }}"
+                                            class="{{ 'active' if loop.first else '' }}"
+                                            aria-label="Slide {{ loop.index }}"></button>
+                                {% endfor %}
                             </div>
-                        {% endfor %}
+                        {% endif %}
+
+                        <div class="carousel-inner rounded border" style="background-color: #000;">
+                            {% for m in r.media %}
+                                <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                                    {% if m.media_type == 'image' %}
+                                        <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                             class="d-block w-100"
+                                             style="height: 400px; object-fit: contain;"
+                                             alt="{{ m.original_name }}">
+                                    {% else %}
+                                        <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                               controls
+                                               class="d-block w-100"
+                                               style="height: 400px; object-fit: contain; background: #000;"></video>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        {# previous / next arrows only appear when there's more than one media item #}
+                        {% if r.media | length > 1 %}
+                            <button class="carousel-control-prev" type="button"
+                                    data-bs-target="#carousel-{{ r.id }}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                    data-bs-target="#carousel-{{ r.id }}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        {% endif %}
                     </div>
                 {% endif %}
             </li>
