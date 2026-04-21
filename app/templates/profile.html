@@ -1,35 +1,10 @@
 {% extends "base.html" %}
 
-{% block content %}
-<style>
-    /* make the carousel arrows very obvious — solid dark circles, scale up on hover */
-    .carousel-control-prev,
-    .carousel-control-next {
-        width: 60px;
-        opacity: 1;
-    }
-    .carousel-control-prev-icon,
-    .carousel-control-next-icon {
-        background-color: rgba(0, 0, 0, 0.6);
-        border-radius: 50%;
-        width: 44px;
-        height: 44px;
-        background-size: 60%;
-        background-position: center;
-        transition: transform 0.15s ease, background-color 0.15s ease;
-    }
-    .carousel-control-prev:hover .carousel-control-prev-icon,
-    .carousel-control-next:hover .carousel-control-next-icon {
-        background-color: rgba(0, 0, 0, 0.9);
-        transform: scale(1.2);
-    }
-    /* indicator dots stay visible on any background */
-    .carousel-indicators [data-bs-target] {
-        background-color: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(0, 0, 0, 0.4);
-    }
-</style>
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
 
+{% block content %}
 <h1>My Profile</h1>
 
 <div class="card mb-4">
@@ -51,12 +26,21 @@
                 <span class="text-muted">— {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
                 {% if r.description %}<div class="mt-1">{{ r.description }}</div>{% endif %}
 
+                {# ---------- image/video carousel for this report ---------- #}
+                {# Only shown if the report has any attachments. Uses Bootstrap 5's carousel component. #}
                 {% if r.media %}
+                    {# unique id per report so each carousel's prev/next buttons target the right one #}
+                    {# data-bs-ride="false" means it WON'T auto-play; user clicks arrows/indicators to move #}
                     <div id="carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
-                        {# dots at the top showing which slide you're on, 1 per media item #}
+
+                        {# ---- indicators (little bars) at the buttom showing which slide you're on ---- #}
+                        {# Bootstrap 5 renders these as thin horizontal bars by default (not dots) #}
+                        {# only shown when there's more than 1 attachment #}
                         {% if r.media | length > 1 %}
                             <div class="carousel-indicators">
                                 {% for m in r.media %}
+                                    {# each indicator jumps to a specific slide by index (loop.index0 = 0-based) #}
+                                    {# the first one is marked 'active' so it's highlighted on page load #}
                                     <button type="button"
                                             data-bs-target="#carousel-{{ r.id }}"
                                             data-bs-slide-to="{{ loop.index0 }}"
@@ -66,15 +50,20 @@
                             </div>
                         {% endif %}
 
+                        {# ---- the actual slides (images or videos) ---- #}
+                        {# black background so portrait photos have nice letterbox padding #}
                         <div class="carousel-inner rounded border" style="background-color: #000;">
                             {% for m in r.media %}
+                                {# 'active' class marks the slide that's shown first #}
                                 <div class="carousel-item {{ 'active' if loop.first else '' }}">
                                     {% if m.media_type == 'image' %}
+                                        {# object-fit: contain = show the whole image, don't crop #}
                                         <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
                                              class="d-block w-100"
                                              style="height: 400px; object-fit: contain;"
                                              alt="{{ m.original_name }}">
                                     {% else %}
+                                        {# same styling, but for video — controls attribute adds play/pause UI #}
                                         <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
                                                controls
                                                class="d-block w-100"
@@ -84,7 +73,8 @@
                             {% endfor %}
                         </div>
 
-                        {# previous / next arrows only appear when there's more than one media item #}
+                        {# ---- left/right arrow buttons ---- #}
+                        {# also hidden if there's only one attachment (no slides to go between) #}
                         {% if r.media | length > 1 %}
                             <button class="carousel-control-prev" type="button"
                                     data-bs-target="#carousel-{{ r.id }}" data-bs-slide="prev">

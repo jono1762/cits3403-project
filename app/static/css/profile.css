@@ -1,0 +1,31 @@
+/* profile.html — carousel styling */
+
+/* make the carousel arrows very obvious — solid dark circles, scale up on hover */
+.carousel-control-prev,
+.carousel-control-next {
+    width: 60px;
+    opacity: 1;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    background-size: 60%;
+    background-position: center;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.carousel-control-prev:hover .carousel-control-prev-icon,
+.carousel-control-next:hover .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.9);
+    transform: scale(1.2);
+}
+
+/* indicator dots stay visible on any background */
+.carousel-indicators [data-bs-target] {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.4);
+}
