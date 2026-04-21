@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>My Profile</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">{{ current_user.username }}</h5>
+        <p class="card-text mb-1"><strong>Email:</strong> {{ current_user.email }}</p>
+        <p class="card-text mb-1"><strong>Trust score:</strong> {{ current_user.trust_score }}</p>
+        <p class="card-text mb-0"><strong>Reports submitted:</strong> {{ current_user.reports | length }}</p>
+    </div>
+</div>
+
+<h3>Recent Reports</h3>
+{% if recent_reports %}
+    <ul class="list-group">
+        {% for r in recent_reports %}
+            <li class="list-group-item">
+                <span class="badge me-2" style="background-color: {{ r.category.marker_color }};">{{ r.category.name }}</span>
+                {{ r.suburb.name }}, {{ r.suburb.state.code }}
+                <span class="text-muted">— {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                {% if r.description %}<div class="mt-1">{{ r.description }}</div>{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="text-muted">You haven't submitted any reports yet.</p>
+{% endif %}
+{% endblock %}

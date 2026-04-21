@@ -80,6 +80,19 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+# /profile — show the logged-in user's own basic info
+@app.route('/profile')
+@login_required
+def profile_page():
+    recent_reports = (
+        Report.query
+        .filter_by(user_id=current_user.id)
+        .order_by(Report.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    return render_template('profile.html', recent_reports=recent_reports)
+
 # /reports — page where a logged-in user fills out and submits a report
 @app.route('/reports')
 @login_required
