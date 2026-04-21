@@ -21,6 +21,26 @@
                 {{ r.suburb.name }}, {{ r.suburb.state.code }}
                 <span class="text-muted">— {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
                 {% if r.description %}<div class="mt-1">{{ r.description }}</div>{% endif %}
+
+                {% if r.media %}
+                    <div class="row g-2 mt-2">
+                        {% for m in r.media %}
+                            <div class="col-12 col-md-6">
+                                {% if m.media_type == 'image' %}
+                                    <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                         class="rounded border"
+                                         style="width: 100%; height: 350px; object-fit: cover;"
+                                         alt="{{ m.original_name }}">
+                                {% else %}
+                                    <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                           controls
+                                           class="rounded border"
+                                           style="width: 100%; height: 350px; object-fit: cover;"></video>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </li>
         {% endfor %}
     </ul>
