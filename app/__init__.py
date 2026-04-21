@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
-from .models import db, User, Category, State, Suburb
+from .models import db, User, Category, State, Suburb, Report
 
 login_manager = LoginManager()
 
@@ -51,6 +51,49 @@ def seed_locations():
             db.session.add(Suburb(name=suburb_name, state_id=state.id))
     db.session.commit()
 
+# a few arbitrary test users so the search feature has something to find
+# password for all of them is 'Test@1234' — move this to a real fixture later
+DEFAULT_TEST_USERS = [
+    ('alice',   'alice@test.com'),
+    ('bob',     'bob@test.com'),
+    ('charlie', 'charlie@test.com'),
+]
+
+# one sample report per test user so viewing their profile actually shows content
+# (suburb_name, category_name, description)
+DEFAULT_TEST_REPORTS = [
+    ('alice',   'Sydney',   'Weather', 'Heavy rain at George St, watch out for puddles.'),
+    ('bob',     'Melbourne','Traffic', 'Tram line blocked near Flinders Station.'),
+    ('charlie', 'Perth',    'Hazards', 'Fallen branch on the Kings Park path.'),
+]
+
+def seed_test_users_and_reports():
+    # add missing test users; skip any that already exist
+    for username, email in DEFAULT_TEST_USERS:
+        if User.query.filter_by(username=username).first():
+            continue
+        u = User(username=username, email=email)
+        u.set_password('Test@1234')
+        db.session.add(u)
+    db.session.commit()
+
+    # add sample reports — only if the user has none, to stay idempotent
+    for username, suburb_name, category_name, description in DEFAULT_TEST_REPORTS:
+        user = User.query.filter_by(username=username).first()
+        if not user or user.reports:
+            continue
+        suburb = Suburb.query.filter_by(name=suburb_name).first()
+        category = Category.query.filter_by(name=category_name).first()
+        if not (suburb and category):
+            continue
+        db.session.add(Report(
+            user_id=user.id,
+            suburb_id=suburb.id,
+            category_id=category.id,
+            description=description,
+        ))
+    db.session.commit()
+
 def create_app():
     app = Flask(__name__)
 
@@ -71,6 +114,7 @@ def create_app():
         from . import routes
         db.create_all()
         seed_categories()  # make sure default categories exist
-        seed_locations()   # make sure states + cities exist
+        seed_locations()   # make sure states + suburbs exist
+        seed_test_users_and_reports()  # arbitrary users so search has something to find
 
     return app

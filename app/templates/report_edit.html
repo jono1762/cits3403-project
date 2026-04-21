@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_edit.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>Edit Report</h1>
+<p class="text-muted">Update the details of your report.</p>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">State <span class="text-danger">*</span></label>
+                <select id="state_id" class="form-select" required>
+                    <option value="" disabled>Select a state...</option>
+                    {% for state in states %}
+                        {# pre-select the state that contains the report's current suburb #}
+                        <option value="{{ state.id }}" {{ 'selected' if state.id == report.suburb.state_id else '' }}>
+                            {{ state.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Suburb <span class="text-danger">*</span></label>
+                <select id="suburb_id" name="suburb_id" class="form-select" required>
+                    {# pre-populate with the suburbs from the report's current state so the dropdown isn't empty on load #}
+                    {% for sub in report.suburb.state.suburbs %}
+                        <option value="{{ sub.id }}" {{ 'selected' if sub.id == report.suburb_id else '' }}>
+                            {{ sub.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Specific Address <span class="text-muted">(optional)</span></label>
+                <input id="address" name="address" type="text" class="form-control" maxlength="200"
+                       value="{{ report.address or '' }}"
+                       placeholder="e.g. corner of Hay St and William St">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Category <span class="text-danger">*</span></label>
+                <select id="category_id" name="category_id" class="form-select" required>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" style="color: {{ cat.marker_color }};"
+                                {{ 'selected' if cat.id == report.category_id else '' }}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                <textarea id="description" name="description" class="form-control" rows="3">{{ report.description or '' }}</textarea>
+            </div>
+
+            {# ---------- existing attachments: click the X to mark for deletion on save ---------- #}
+            {% if report.media %}
+                <div class="mb-3">
+                    <label class="form-label">Current attachments</label>
+                    <div class="row g-2">
+                        {% for m in report.media %}
+                            {# wrapper gets hidden when the user clicks its X — the checkbox inside stays in the form and submits the delete id #}
+                            <div class="col-6 col-md-4 attachment-thumb">
+                                <div class="border rounded p-2 position-relative">
+                                    {% if m.media_type == 'image' %}
+                                        <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                             class="d-block w-100"
+                                             style="height: 140px; object-fit: cover;"
+                                             alt="{{ m.original_name }}">
+                                    {% else %}
+                                        <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                               class="d-block w-100"
+                                               style="height: 140px; object-fit: cover;"
+                                               muted></video>
+                                    {% endif %}
+
+                                    {# X button: JS ticks the hidden checkbox and hides this whole thumbnail #}
+                                    <button type="button" class="remove-btn" aria-label="Remove attachment">×</button>
+
+                                    {# hidden — checked by the X button's click handler, submits with the form #}
+                                    <input type="checkbox" name="delete_media_ids" value="{{ m.id }}">
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {# ---------- add new attachments ---------- #}
+            <div class="mb-3">
+                <label class="form-label">Add Image/Video <span class="text-muted">(optional, max 5 total)</span></label>
+                <input id="media" name="media" type="file" class="form-control"
+                       accept="image/*,video/*" multiple>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('profile_page') }}" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+
+<script>
+    // cascade: when user changes state, swap the suburb dropdown contents to match
+    const SUBURBS_BY_STATE = {{ suburbs_by_state | tojson }};
+    const stateSelect = document.getElementById('state_id');
+    const suburbSelect = document.getElementById('suburb_id');
+
+    stateSelect.addEventListener('change', () => {
+        const suburbs = SUBURBS_BY_STATE[stateSelect.value] || [];
+        suburbSelect.innerHTML = '';
+        for (const sub of suburbs) {
+            const opt = document.createElement('option');
+            opt.value = sub.id;
+            opt.textContent = sub.name;
+            suburbSelect.appendChild(opt);
+        }
+    });
+
+    // clicking the X on a current attachment: tick its hidden checkbox and hide the thumbnail
+    // the checkbox stays in the form so the server still receives the delete id on submit
+    document.querySelectorAll('.attachment-thumb .remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const thumb = btn.closest('.attachment-thumb');
+            thumb.querySelector('input[type="checkbox"]').checked = true;
+            thumb.style.display = 'none';
+        });
+    });
+</script>
+{% endblock %}

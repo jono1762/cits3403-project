@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>{{ "My Profile" if is_own_profile else user.username + "'s Profile" }}</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">{{ user.username }}</h5>
+        {# email is private — only shown on your own profile #}
+        {% if is_own_profile %}
+            <p class="card-text mb-1"><strong>Email:</strong> {{ user.email }}</p>
+        {% endif %}
+        <p class="card-text mb-1"><strong>Trust score:</strong> {{ user.trust_score }}</p>
+        <p class="card-text mb-0"><strong>Reports submitted:</strong> {{ user.reports | length }}</p>
+    </div>
+</div>
+
+<h3>Recent Reports</h3>
+{% if recent_reports %}
+    <ul class="list-group">
+        {% for r in recent_reports %}
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge me-2" style="background-color: {{ r.category.marker_color }};">{{ r.category.name }}</span>
+                        {{ r.suburb.name }}, {{ r.suburb.state.code }}
+                        <span class="text-muted">— {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                    </div>
+                    {# Edit button only shown on your own profile — can't edit others' posts #}
+                    {% if is_own_profile %}
+                        <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    {% endif %}
+                </div>
+                {% if r.description %}<div class="mt-1">{{ r.description }}</div>{% endif %}
+
+                {# ---------- image/video carousel for this report ---------- #}
+                {# Only shown if the report has any attachments. Uses Bootstrap 5's carousel component. #}
+                {% if r.media %}
+                    {# unique id per report so each carousel's prev/next buttons target the right one #}
+                    {# data-bs-ride="false" means it WON'T auto-play; user clicks arrows/indicators to move #}
+                    <div id="carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
+
+                        {# ---- indicators (little bars) at the buttom showing which slide you're on ---- #}
+                        {# Bootstrap 5 renders these as thin horizontal bars by default (not dots) #}
+                        {# only shown when there's more than 1 attachment #}
+                        {% if r.media | length > 1 %}
+                            <div class="carousel-indicators">
+                                {% for m in r.media %}
+                                    {# each indicator jumps to a specific slide by index (loop.index0 = 0-based) #}
+                                    {# the first one is marked 'active' so it's highlighted on page load #}
+                                    <button type="button"
+                                            data-bs-target="#carousel-{{ r.id }}"
+                                            data-bs-slide-to="{{ loop.index0 }}"
+                                            class="{{ 'active' if loop.first else '' }}"
+                                            aria-label="Slide {{ loop.index }}"></button>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {# ---- the actual slides (images or videos) ---- #}
+                        {# black background so portrait photos have nice letterbox padding #}
+                        <div class="carousel-inner rounded border" style="background-color: #000;">
+                            {% for m in r.media %}
+                                {# 'active' class marks the slide that's shown first #}
+                                <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                                    {% if m.media_type == 'image' %}
+                                        {# object-fit: contain = show the whole image, don't crop #}
+                                        <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                             class="d-block w-100"
+                                             style="height: 400px; object-fit: contain;"
+                                             alt="{{ m.original_name }}">
+                                    {% else %}
+                                        {# same styling, but for video — controls attribute adds play/pause UI #}
+                                        <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                               controls
+                                               class="d-block w-100"
+                                               style="height: 400px; object-fit: contain; background: #000;"></video>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        {# ---- left/right arrow buttons ---- #}
+                        {# also hidden if there's only one attachment (no slides to go between) #}
+                        {% if r.media | length > 1 %}
+                            <button class="carousel-control-prev" type="button"
+                                    data-bs-target="#carousel-{{ r.id }}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                    data-bs-target="#carousel-{{ r.id }}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="text-muted">{{ "You haven't submitted any reports yet." if is_own_profile else user.username + " hasn't submitted any reports yet." }}</p>
+{% endif %}
+{% endblock %}
