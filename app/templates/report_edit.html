@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_edit.css') }}">
+{% endblock %}
+
 {% block content %}
 <h1>Edit Report</h1>
 <p class="text-muted">Update the details of your report.</p>
 
 <div class="card">
     <div class="card-body">
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label class="form-label">State <span class="text-danger">*</span></label>
                 <select id="state_id" class="form-select" required>
@@ -56,13 +60,45 @@
                 <textarea id="description" name="description" class="form-control" rows="3">{{ report.description or '' }}</textarea>
             </div>
 
-            {# media editing is out of scope for this PR — attachments stay as they were #}
+            {# ---------- existing attachments: click the X to mark for deletion on save ---------- #}
             {% if report.media %}
-                <p class="text-muted small mb-3">
-                    This report has {{ report.media | length }} attachment{{ '' if report.media|length == 1 else 's' }}.
-                    Attachments can't be edited yet — they'll stay as they are.
-                </p>
+                <div class="mb-3">
+                    <label class="form-label">Current attachments</label>
+                    <div class="row g-2">
+                        {% for m in report.media %}
+                            {# wrapper gets hidden when the user clicks its X — the checkbox inside stays in the form and submits the delete id #}
+                            <div class="col-6 col-md-4 attachment-thumb">
+                                <div class="border rounded p-2 position-relative">
+                                    {% if m.media_type == 'image' %}
+                                        <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                             class="d-block w-100"
+                                             style="height: 140px; object-fit: cover;"
+                                             alt="{{ m.original_name }}">
+                                    {% else %}
+                                        <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                               class="d-block w-100"
+                                               style="height: 140px; object-fit: cover;"
+                                               muted></video>
+                                    {% endif %}
+
+                                    {# X button: JS ticks the hidden checkbox and hides this whole thumbnail #}
+                                    <button type="button" class="remove-btn" aria-label="Remove attachment">×</button>
+
+                                    {# hidden — checked by the X button's click handler, submits with the form #}
+                                    <input type="checkbox" name="delete_media_ids" value="{{ m.id }}">
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             {% endif %}
+
+            {# ---------- add new attachments ---------- #}
+            <div class="mb-3">
+                <label class="form-label">Add Image/Video <span class="text-muted">(optional, max 5 total)</span></label>
+                <input id="media" name="media" type="file" class="form-control"
+                       accept="image/*,video/*" multiple>
+            </div>
 
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="{{ url_for('profile_page') }}" class="btn btn-outline-secondary">Cancel</a>
@@ -85,6 +121,16 @@
             opt.textContent = sub.name;
             suburbSelect.appendChild(opt);
         }
+    });
+
+    // clicking the X on a current attachment: tick its hidden checkbox and hide the thumbnail
+    // the checkbox stays in the form so the server still receives the delete id on submit
+    document.querySelectorAll('.attachment-thumb .remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const thumb = btn.closest('.attachment-thumb');
+            thumb.querySelector('input[type="checkbox"]').checked = true;
+            thumb.style.display = 'none';
+        });
     });
 </script>
 {% endblock %}

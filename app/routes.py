@@ -108,6 +108,16 @@ def edit_report_page(report_id):
         description = (request.form.get('description') or '').strip()
         address = (request.form.get('address') or '').strip() or None
 
+        # media edits: user may delete some existing attachments and/or add new ones
+        delete_ids = request.form.getlist('delete_media_ids', type=int)
+        new_files = [f for f in request.files.getlist('media') if f and f.filename]
+
+        # only allow deleting attachments that actually belong to THIS report
+        media_to_delete = [m for m in report.media if m.id in delete_ids]
+
+        # total files after delete + upload must stay under the limit
+        remaining_after_delete = len(report.media) - len(media_to_delete)
+
         # same validation rules as create — category + suburb required, address optional
         errors = {}
         if not category_id or not Category.query.get(category_id):
@@ -116,13 +126,54 @@ def edit_report_page(report_id):
             errors['suburb_id'] = 'Invalid or missing location.'
         if address and len(address) > 200:
             errors['address'] = 'Address must be 200 characters or fewer.'
+        if remaining_after_delete + len(new_files) > MAX_MEDIA_FILES:
+            errors['media'] = f'Too many attachments (max {MAX_MEDIA_FILES} total).'
+        else:
+            for f in new_files:
+                if not _media_type_for(f.filename):
+                    errors['media'] = f'Unsupported file type: {f.filename}'
+                    break
 
         if not errors:
             report.category_id = category_id
             report.suburb_id = suburb_id
             report.address = address
             report.description = description
-            db.session.commit()
+
+            # delete selected attachments: remove the DB row AND the file on disk
+            for m in media_to_delete:
+                disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+                db.session.delete(m)
+                try:
+                    os.remove(disk_path)
+                except OSError:
+                    pass  # file already gone, that's fine
+
+            # save any new uploads (same pattern as the create endpoint)
+            saved_paths = []
+            try:
+                for f in new_files:
+                    ext = f.filename.rsplit('.', 1)[-1].lower()
+                    stored_name = f'{uuid.uuid4().hex}.{ext}'
+                    save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
+                    f.save(save_path)
+                    saved_paths.append(save_path)
+                    db.session.add(ReportMedia(
+                        report_id=report.id,
+                        filename=stored_name,
+                        original_name=secure_filename(f.filename) or stored_name,
+                        media_type=_media_type_for(f.filename),
+                    ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                for path in saved_paths:
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+                raise
+
             flash('Report updated.', 'success')
             return redirect(url_for('profile_page'))
 
