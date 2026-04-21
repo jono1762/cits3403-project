@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Edit Report</h1>
+<p class="text-muted">Update the details of your report.</p>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">State <span class="text-danger">*</span></label>
+                <select id="state_id" class="form-select" required>
+                    <option value="" disabled>Select a state...</option>
+                    {% for state in states %}
+                        {# pre-select the state that contains the report's current suburb #}
+                        <option value="{{ state.id }}" {{ 'selected' if state.id == report.suburb.state_id else '' }}>
+                            {{ state.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Suburb <span class="text-danger">*</span></label>
+                <select id="suburb_id" name="suburb_id" class="form-select" required>
+                    {# pre-populate with the suburbs from the report's current state so the dropdown isn't empty on load #}
+                    {% for sub in report.suburb.state.suburbs %}
+                        <option value="{{ sub.id }}" {{ 'selected' if sub.id == report.suburb_id else '' }}>
+                            {{ sub.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Specific Address <span class="text-muted">(optional)</span></label>
+                <input id="address" name="address" type="text" class="form-control" maxlength="200"
+                       value="{{ report.address or '' }}"
+                       placeholder="e.g. corner of Hay St and William St">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Category <span class="text-danger">*</span></label>
+                <select id="category_id" name="category_id" class="form-select" required>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" style="color: {{ cat.marker_color }};"
+                                {{ 'selected' if cat.id == report.category_id else '' }}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                <textarea id="description" name="description" class="form-control" rows="3">{{ report.description or '' }}</textarea>
+            </div>
+
+            {# media editing is out of scope for this PR — attachments stay as they were #}
+            {% if report.media %}
+                <p class="text-muted small mb-3">
+                    This report has {{ report.media | length }} attachment{{ '' if report.media|length == 1 else 's' }}.
+                    Attachments can't be edited yet — they'll stay as they are.
+                </p>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('profile_page') }}" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+
+<script>
+    // cascade: when user changes state, swap the suburb dropdown contents to match
+    const SUBURBS_BY_STATE = {{ suburbs_by_state | tojson }};
+    const stateSelect = document.getElementById('state_id');
+    const suburbSelect = document.getElementById('suburb_id');
+
+    stateSelect.addEventListener('change', () => {
+        const suburbs = SUBURBS_BY_STATE[stateSelect.value] || [];
+        suburbSelect.innerHTML = '';
+        for (const sub of suburbs) {
+            const opt = document.createElement('option');
+            opt.value = sub.id;
+            opt.textContent = sub.name;
+            suburbSelect.appendChild(opt);
+        }
+    });
+</script>
+{% endblock %}

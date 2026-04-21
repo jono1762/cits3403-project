@@ -1,7 +1,7 @@
 import os
 import uuid
 from flask import current_app as app
-from flask import render_template, redirect, url_for, flash, request, jsonify
+from flask import render_template, redirect, url_for, flash, request, jsonify, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from .models import db, User, Category, Report, State, Suburb, ReportMedia
@@ -92,6 +92,57 @@ def profile_page():
         .all()
     )
     return render_template('profile.html', recent_reports=recent_reports)
+
+# /reports/<id>/edit — GET renders the edit form, POST saves changes
+# only the original author can edit; everyone else gets 403
+@app.route('/reports/<int:report_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_report_page(report_id):
+    report = Report.query.get_or_404(report_id)
+    if report.user_id != current_user.id:
+        abort(403)
+
+    if request.method == 'POST':
+        category_id = request.form.get('category_id', type=int)
+        suburb_id = request.form.get('suburb_id', type=int)
+        description = (request.form.get('description') or '').strip()
+        address = (request.form.get('address') or '').strip() or None
+
+        # same validation rules as create — category + suburb required, address optional
+        errors = {}
+        if not category_id or not Category.query.get(category_id):
+            errors['category_id'] = 'Invalid or missing category.'
+        if not suburb_id or not Suburb.query.get(suburb_id):
+            errors['suburb_id'] = 'Invalid or missing location.'
+        if address and len(address) > 200:
+            errors['address'] = 'Address must be 200 characters or fewer.'
+
+        if not errors:
+            report.category_id = category_id
+            report.suburb_id = suburb_id
+            report.address = address
+            report.description = description
+            db.session.commit()
+            flash('Report updated.', 'success')
+            return redirect(url_for('profile_page'))
+
+        # validation failed — fall through and re-render the form showing errors
+        for msg in errors.values():
+            flash(msg, 'error')
+
+    categories = Category.query.order_by(Category.id).all()
+    states = State.query.order_by(State.name).all()
+    suburbs_by_state = {
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs]
+        for s in states
+    }
+    return render_template(
+        'report_edit.html',
+        report=report,
+        categories=categories,
+        states=states,
+        suburbs_by_state=suburbs_by_state,
+    )
 
 # /reports — page where a logged-in user fills out and submits a report
 @app.route('/reports')
