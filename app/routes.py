@@ -235,6 +235,17 @@ def edit_report_page(report_id):
         suburbs_by_state=suburbs_by_state,
     )
 
+# /listing — list all reports, most recent first
+# keep the query as an object so filters (category, state, suburb) can be dropped in
+# as query = query.filter(...) without restructuring
+@app.route('/listing')
+@login_required
+def listing_page():
+    page = request.args.get('page', 1, type=int)
+    query = Report.query.order_by(Report.created_at.desc())
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    return render_template('reports_listing.html', pagination=pagination)
+
 # /reports — page where a logged-in user fills out and submits a report
 @app.route('/reports')
 @login_required
@@ -355,3 +366,6 @@ def api_create_report():
             for m in report.media
         ],
     }), 201
+
+
+
