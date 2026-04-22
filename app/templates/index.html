@@ -1,6 +1,216 @@
 {% extends "base.html" %}
 
+{% block styles %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
 {% block content %}
-<h1>Welcome, {{ current_user.username }}!</h1>
-<p>Map will go here.</p>
+<div id="mapPage" class="mx-auto">
+    <div class="d-flex flex-column gap-1">
+        <h1 class="h2 mb-0">Global Map</h1>
+        <p class="text-muted mb-0">Explore situation reports worldwide.</p>
+    </div>
+
+    <div class="search-wrapper">
+        <div class="search-row">
+            <div class="search-input-area">
+                <input
+                    type="text"
+                    name="searchBar"
+                    id="searchBar"
+                    class="form-control"
+                    placeholder="Search for a city or country..."
+                    autocomplete="off"
+                >
+                <ul id="suggestions"></ul>
+            </div>
+            <button type="button" id="searchButton" class="btn btn-primary">Search</button>
+        </div>
+    </div>
+
+    <div class="map-wrapper border rounded">
+        <div id="map" aria-label="Interactive world map"></div>
+        <div class="zoom-controls">
+            <button type="button" onclick="zoom(true)">+</button>
+            <button type="button" onclick="zoom(false)">-</button>
+            <button type="button" onclick="resetMap()">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const searchBar = document.getElementById("searchBar");
+    const searchButton = document.getElementById("searchButton");
+    const suggestions = document.getElementById("suggestions");
+    const searchWrapper = document.querySelector(".search-wrapper");
+
+    const cityData = [
+        { name: "Perth", country: "Australia", lat: -31.9523, lng: 115.8613 },
+        { name: "Sydney", country: "Australia", lat: -33.8688, lng: 151.2093 },
+        { name: "New York", country: "United States of America", lat: 40.7128, lng: -74.0060 },
+        { name: "New Delhi", country: "India", lat: 28.6139, lng: 77.2090 },
+        { name: "Tokyo", country: "Japan", lat: 35.6762, lng: 139.6503 }
+    ];
+
+    const sortedCities = [...cityData].sort((a, b) => a.name.localeCompare(b.name));
+    const defaultView = { center: [20, 0], zoom: 2 };
+
+    const map = L.map("map", {
+        center: defaultView.center,
+        zoom: defaultView.zoom,
+        minZoom: 2,
+        maxZoom: 8,
+        zoomControl: false,
+        worldCopyJump: false,
+        maxBounds: [[-85, -180], [85, 180]],
+        maxBoundsViscosity: 1.0
+    });
+
+    const cityMarkerLayer = L.layerGroup().addTo(map);
+    let suggestionsOpen = false;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        noWrap: true,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    function clearSuggestions() {
+        suggestions.innerHTML = "";
+        suggestionsOpen = false;
+    }
+
+    function focusCity(city) {
+        map.setView([city.lat, city.lng], 5);
+    }
+
+    function renderSuggestions(items) {
+        suggestions.innerHTML = "";
+        const visible = items.slice(0, 5);
+
+        visible.forEach((city) => {
+            const suggestion = document.createElement("li");
+            suggestion.textContent = city.name;
+            suggestions.appendChild(suggestion);
+        });
+
+        suggestionsOpen = visible.length > 0;
+    }
+
+    function search() {
+        const query = searchBar.value.trim().toLowerCase();
+        const filteredCities = query
+            ? sortedCities.filter((item) => (
+                item.name.toLowerCase().includes(query) || item.country.toLowerCase().includes(query)
+            ))
+            : sortedCities;
+
+        renderSuggestions(filteredCities);
+    }
+
+    function initializeCityMarkers() {
+        cityMarkerLayer.clearLayers();
+
+        sortedCities.forEach((city) => {
+            const marker = L.marker([city.lat, city.lng]).addTo(cityMarkerLayer);
+            marker.bindPopup(`<strong>${city.name}</strong><br>${city.country}`);
+
+            marker.on("click", () => {
+                searchBar.value = city.name;
+                clearSuggestions();
+                focusCity(city);
+            });
+        });
+    }
+
+    function autocomplete(event) {
+        event.stopPropagation();
+
+        if (event.target.tagName !== "LI") {
+            return;
+        }
+
+        const selectedCity = cityData.find((item) => item.name === event.target.textContent);
+        if (!selectedCity) {
+            return;
+        }
+
+        searchBar.value = selectedCity.name;
+        clearSuggestions();
+        focusCity(selectedCity);
+    }
+
+    function minimise(event) {
+        if (!searchWrapper.contains(event.target)) {
+            clearSuggestions();
+        }
+    }
+
+    function onSearchBarClick(event) {
+        event.stopPropagation();
+
+        if (suggestionsOpen) {
+            clearSuggestions();
+        } else {
+            search();
+        }
+    }
+
+    function onSearchSubmit(event) {
+        event.stopPropagation();
+
+        const query = searchBar.value.trim().toLowerCase();
+        if (!query) {
+            alert("Please enter a location to search.");
+            return;
+        }
+
+        const selectedCity = cityData.find((item) => (
+            item.name.toLowerCase() === query ||
+            item.name.toLowerCase().includes(query) ||
+            item.country.toLowerCase().includes(query)
+        ));
+
+        if (!selectedCity) {
+            alert("No matching location found.");
+            return;
+        }
+
+        searchBar.value = selectedCity.name;
+        focusCity(selectedCity);
+        clearSuggestions();
+
+        // Stub for future navigation to a location-specific report page.
+        alert("Stub: open report page for " + selectedCity.name);
+    }
+
+    function onSearchBarKeyDown(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            onSearchSubmit(event);
+        }
+    }
+
+    function zoom(zoomIn) {
+        if (zoomIn) {
+            map.zoomIn();
+        } else {
+            map.zoomOut();
+        }
+    }
+
+    function resetMap() {
+        map.setView(defaultView.center, defaultView.zoom);
+    }
+
+    searchBar.addEventListener("click", onSearchBarClick);
+    searchBar.addEventListener("input", search);
+    searchBar.addEventListener("keydown", onSearchBarKeyDown);
+    searchButton.addEventListener("click", onSearchSubmit);
+    document.body.addEventListener("click", minimise);
+    suggestions.addEventListener("click", autocomplete);
+
+    initializeCityMarkers();
+</script>
 {% endblock %}
