@@ -235,16 +235,39 @@ def edit_report_page(report_id):
         suburbs_by_state=suburbs_by_state,
     )
 
-# /listing — list all reports, most recent first
-# keep the query as an object so filters (category, state, suburb) can be dropped in
-# as query = query.filter(...) without restructuring
+# /listing — list all reports, most recent first, with optional state / suburb filters
 @app.route('/listing')
 @login_required
 def listing_page():
     page = request.args.get('page', 1, type=int)
-    query = Report.query.order_by(Report.created_at.desc())
+    state_id = request.args.get('state_id', type=int)
+    suburb_id = request.args.get('suburb_id', type=int)
+
+    query = Report.query
+    # state filter has to go through Suburb because Report only stores suburb_id, not state_id
+    if state_id:
+        query = query.join(Suburb, Suburb.id == Report.suburb_id).filter(Suburb.state_id == state_id)
+    if suburb_id:
+        query = query.filter(Report.suburb_id == suburb_id)
+
+    query = query.order_by(Report.created_at.desc())
     pagination = query.paginate(page=page, per_page=20, error_out=False)
-    return render_template('reports_listing.html', pagination=pagination)
+
+    # dropdown data — same shape the create form uses, so the cascade JS is identical
+    states = State.query.order_by(State.name).all()
+    suburbs_by_state = {
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs]
+        for s in states
+    }
+
+    return render_template(
+        'reports_listing.html',
+        pagination=pagination,
+        states=states,
+        suburbs_by_state=suburbs_by_state,
+        selected_state_id=state_id,
+        selected_suburb_id=suburb_id,
+    )
 
 # /reports — page where a logged-in user fills out and submits a report
 @app.route('/reports')
