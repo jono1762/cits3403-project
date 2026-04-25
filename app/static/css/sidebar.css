@@ -1,0 +1,74 @@
+:root {
+    --sidebar-width: 220px;
+}
+
+.app-shell {
+    display: flex;
+    align-items: flex-start;
+}
+
+.app-sidebar {
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--navbar-height));
+    background-color: #000;
+    color: #fff;
+    border-right: 1px solid #1f1f1f;
+    overflow-y: auto;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    z-index: 1000;
+}
+
+.app-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+}
+
+.app-sidebar-link {
+    display: block;
+    padding: 14px 18px;
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid #1a1a1a;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-sidebar-link:hover,
+.app-sidebar-link:focus {
+    background-color: #1f1f1f;
+    color: #fff;
+}
+
+.app-sidebar-link.active {
+    background-color: #2f2f2f;
+    color: #fff;
+    font-weight: 600;
+}
+
+.app-main-content {
+    flex: 1;
+    min-width: 0;
+    margin-left: var(--sidebar-width);
+}
+
+@media (max-width: 767.98px) {
+    .app-shell {
+        display: block;
+    }
+
+    .app-sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid #1f1f1f;
+    }
+
+    .app-main-content {
+        margin-left: 0;
+    }
+}
