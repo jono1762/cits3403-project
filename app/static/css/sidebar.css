@@ -1,0 +1,87 @@
+:root {
+    --sidebar-width: 208px;
+}
+
+.app-shell {
+    display: flex;
+    align-items: flex-start;
+}
+
+.app-sidebar {
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--navbar-height));
+    background-color: #000;
+    color: #fff;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    overflow-y: auto;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    z-index: 1000;
+}
+
+.app-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 184px;
+    padding: 16px 0 10px;
+    margin: 0 auto;
+}
+
+.app-sidebar-group-header {
+    margin: 12px 0 6px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 600;
+}
+
+.app-sidebar-group-header:first-child {
+    margin-top: 2px;
+}
+
+.app-sidebar-link {
+    display: block;
+    padding: 10px 12px;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-weight: 400;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-sidebar-link:hover,
+.app-sidebar-link:focus {
+    background-color: rgba(255, 255, 255, 0.09);
+    color: #fff;
+}
+
+.app-sidebar-link.active {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-weight: 600;
+}
+
+.app-main-content {
+    flex: 1;
+    min-width: 0;
+    margin-left: var(--sidebar-width);
+}
+
+.mobile-sidebar-nav {
+    max-width: none;
+    padding: 16px 10px 12px;
+}
+
+@media (max-width: 767.98px) {
+    .app-shell {
+        display: block;
+    }
+
+    .app-main-content {
+        margin-left: 0;
+    }
+}
