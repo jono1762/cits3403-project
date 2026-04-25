@@ -12,6 +12,21 @@
     height: var(--navbar-height);
 }
 
+.app-account-toggle {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.app-account-toggle:hover,
+.app-account-toggle:focus {
+    color: #fff;
+    text-decoration: none;
+}
+
+.app-account-toggle:focus {
+    box-shadow: none;
+}
+
 @media (max-width: 767.98px) {
     :root {
         --navbar-height: 56px;

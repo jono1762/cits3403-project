@@ -25,9 +25,18 @@
 
             <div>
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('profile_page') }}" class="text-light me-3 text-decoration-none">{{ current_user.username }}</a>
-                    <a href="#" class="text-light me-3 text-decoration-none app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Log Out</a>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-light text-decoration-none dropdown-toggle p-0 border-0 app-account-toggle"
+                                type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ current_user.username }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('profile_page') }}">Profile</a></li>
+                            <li><a class="dropdown-item app-stub-link" href="#" data-stub-message="Stub: open Settings page.">Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log Out</a></li>
+                        </ul>
+                    </div>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2">Log In</a>
                     <a href="{{ url_for('signup') }}" class="btn btn-light btn-sm">Sign Up</a>
