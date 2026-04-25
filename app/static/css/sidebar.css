@@ -28,6 +28,19 @@
     margin: 0;
 }
 
+.app-sidebar-group-header {
+    margin: 12px 6px 6px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 600;
+}
+
+.app-sidebar-group-header:first-child {
+    margin-top: 2px;
+}
+
 .app-sidebar-link {
     display: block;
     padding: 10px 12px;

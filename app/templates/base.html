@@ -52,10 +52,15 @@
         <div class="app-shell">
             <aside class="app-sidebar" aria-label="Sidebar Navigation">
                 <nav class="app-sidebar-nav">
+                    <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('index') }}" class="app-sidebar-link {{ 'active' if path == url_for('index') else '' }}">Global Map</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page.">Top Reports</a>
-                    <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page.">Favourites</a>
+
+                    <div class="app-sidebar-group-header">Reports</div>
+                    <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
+                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page.">Top Reports</a>
+
+                    <div class="app-sidebar-group-header">Support</div>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page.">Help</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page.">About</a>
                 </nav>
