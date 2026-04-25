@@ -24,12 +24,14 @@
 .app-sidebar-nav {
     display: flex;
     flex-direction: column;
-    padding: 16px 8px 10px;
-    margin: 0;
+    width: 100%;
+    max-width: 184px;
+    padding: 16px 0 10px;
+    margin: 0 auto;
 }
 
 .app-sidebar-group-header {
-    margin: 12px 6px 6px;
+    margin: 12px 0 6px;
     font-size: 0.68rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -69,17 +71,14 @@
     margin-left: var(--sidebar-width);
 }
 
+.mobile-sidebar-nav {
+    max-width: none;
+    padding: 16px 10px 12px;
+}
+
 @media (max-width: 767.98px) {
     .app-shell {
         display: block;
-    }
-
-    .app-sidebar {
-        position: static;
-        width: 100%;
-        height: auto;
-        border-right: 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .app-main-content {

@@ -49,8 +49,40 @@
 
     {% if current_user.is_authenticated %}
         {% set path = request.path %}
+
+        <button class="btn btn-sm btn-outline-light d-md-none app-mobile-menu-floating"
+                type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#mobileSidebar"
+                aria-controls="mobileSidebar"
+                aria-label="Open navigation menu">
+            Menu
+        </button>
+
+        <div class="offcanvas offcanvas-start text-bg-dark d-md-none" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+            <div class="offcanvas-header border-bottom border-secondary">
+                <h5 class="offcanvas-title" id="mobileSidebarLabel">Navigation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <nav class="app-sidebar-nav mobile-sidebar-nav" aria-label="Mobile Sidebar Navigation">
+                    <div class="app-sidebar-group-header">Locations</div>
+                    <a href="{{ url_for('index') }}" class="app-sidebar-link {{ 'active' if path == url_for('index') else '' }}">Global Map</a>
+                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page." data-bs-dismiss="offcanvas">Favourites</a>
+
+                    <div class="app-sidebar-group-header">Reports</div>
+                    <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
+                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page." data-bs-dismiss="offcanvas">Top Reports</a>
+
+                    <div class="app-sidebar-group-header">Support</div>
+                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page." data-bs-dismiss="offcanvas">Help</a>
+                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page." data-bs-dismiss="offcanvas">About</a>
+                </nav>
+            </div>
+        </div>
+
         <div class="app-shell">
-            <aside class="app-sidebar" aria-label="Sidebar Navigation">
+            <aside class="app-sidebar d-none d-md-block" aria-label="Sidebar Navigation">
                 <nav class="app-sidebar-nav">
                     <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('index') }}" class="app-sidebar-link {{ 'active' if path == url_for('index') else '' }}">Global Map</a>
@@ -91,6 +123,12 @@
             link.addEventListener('click', (event) => {
                 event.preventDefault();
                 alert(link.dataset.stubMessage || 'Stub: page not available yet.');
+
+                const offcanvasElement = document.getElementById('mobileSidebar');
+                if (offcanvasElement) {
+                    const offcanvasInstance = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
+                    offcanvasInstance.hide();
+                }
             });
         });
     </script>
