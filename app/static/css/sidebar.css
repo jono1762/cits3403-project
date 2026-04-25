@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 220px;
+    --sidebar-width: 208px;
 }
 
 .app-shell {
@@ -15,7 +15,7 @@
     height: calc(100vh - var(--navbar-height));
     background-color: #000;
     color: #fff;
-    border-right: 1px solid #1f1f1f;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     overflow-y: auto;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     z-index: 1000;
@@ -24,27 +24,28 @@
 .app-sidebar-nav {
     display: flex;
     flex-direction: column;
-    padding: 0;
+    padding: 16px 8px 10px;
     margin: 0;
 }
 
 .app-sidebar-link {
     display: block;
-    padding: 14px 18px;
-    color: #fff;
+    padding: 10px 12px;
+    color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
-    border-bottom: 1px solid #1a1a1a;
+    font-weight: 400;
+    border-radius: 8px;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .app-sidebar-link:hover,
 .app-sidebar-link:focus {
-    background-color: #1f1f1f;
+    background-color: rgba(255, 255, 255, 0.09);
     color: #fff;
 }
 
 .app-sidebar-link.active {
-    background-color: #2f2f2f;
+    background-color: rgba(255, 255, 255, 0.16);
     color: #fff;
     font-weight: 600;
 }
@@ -65,7 +66,7 @@
         width: 100%;
         height: auto;
         border-right: 0;
-        border-bottom: 1px solid #1f1f1f;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .app-main-content {
