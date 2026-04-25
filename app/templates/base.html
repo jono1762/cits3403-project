@@ -26,6 +26,7 @@
             <div>
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('profile_page') }}" class="text-light me-3 text-decoration-none">{{ current_user.username }}</a>
+                    <a href="#" class="text-light me-3 text-decoration-none app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
                     <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Log Out</a>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2">Log In</a>
@@ -43,10 +44,9 @@
             <aside class="app-sidebar" aria-label="Sidebar Navigation">
                 <nav class="app-sidebar-nav">
                     <a href="{{ url_for('index') }}" class="app-sidebar-link {{ 'active' if path == url_for('index') else '' }}">Global Map</a>
-                    <a href="#" class="app-sidebar-link app-sidebar-stub {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page.">Favourites</a>
-                    <a href="#" class="app-sidebar-link app-sidebar-stub {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page.">Top Reports</a>
+                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page.">Favourites</a>
+                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page.">Top Reports</a>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
-                    <a href="#" class="app-sidebar-link app-sidebar-stub {{ 'active' if path == '/settings.html' else '' }}" data-stub-message="Stub: open Settings page.">Settings</a>
                 </nav>
             </aside>
             <main class="app-main-content">
@@ -71,7 +71,7 @@
     {% endif %}
 
     <script>
-        document.querySelectorAll('.app-sidebar-stub').forEach((link) => {
+        document.querySelectorAll('.app-stub-link').forEach((link) => {
             link.addEventListener('click', (event) => {
                 event.preventDefault();
                 alert(link.dataset.stubMessage || 'Stub: page not available yet.');
