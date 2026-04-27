@@ -13,7 +13,7 @@
 	<div class="search-wrapper">
 		<div class="search-row">
 			<div class="search-input-area">
-				<input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its country...">
+				<input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its state...">
 				<ul id="suggestions"></ul>
 			</div>
 			<button type="button" id="searchButton">Search</button>
@@ -37,17 +37,17 @@
 	const suggestions = document.getElementById("suggestions");
 	const searchWrapper = document.querySelector(".search-wrapper");
 	const cityData = [
-		{ name: "Sydney, Australia", country: "Australia", lat: -33.8688, lng: 151.2093 },
-		{ name: "Melbourne, Australia", country: "Australia", lat: -37.8136, lng: 144.9631 },
-		{ name: "Brisbane, Australia", country: "Australia", lat: -27.4698, lng: 153.0251 },
-		{ name: "Perth, Australia", country: "Australia", lat: -31.9523, lng: 115.8613 },
-		{ name: "Adelaide, Australia", country: "Australia", lat: -34.9285, lng: 138.6007 },
-		{ name: "Canberra, Australia", country: "Australia", lat: -35.2809, lng: 149.1300 },
-		{ name: "Gold Coast, Australia", country: "Australia", lat: -28.0167, lng: 153.4000 },
-		{ name: "Hobart, Australia", country: "Australia", lat: -42.8821, lng: 147.3272 },
-		{ name: "Darwin, Australia", country: "Australia", lat: -12.4634, lng: 130.8456 },
-		{ name: "Cairns, Australia", country: "Australia", lat: -16.9203, lng: 145.7710 },
-		{ name: "Alice Springs, Australia", country: "Australia", lat: -23.6980, lng: 133.8807 }
+		{ name: "Sydney, New South Wales", state: "New South Wales", lat: -33.8688, lng: 151.2093 },
+		{ name: "Melbourne, Victoria", state: "Victoria", lat: -37.8136, lng: 144.9631 },
+		{ name: "Brisbane, Queensland", state: "Queensland", lat: -27.4698, lng: 153.0251 },
+		{ name: "Perth, Western Australia", state: "Western Australia", lat: -31.9523, lng: 115.8613 },
+		{ name: "Adelaide, South Australia", state: "South Australia", lat: -34.9285, lng: 138.6007 },
+		{ name: "Canberra, Australian Capital Territory", state: "Australian Capital Territory", lat: -35.2809, lng: 149.1300 },
+		{ name: "Gold Coast, Queensland", state: "Queensland", lat: -28.0167, lng: 153.4000 },
+		{ name: "Hobart, Tasmania", state: "Tasmania", lat: -42.8821, lng: 147.3272 },
+		{ name: "Darwin, Northern Territory", state: "Northern Territory", lat: -12.4634, lng: 130.8456 },
+		{ name: "Cairns, Queensland", state: "Queensland", lat: -16.9203, lng: 145.7710 },
+		{ name: "Alice Springs, Northern Territory", state: "Northern Territory", lat: -23.6980, lng: 133.8807 }
 	];
 	const australiaBounds = [[-44.5, 112.0], [-9.0, 154.5]];
 	const defaultView = { center: [-25.2744, 133.7751], zoom: 4 };
@@ -74,7 +74,7 @@
 
 		cityData.forEach((city) => {
 			const marker = L.marker([city.lat, city.lng]).addTo(cityMarkerLayer);
-			marker.bindPopup(`<strong>${city.name}</strong><br>${city.country}`);
+			marker.bindPopup(`<strong>${city.name}</strong><br>${city.state}`);
 
 			marker.on("click", function () {
 				searchBar.value = city.name;
@@ -102,7 +102,7 @@
 			filteredCities = cityData.slice(0, 5);
 		} else {
 			filteredCities = cityData.filter((item) => (
-				item.name.toLowerCase().includes(query) || item.country.toLowerCase().includes(query)
+				item.name.toLowerCase().includes(query) || item.state.toLowerCase().includes(query)
 			));
 		}
 
@@ -159,7 +159,7 @@
 		const selectedCity = cityData.find((item) => (
 			item.name.toLowerCase() === query ||
 			item.name.toLowerCase().includes(query) ||
-			item.country.toLowerCase().includes(query)
+			item.state.toLowerCase().includes(query)
 		));
 
 		if (!selectedCity) {
