@@ -10,7 +10,62 @@
     <a href="{{ url_for('reports_page') }}" class="btn btn-primary btn-sm">+ New Report</a>
 </div>
 
-{# filter controls will slot in here later (category, state, suburb, hot topic, etc.) #}
+{# location + category filter — suburb dropdown only lights up once a state is picked #}
+<form method="get" action="{{ url_for('listing_page') }}" class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label mb-1">State</label>
+            <select name="state_id" id="filter-state" class="form-select form-select-sm">
+                <option value="">All states</option>
+                {% for s in states %}
+                    <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-1">Suburb</label>
+            <select name="suburb_id" id="filter-suburb" class="form-select form-select-sm"
+                    {% if not selected_state_id %}disabled{% endif %}>
+                <option value="">All suburbs</option>
+                {% if selected_state_id %}
+                    {% for sub in suburbs_by_state.get(selected_state_id, []) %}
+                        <option value="{{ sub.id }}" {% if selected_suburb_id == sub.id %}selected{% endif %}>{{ sub.name }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-1">Category</label>
+            <select name="category_id" class="form-select form-select-sm">
+                <option value="">All categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if selected_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+            <a href="{{ url_for('listing_page') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </div>
+    </div>
+</form>
+
+<script>
+const SUBURBS_BY_STATE = {{ suburbs_by_state | tojson }};
+const filterState = document.getElementById('filter-state');
+const filterSuburb = document.getElementById('filter-suburb');
+filterState.addEventListener('change', () => {
+    const list = SUBURBS_BY_STATE[filterState.value] || [];
+    filterSuburb.innerHTML = '<option value="">All suburbs</option>';
+    for (const sub of list) {
+        const opt = document.createElement('option');
+        opt.value = sub.id;
+        opt.textContent = sub.name;
+        filterSuburb.appendChild(opt);
+    }
+    filterSuburb.disabled = !filterState.value;
+});
+</script>
 
 {% if pagination.items %}
     <ul class="list-group mb-4">
@@ -88,20 +143,21 @@
     {% if pagination.pages > 1 %}
         <nav aria-label="Reports pagination">
             <ul class="pagination justify-content-center">
+                {# carry filter ids through pagination — url_for omits None values #}
                 <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
-                    <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num) if pagination.has_prev else '#' }}">Previous</a>
+                    <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_prev else '#' }}">Previous</a>
                 </li>
                 {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                     {% if p %}
                         <li class="page-item {{ 'active' if p == pagination.page else '' }}">
-                            <a class="page-link" href="{{ url_for('listing_page', page=p) }}">{{ p }}</a>
+                            <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) }}">{{ p }}</a>
                         </li>
                     {% else %}
                         <li class="page-item disabled"><span class="page-link">…</span></li>
                     {% endif %}
                 {% endfor %}
                 <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
-                    <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num) if pagination.has_next else '#' }}">Next</a>
+                    <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_next else '#' }}">Next</a>
                 </li>
             </ul>
         </nav>

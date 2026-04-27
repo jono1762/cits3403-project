@@ -242,6 +242,7 @@ def listing_page():
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     suburb_id = request.args.get('suburb_id', type=int)
+    category_id = request.args.get('category_id', type=int)
 
     query = Report.query
     # state filter has to go through Suburb because Report only stores suburb_id, not state_id
@@ -249,6 +250,8 @@ def listing_page():
         query = query.join(Suburb, Suburb.id == Report.suburb_id).filter(Suburb.state_id == state_id)
     if suburb_id:
         query = query.filter(Report.suburb_id == suburb_id)
+    if category_id:
+        query = query.filter(Report.category_id == category_id)
 
     query = query.order_by(Report.created_at.desc())
     pagination = query.paginate(page=page, per_page=20, error_out=False)
@@ -259,14 +262,17 @@ def listing_page():
         s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs]
         for s in states
     }
+    categories = Category.query.order_by(Category.id).all()
 
     return render_template(
         'reports_listing.html',
         pagination=pagination,
         states=states,
         suburbs_by_state=suburbs_by_state,
+        categories=categories,
         selected_state_id=state_id,
         selected_suburb_id=suburb_id,
+        selected_category_id=category_id,
     )
 
 # /reports — page where a logged-in user fills out and submits a report
@@ -389,6 +395,3 @@ def api_create_report():
             for m in report.media
         ],
     }), 201
-
-
-
