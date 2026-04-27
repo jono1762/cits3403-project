@@ -49,15 +49,16 @@
 		{ name: "Cairns, Australia", country: "Australia", lat: -16.9203, lng: 145.7710 },
 		{ name: "Alice Springs, Australia", country: "Australia", lat: -23.6980, lng: 133.8807 }
 	];
-	const defaultView = { center: [20, 0], zoom: 2 };
+	const australiaBounds = [[-44.5, 112.0], [-9.0, 154.5]];
+	const defaultView = { center: [-25.2744, 133.7751], zoom: 4 };
 	const map = L.map("map", {
 		center: defaultView.center,
 		zoom: defaultView.zoom,
-		minZoom: 2,
+		minZoom: 4,
 		maxZoom: 8,
 		zoomControl: false,
 		worldCopyJump: false,
-		maxBounds: [[-85, -180], [85, 180]],
+		maxBounds: australiaBounds,
 		maxBoundsViscosity: 1.0
 	});
 	const cityMarkerLayer = L.layerGroup().addTo(map);
