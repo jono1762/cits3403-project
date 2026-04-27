@@ -49,23 +49,24 @@
 		{ name: "Cairns, Queensland", state: "Queensland", lat: -16.9203, lng: 145.7710 },
 		{ name: "Alice Springs, Northern Territory", state: "Northern Territory", lat: -23.6980, lng: 133.8807 }
 	];
-	const australiaBounds = [[-44.5, 112.0], [-9.0, 154.5]];
-	const defaultView = { center: [-25.2744, 133.7751], zoom: 4 };
+	const australiaBounds = [[-45.5, 106.0], [-8.0, 160.0]];
+	const southBound = australiaBounds[0][0];
+	const westBound = australiaBounds[0][1];
+	const northBound = australiaBounds[1][0];
+	const eastBound = australiaBounds[1][1];
+	const defaultView = { center: [-27.0, 133.7751], zoom: 4 };
 	const map = L.map("map", {
 		center: defaultView.center,
 		zoom: defaultView.zoom,
-		minZoom: 4,
+		minZoom: defaultView.zoom,
 		maxZoom: 8,
 		zoomControl: false,
-		worldCopyJump: false,
-		maxBounds: australiaBounds,
-		maxBoundsViscosity: 1.0
+		worldCopyJump: true
 	});
 	const cityMarkerLayer = L.layerGroup().addTo(map);
 	let suggestionsOpen = false;
 
 	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-		noWrap: true,
 		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 	}).addTo(map);
 
@@ -92,6 +93,21 @@
 	function focusCity(city) {
 		const latlng = [city.lat, city.lng];
 		map.setView(latlng, 5);
+	}
+
+	function wrapLongitude(lng) {
+		return ((lng + 180) % 360 + 360) % 360 - 180;
+	}
+
+	function clampMapCenterToAustralia() {
+		const center = map.getCenter();
+		const wrappedLng = wrapLongitude(center.lng);
+		const clampedLat = Math.min(Math.max(center.lat, southBound), northBound);
+		const clampedLng = Math.min(Math.max(wrappedLng, westBound), eastBound);
+
+		if (Math.abs(clampedLat - center.lat) > 1e-6 || Math.abs(clampedLng - wrappedLng) > 1e-6) {
+			map.panTo([clampedLat, clampedLng], { animate: false });
+		}
 	}
 
 	function search() {
@@ -196,6 +212,7 @@
 	searchButton.addEventListener("click", onSearchSubmit);
 	document.body.addEventListener("click", minimise);
 	suggestions.addEventListener("click", autocomplete);
+	map.on("moveend", clampMapCenterToAustralia);
 	initializeCityMarkers();
 </script>
 {% endblock %}
