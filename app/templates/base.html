@@ -28,16 +28,8 @@
 
             <div>
                 {% if current_user.is_authenticated %}
-                    <div class="dropdown">
-                        <button class="btn btn-link text-light text-decoration-none dropdown-toggle p-0 border-0 app-account-toggle"
-                                type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ current_user.username }}
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('profile_page') }}">Profile</a></li>
-                            <li><a class="dropdown-item app-stub-link" href="#" data-stub-message="Stub: open Settings page.">Settings</a></li>
-                        </ul>
-                    </div>
+                    {# username links straight to the profile page now that the dropdown is gone #}
+                    <a href="{{ url_for('profile_page') }}" class="app-account-toggle">{{ current_user.username }}</a>
                 {% endif %}
             </div>
         </div>
@@ -72,6 +64,10 @@
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page." data-bs-dismiss="offcanvas">Top Reports</a>
 
+                    <div class="app-sidebar-group-header">Account</div>
+                    <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
+
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page." data-bs-dismiss="offcanvas">Help</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page." data-bs-dismiss="offcanvas">About</a>
@@ -97,6 +93,10 @@
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page.">Top Reports</a>
+
+                    <div class="app-sidebar-group-header">Account</div>
+                    <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page.">Help</a>

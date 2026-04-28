@@ -17,6 +17,15 @@
     font-family: 'Italiana', serif;     /* matches the brand text — elegant serif */
     font-size: 1.15rem;
     letter-spacing: 0.04em;
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+}
+
+.app-account-toggle:hover,
+.app-account-toggle:focus {
+    opacity: 0.85;
+    text-decoration: none;
+    color: #fff;
 }
 
 .app-account-toggle:hover,
