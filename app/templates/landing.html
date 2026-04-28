@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
 {% block content %}
 <section class="landing-hero">
     {# decorative gradient blobs sit behind everything #}
@@ -9,7 +13,10 @@
     <div class="landing-hero-grid">
         {# ---------- left column: hero text + buttons ---------- #}
         <div class="landing-hero-text">
-            <span class="landing-badge">LIVE · AUSTRALIA</span>
+            <span class="landing-badge">
+                <span class="landing-live-dot" aria-hidden="true"></span>
+                LIVE · AUSTRALIA
+            </span>
 
             <h1 class="landing-title">
                 Know what's happening<br>
@@ -59,6 +66,11 @@
                 <rect x="30" y="30" width="440" height="34" fill="#0f172a"/>
                 <text x="44" y="52" font-family="Italiana, serif" font-size="14" fill="#fff" letter-spacing="0.5">Australia Explorer</text>
                 <rect x="316" y="40" width="100" height="18" rx="9" fill="rgba(255,255,255,0.1)"/>
+                {# magnifier glyph + the city name; both updated by JS as the city cycles #}
+                <text x="324" y="53" font-size="9" fill="rgba(255,255,255,0.55)"
+                      font-family="Inter, system-ui, sans-serif">⌕</text>
+                <text id="landing-search-text" x="366" y="53" font-size="8.5" fill="rgba(255,255,255,0.85)" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Sydney</text>
                 <circle cx="438" cy="49" r="9" fill="#4f46e5"/>
 
                 {# left sidebar #}
@@ -103,9 +115,9 @@
                         <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
                               font-family="Inter, system-ui, sans-serif">🔥 142</text>
                         <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Heavy rain at Stirling</text>
+                              font-family="Inter, system-ui, sans-serif">Heavy rain across CBD</text>
                         <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Perth · 2m ago</text>
+                              font-family="Inter, system-ui, sans-serif">Sydney · 2m ago</text>
                     </g>
                 </g>
 
@@ -119,9 +131,9 @@
                         <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
                               font-family="Inter, system-ui, sans-serif">🔥 87</text>
                         <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Tree down on path</text>
+                              font-family="Inter, system-ui, sans-serif">Tree down on Yarra trail</text>
                         <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Cottesloe · 5m ago</text>
+                              font-family="Inter, system-ui, sans-serif">Melbourne · 5m ago</text>
                     </g>
                 </g>
 
@@ -135,9 +147,9 @@
                         <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
                               font-family="Inter, system-ui, sans-serif">🔥 54</text>
                         <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Mitchell Fwy jam</text>
+                              font-family="Inter, system-ui, sans-serif">M1 backed up</text>
                         <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Joondalup · 8m ago</text>
+                              font-family="Inter, system-ui, sans-serif">Brisbane · 8m ago</text>
                     </g>
                 </g>
 
@@ -152,9 +164,9 @@
                         <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
                               font-family="Inter, system-ui, sans-serif">🔥 203</text>
                         <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Power outage</text>
+                              font-family="Inter, system-ui, sans-serif">Power outage citywide</text>
                         <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Joondalup · 12m ago</text>
+                              font-family="Inter, system-ui, sans-serif">Perth · 12m ago</text>
                     </g>
                 </g>
 
@@ -170,7 +182,7 @@
                         <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
                               font-family="Inter, system-ui, sans-serif">Construction noise</text>
                         <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Subiaco · 18m ago</text>
+                              font-family="Inter, system-ui, sans-serif">Adelaide · 18m ago</text>
                     </g>
                 </g>
 
@@ -184,9 +196,9 @@
                         <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
                               font-family="Inter, system-ui, sans-serif">🔥 96</text>
                         <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Storm warning</text>
+                              font-family="Inter, system-ui, sans-serif">Storm warning issued</text>
                         <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Fremantle · 24m ago</text>
+                              font-family="Inter, system-ui, sans-serif">Sydney · 24m ago</text>
                     </g>
                 </g>
 
@@ -197,4 +209,97 @@
         </div>
     </div>
 </section>
+
+<script>
+// Cycle the search bar + the 6 report cards through Australian cities every few seconds,
+// to make the monitor feel "live" — like the user is searching different cities.
+(function () {
+    const cities = [
+        { name: 'Sydney',    posts: ['Heavy rain across CBD', 'Tree down at Centennial', 'M5 backed up south', 'Power outage in Bondi', 'Construction Pyrmont', 'Storm warning issued'] },
+        { name: 'Melbourne', posts: ['Hail across the city',  'Tree down Yarra trail',   'Tram delays Flinders', 'Power cut Brunswick',   'Construction Carlton',  'Storm warning issued'] },
+        { name: 'Brisbane',  posts: ['Heavy rain in CBD',     'Tree down at South Bank', 'M1 backed up south',   'Flood warning Logan',    'Construction West End', 'Severe storm warning'] },
+        { name: 'Perth',     posts: ['Rain at Stirling Hwy',  'Tree down Kings Park',    'Mitchell Fwy jam',     'Power outage citywide',  'Construction Subiaco',  'Bushfire watch issued'] },
+        { name: 'Adelaide',  posts: ['Heavy rain in CBD',     'Tree down North Adelaide','South Rd backed up',   'Power outage Norwood',   'Construction Glenelg',  'Severe storm warning'] },
+    ];
+
+    // timestamps stay the same per slot — only the city + post text changes
+    const times = ['2m ago', '5m ago', '8m ago', '12m ago', '18m ago', '24m ago'];
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const cards   = () => document.querySelectorAll('.landing-illustration .landing-row');
+    const search  = () => document.getElementById('landing-search-text');
+
+    // type / delete one character at a time — the typewriter effect on the search bar
+    async function deleteText(el) {
+        while (el.textContent.length > 0) {
+            el.textContent = el.textContent.slice(0, -1);
+            await sleep(45);
+        }
+    }
+    async function typeText(el, text) {
+        for (let i = 1; i <= text.length; i++) {
+            el.textContent = text.substring(0, i);
+            await sleep(95);
+        }
+    }
+
+    function updateCardContent(city) {
+        cards().forEach((card, n) => {
+            if (n >= city.posts.length) return;
+            const texts = card.querySelectorAll('text');
+            // text order inside each card: [0] badge label, [1] fire count, [2] title, [3] meta
+            if (texts[2]) texts[2].textContent = city.posts[n];
+            if (texts[3]) texts[3].textContent = city.name + ' · ' + times[n];
+        });
+    }
+
+    // Re-trigger the existing slide-in CSS animation on each card.
+    // Single-frame `none → ''` toggles get optimized away by the browser, so we use
+    // requestAnimationFrame twice to guarantee the reset is rendered in one frame
+    // BEFORE we re-attach the animation in the next frame.
+    function replaySlideIns() {
+        const all = Array.from(cards());
+        // 1. kill the running animations + force the cards back to their pre-animation state
+        all.forEach((card) => {
+            card.style.animation = 'none';
+            card.style.opacity = '0';
+        });
+        // 2. let the browser paint that "hidden" state
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                // 3. drop the inline overrides so the CSS classes' keyframes fire from frame 0
+                all.forEach((card) => {
+                    card.style.animation = '';
+                    card.style.opacity = '';
+                });
+            });
+        });
+    }
+
+    async function loop() {
+        // give the initial page-load slide-in time to finish before we start cycling
+        await sleep(2800);
+
+        let cursor = 0;
+        while (true) {
+            cursor = (cursor + 1) % cities.length;
+            const city = cities[cursor];
+            const s = search();
+
+            if (s) {
+                await deleteText(s);              // 1. delete previous city, char by char
+                await typeText(s, city.name);     // 2. type new city, char by char
+            }
+            await sleep(250);                     // brief pause so the typed name registers
+
+            updateCardContent(city);              // 3. swap 6 cards' titles + meta lines
+            replaySlideIns();                     // 4. cards slide in fresh, like a refresh
+
+            await sleep(3800);                    // 5. let the user read before the next city
+        }
+    }
+
+    loop();
+})();
+</script>
 {% endblock %}

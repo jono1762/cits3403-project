@@ -1,194 +1,69 @@
 /* ============================================================
-   Landing page
+   style.css — global design system
+   Loaded on EVERY page via base.html, so anything here applies
+   site-wide. Keep this file for shared visual language only.
    ============================================================ */
-.landing-hero {
-    position: relative;
-    overflow: hidden;
-    /* full viewport height minus the fixed navbar so the hero owns the whole screen */
-    min-height: calc(100vh - var(--navbar-height, 64px));
-    display: flex;
-    align-items: center;
-    padding: 3rem 2rem;
-    /* break out of the parent .container so the hero spans edge-to-edge */
-    width: 100vw;
-    margin-left: calc(-1 * (100vw - 100%) / 2);
-    /* cancel the container's top/bottom margin so the hero starts flush under the navbar */
-    margin-top: -1.5rem;
-    margin-bottom: -1.5rem;
-}
 
-/* two-column layout: hero text on the left, monitor mockup on the right */
-.landing-hero-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.05fr;
-    gap: 4rem;
-    align-items: center;
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-}
 
-/* mobile: stack vertically and re-center everything */
-@media (max-width: 900px) {
-    .landing-hero-grid {
-        grid-template-columns: 1fr;
-        gap: 3rem;
-        text-align: center;
-    }
-    .landing-hero-text .landing-cta,
-    .landing-hero-text .landing-categories {
-        justify-content: center;
-    }
-}
-
-/* big soft blurred gradient blobs sitting behind the hero text */
-.landing-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.55;
-    z-index: -1;
-    pointer-events: none;
-}
-
-.landing-blob-1 {
-    width: 30rem; height: 30rem;
-    background: radial-gradient(circle, #4f46e5, transparent 70%);
-    top: -8rem; left: -8rem;
-}
-
-.landing-blob-2 {
-    width: 28rem; height: 28rem;
-    background: radial-gradient(circle, #06b6d4, transparent 70%);
-    bottom: -6rem; right: -6rem;
-}
-
-.landing-badge {
-    display: inline-block;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    color: #4f46e5;
-    background-color: #eef2ff;
-    padding: 0.5rem 1rem;
-    border-radius: 999px;
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
-}
-
-.landing-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(2rem, 4.2vw, 3.5rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    margin: 0 0 1.25rem;
-    color: #1e293b;
-}
-
-.landing-title-accent {
-    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.landing-subtitle {
-    font-size: 1.05rem;
-    line-height: 1.55;
-    color: #64748b;
-    max-width: 36rem;
-    margin: 0 0 1.75rem;
-}
-
-.landing-cta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-bottom: 1.75rem;
-}
-
-.landing-btn {
-    padding: 0.65rem 1.4rem;
-    font-weight: 600;
-    border-radius: 10px;
-    font-size: 0.95rem;
-}
-
-.landing-categories {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-}
-
-.landing-cat {
-    padding: 0.4rem 0.9rem;
-    border-radius: 999px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-left: 3px solid var(--cat);
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #1e293b;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+/* ============================================================
+   1. Design tokens — single source of truth for brand colours
+   ============================================================ */
+:root {
+    --color-primary:       #4f46e5;     /* indigo brand */
+    --color-primary-soft:  #eef2ff;     /* light indigo, used for hovers */
+    --color-accent:        #06b6d4;     /* cyan accent for gradients */
+    --color-bg:            #f6f7fb;     /* page background — soft off-white */
+    --color-surface:       #ffffff;     /* card / panel background */
+    --color-text:          #1e293b;     /* slate-800 — body text */
+    --color-text-muted:    #64748b;     /* slate-500 */
+    --color-border:        #e2e8f0;     /* slate-200 */
 }
 
 
 /* ============================================================
-   Desktop monitor mockup — pure SVG, no images
+   2. Page background + aurora gradient blobs
+   Same vibe as the landing hero, but layered behind every page
+   so the whole site feels cohesive. Blobs are fixed-position so
+   they stay in view as the user scrolls.
    ============================================================ */
-.landing-illustration-wrap {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    /* isolation creates a new stacking context so the z-index:-1
+       pseudo-elements below sit ABOVE the body background and
+       BELOW everything else — without this, blobs disappear */
+    position: relative;
+    isolation: isolate;
 }
 
-.landing-illustration {
-    width: 100%;
-    max-width: 620px;
-    height: auto;
-    filter: drop-shadow(0 30px 50px rgba(15, 23, 42, 0.18));
+/* indigo blob — top-left of the viewport */
+body::before {
+    content: "";
+    position: fixed;
+    top: -8rem;
+    left: -8rem;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-primary), transparent 70%);
+    filter: blur(90px);
+    opacity: 0.40;
+    z-index: -1;
+    pointer-events: none;
 }
 
-/* Each report card slides in from a different direction so the screen feels alive,
-   not like every post is dropping from the same place */
-.landing-row {
-    transform-box: fill-box;
-    transform-origin: center;
-    opacity: 0;
-    animation-duration: 0.55s;
-    animation-timing-function: ease-out;
-    animation-fill-mode: forwards;
+/* cyan blob — bottom-right of the viewport */
+body::after {
+    content: "";
+    position: fixed;
+    bottom: -8rem;
+    right: -8rem;
+    width: 30rem;
+    height: 30rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-accent), transparent 70%);
+    filter: blur(90px);
+    opacity: 0.40;
+    z-index: -1;
+    pointer-events: none;
 }
-
-.landing-row-from-left   { animation-name: slideFromLeft;   }
-.landing-row-from-right  { animation-name: slideFromRight;  }
-.landing-row-from-top    { animation-name: slideFromTop;    }
-.landing-row-from-bottom { animation-name: slideFromBottom; }
-
-/* staggered timing so cards arrive in a rhythm, not all at once */
-.landing-row-1 { animation-delay: 0.15s; }
-.landing-row-2 { animation-delay: 0.40s; }
-.landing-row-3 { animation-delay: 0.65s; }
-.landing-row-4 { animation-delay: 0.30s; }
-.landing-row-5 { animation-delay: 0.55s; }
-.landing-row-6 { animation-delay: 0.80s; }
-
-@keyframes slideFromLeft {
-    0%   { opacity: 0; transform: translateX(-18px); }
-    100% { opacity: 1; transform: translateX(0);     }
-}
-@keyframes slideFromRight {
-    0%   { opacity: 0; transform: translateX(18px); }
-    100% { opacity: 1; transform: translateX(0);    }
-}
-@keyframes slideFromTop {
-    0%   { opacity: 0; transform: translateY(-14px); }
-    100% { opacity: 1; transform: translateY(0);     }
-}
-@keyframes slideFromBottom {
-    0%   { opacity: 0; transform: translateY(14px); }
-    100% { opacity: 1; transform: translateY(0);    }
-}
-

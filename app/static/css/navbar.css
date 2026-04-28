@@ -62,28 +62,31 @@
     letter-spacing: 0.04em;    /* slight extra tracking, typical for elegant serifs */
 }
 
-/* Logged-out navbar buttons — refined pill shape, ghost Log In + filled Sign Up,
-   so they coexist with the landing-page CTAs without competing */
+/* Sign in — ghost outline pill, fills with the indigo→cyan gradient on hover (shallow→dark) */
 .app-navbar .btn-outline-light {
     background: transparent;
-    border: 1px solid rgba(165, 180, 252, 0.5);   /* soft indigo border — ties to brand */
-    color: #c7d2fe;                                /* indigo-200 — light enough to read on dark */
+    border: 1px solid rgba(165, 180, 252, 0.5);
+    color: #c7d2fe;
     font-weight: 500;
     font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.14em;                        /* editorial tracking, echoes the Italiana brand */
+    letter-spacing: 0.14em;
     padding: 0.45rem 1.1rem;
     border-radius: 999px;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease,
+                transform 0.18s ease, box-shadow 0.22s ease;
 }
 
 .app-navbar .btn-outline-light:hover,
 .app-navbar .btn-outline-light:focus {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(165, 180, 252, 0.85);
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    border-color: transparent;
     color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
 }
 
+/* Get started — filled white pill, fills with the same indigo→cyan gradient on hover */
 .app-navbar .btn-light {
     background: #fff;
     color: #0f172a;
@@ -94,13 +97,16 @@
     padding: 0.45rem 1.2rem;
     border-radius: 999px;
     border: 1px solid #fff;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 3px rgba(255, 255, 255, 0.08);
+    transition: background 0.22s ease, color 0.22s ease, border-color 0.22s ease,
+                transform 0.18s ease, box-shadow 0.22s ease;
 }
 
 .app-navbar .btn-light:hover,
 .app-navbar .btn-light:focus {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
-    background: #fff;
-    color: #0f172a;
+    background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(79, 70, 229, 0.45);
 }
