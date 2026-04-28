@@ -35,6 +35,12 @@ def map_page():
     # public map view — used by the "Start as guest" button on the landing page
     return render_template('index.html')
 
+# /landing — always renders the landing/intro page regardless of auth state.
+# Lets logged-in users revisit the public-facing home if they want.
+@app.route('/landing')
+def home_landing():
+    return render_template('landing.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:

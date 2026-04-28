@@ -84,6 +84,7 @@
     color: #fff;
 }
 
+
 .app-main-content {
     flex: 1;
     min-width: 0;
@@ -161,6 +162,51 @@
     width: 100%;
     cursor: pointer;
     font: inherit;
+}
+
+
+/* ============================================================
+   Guest sign-in / sign-up rows — replace the Log out button
+   when an unauthenticated user is browsing as a guest.
+   Same row layout as the logout button (full-width, icon + text,
+   slide on hover) but with a white theme instead of red.
+   ============================================================ */
+.app-sidebar-guest-actions {
+    margin-top: auto;       /* pin the whole group to the bottom */
+    display: flex;
+    flex-direction: column;
+}
+
+.app-sidebar-guest-link {
+    padding: 14px 22px;
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.app-sidebar-guest-link:hover,
+.app-sidebar-guest-link:focus {
+    /* fills with white on hover, dark slate text — slides right like logout but in white */
+    background: linear-gradient(135deg, #ffffff, #e2e8f0);
+    color: #0f172a;
+    transform: translateX(3px);
+    box-shadow: 0 6px 14px rgba(255, 255, 255, 0.20);
+}
+
+.app-sidebar-guest-link svg {
+    flex-shrink: 0;
+    transition: transform 0.18s ease;
+}
+
+.app-sidebar-guest-link:hover svg {
+    transform: translateX(2px);
 }
 
 

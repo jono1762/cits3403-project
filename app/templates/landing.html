@@ -14,21 +14,40 @@
                 LIVE · AUSTRALIA
             </span>
 
-            <h1 class="landing-title">
-                Know what's happening<br>
-                <span class="landing-title-accent">in your city.</span>
-            </h1>
+            {% if current_user.is_authenticated %}
+                {# Logged-in version — personal greeting, single "open the map" CTA #}
+                <h1 class="landing-title">
+                    Welcome back,<br>
+                    <span class="landing-title-accent">{{ current_user.username }}.</span>
+                </h1>
 
-            <p class="landing-subtitle">
-                Real-time community reports — weather, hazards, traffic, noise, and emergencies.
-                Posted by your neighbours, verified by your community.
-            </p>
+                <p class="landing-subtitle">
+                    Here's what's happening across Australia today. Pick up where you left off,
+                    or jump straight onto the map.
+                </p>
 
-            <div class="landing-cta">
-                <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
-                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
-                <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
-            </div>
+                <div class="landing-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Open the map</a>
+                    <a href="{{ url_for('reports_page') }}" class="btn btn-outline-primary btn-lg landing-btn">Submit a report</a>
+                </div>
+            {% else %}
+                {# Logged-out / guest version — original public CTAs #}
+                <h1 class="landing-title">
+                    Know what's happening<br>
+                    <span class="landing-title-accent">in your city.</span>
+                </h1>
+
+                <p class="landing-subtitle">
+                    Real-time community reports — weather, hazards, traffic, noise, and emergencies.
+                    Posted by your neighbours, verified by your community.
+                </p>
+
+                <div class="landing-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
+                </div>
+            {% endif %}
 
             <div class="landing-categories">
                 <span class="landing-cat" style="--cat:#3498db">☁️ Weather</span>

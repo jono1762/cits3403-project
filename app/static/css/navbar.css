@@ -50,6 +50,42 @@
     color: #fff;
 }
 
+/* Guest label in the navbar — same Italiana font but italic + slightly muted
+   so it visually reads as "not signed in" without competing with usernames */
+.app-account-guest {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: default;
+}
+
+/* Group the navbar right-side items (home icon + username) so they sit inline */
+.app-navbar-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* Small home icon next to the username/guest label — takes anyone back to landing */
+.app-navbar-home {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.app-navbar-home:hover,
+.app-navbar-home:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: scale(1.05);
+}
+
 .app-account-toggle:hover,
 .app-account-toggle:focus {
     color: #fff;
