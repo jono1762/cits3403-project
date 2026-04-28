@@ -118,3 +118,12 @@
     margin-top: 0.3rem;
     display: block;
 }
+
+/* "or continue as a guest" line — sits below the main links with a subtle divider */
+.auth-card .auth-guest {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #e2e8f0;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
