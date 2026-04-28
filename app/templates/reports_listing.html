@@ -2,167 +2,196 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports_listing.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">All Reports</h1>
-    <a href="{{ url_for('reports_page') }}" class="btn btn-primary btn-sm">+ New Report</a>
-</div>
+<section class="listing-page">
+    <header class="listing-header">
+        <h1 class="listing-title">All Reports</h1>
+        <a href="{{ url_for('reports_page') }}" class="listing-new-btn">+ New Report</a>
+    </header>
 
-{# location + category filter — suburb dropdown only lights up once a state is picked #}
-<form method="get" action="{{ url_for('listing_page') }}" class="card card-body mb-3">
-    <div class="row g-2 align-items-end">
-        <div class="col-md-3">
-            <label class="form-label mb-1">State</label>
-            <select name="state_id" id="filter-state" class="form-select form-select-sm">
-                <option value="">All states</option>
-                {% for s in states %}
-                    <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label mb-1">Suburb</label>
-            <select name="suburb_id" id="filter-suburb" class="form-select form-select-sm"
-                    {% if not selected_state_id %}disabled{% endif %}>
-                <option value="">All suburbs</option>
-                {% if selected_state_id %}
-                    {% for sub in suburbs_by_state.get(selected_state_id, []) %}
-                        <option value="{{ sub.id }}" {% if selected_suburb_id == sub.id %}selected{% endif %}>{{ sub.name }}</option>
+    {# Location filter (form) — suburb dropdown only lights up once a state is picked.
+       Carries the current category through hidden input so applying state/suburb keeps it. #}
+    <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">State</label>
+                <select name="state_id" id="filter-state" class="form-select form-select-sm">
+                    <option value="">All states</option>
+                    {% for s in states %}
+                        <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
                     {% endfor %}
-                {% endif %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label mb-1">Category</label>
-            <select name="category_id" class="form-select form-select-sm">
-                <option value="">All categories</option>
-                {% for cat in categories %}
-                    <option value="{{ cat.id }}" {% if selected_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3 d-flex gap-2">
-            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-            <a href="{{ url_for('listing_page') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
-        </div>
-    </div>
-</form>
-
-<script>
-const SUBURBS_BY_STATE = {{ suburbs_by_state | tojson }};
-const filterState = document.getElementById('filter-state');
-const filterSuburb = document.getElementById('filter-suburb');
-filterState.addEventListener('change', () => {
-    const list = SUBURBS_BY_STATE[filterState.value] || [];
-    filterSuburb.innerHTML = '<option value="">All suburbs</option>';
-    for (const sub of list) {
-        const opt = document.createElement('option');
-        opt.value = sub.id;
-        opt.textContent = sub.name;
-        filterSuburb.appendChild(opt);
-    }
-    filterSuburb.disabled = !filterState.value;
-});
-</script>
-
-{% if pagination.items %}
-    <ul class="list-group mb-4">
-        {% for r in pagination.items %}
-            <li class="list-group-item">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <span class="badge me-2" style="background-color: {{ r.category.marker_color }};">{{ r.category.name }}</span>
-                        {{ r.suburb.name }}, {{ r.suburb.state.code }}
-                        <span class="text-muted">— by
-                            <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
-                            on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
-                        </span>
-                    </div>
-                    {# author can edit their own report straight from the listing #}
-                    {% if r.user_id == current_user.id %}
-                        <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Suburb</label>
+                <select name="suburb_id" id="filter-suburb" class="form-select form-select-sm"
+                        {% if not selected_state_id %}disabled{% endif %}>
+                    <option value="">All suburbs</option>
+                    {% if selected_state_id %}
+                        {% for sub in suburbs_by_state.get(selected_state_id, []) %}
+                            <option value="{{ sub.id }}" {% if selected_suburb_id == sub.id %}selected{% endif %}>{{ sub.name }}</option>
+                        {% endfor %}
                     {% endif %}
-                </div>
-                {% if r.address %}<div class="text-muted small mt-1">{{ r.address }}</div>{% endif %}
-                {% if r.description %}<div class="mt-1">{{ r.description }}</div>{% endif %}
+                </select>
+            </div>
+            <div class="col-md-4 listing-filter-actions">
+                <button type="submit" class="listing-filter-apply">Apply</button>
+                <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
+            </div>
+        </div>
+        {# preserve the category selection across location-filter Applies #}
+        {% if selected_category_id %}
+            <input type="hidden" name="category_id" value="{{ selected_category_id }}">
+        {% endif %}
+    </form>
 
-                {# same carousel pattern as profile.html — one per report, unique id so the arrows target it #}
-                {% if r.media %}
-                    <div id="browse-carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
-                        {% if r.media | length > 1 %}
-                            <div class="carousel-indicators">
+    {# Emoji lookup keyed by category name — keeps the icons consistent
+       wherever categories show up #}
+    {% set CATEGORY_EMOJI = {
+        'Weather': '☁️',
+        'Noisiness': '🔊',
+        'Hazards': '⚠️',
+        'Traffic': '🚦',
+        'Emergency': '🚨'
+    } %}
+
+    {# Category chips — click any one to filter. Each link carries the current
+       state/suburb so users don't lose those filters when changing category. #}
+    <div class="listing-categories">
+        <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id) }}"
+           class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
+            🌏 All categories
+        </a>
+        {% for cat in categories %}
+            <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=cat.id) }}"
+               class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
+               style="--cat: {{ cat.marker_color }};">
+                {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {# Server data injected as JSON in a non-executable script tag.
+       Keeps Jinja out of the JavaScript so the IDE stops flagging false errors. #}
+    <script type="application/json" id="suburbs-by-state-data">{{ suburbs_by_state | tojson }}</script>
+    <script>
+    const SUBURBS_BY_STATE = JSON.parse(document.getElementById('suburbs-by-state-data').textContent);
+    const filterState = document.getElementById('filter-state');
+    const filterSuburb = document.getElementById('filter-suburb');
+    filterState.addEventListener('change', () => {
+        const list = SUBURBS_BY_STATE[filterState.value] || [];
+        filterSuburb.innerHTML = '<option value="">All suburbs</option>';
+        for (const sub of list) {
+            const opt = document.createElement('option');
+            opt.value = sub.id;
+            opt.textContent = sub.name;
+            filterSuburb.appendChild(opt);
+        }
+        filterSuburb.disabled = !filterState.value;
+    });
+    </script>
+
+    {% if pagination.items %}
+        <ul class="listing-feed">
+            {% for r in pagination.items %}
+                <li class="listing-item" style="--cat: {{ r.category.marker_color }};">
+                    <div class="listing-item-top">
+                        <div class="listing-item-meta">
+                            <span class="listing-item-badge">{{ r.category.name }}</span>
+                            <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
+                            <span class="listing-item-author">— by
+                                <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
+                                on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
+                            </span>
+                        </div>
+                        {# author can edit their own report straight from the listing #}
+                        {% if r.user_id == current_user.id %}
+                            <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="listing-item-edit">Edit</a>
+                        {% endif %}
+                    </div>
+                    {% if r.address %}<p class="listing-item-address">{{ r.address }}</p>{% endif %}
+                    {% if r.description %}<p class="listing-item-desc">{{ r.description }}</p>{% endif %}
+
+                    {# carousel for image/video attachments — same pattern as profile.html #}
+                    {% if r.media %}
+                        <div id="browse-carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
+                            {% if r.media | length > 1 %}
+                                <div class="carousel-indicators">
+                                    {% for m in r.media %}
+                                        <button type="button"
+                                                data-bs-target="#browse-carousel-{{ r.id }}"
+                                                data-bs-slide-to="{{ loop.index0 }}"
+                                                class="{{ 'active' if loop.first else '' }}"
+                                                aria-label="Slide {{ loop.index }}"></button>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="carousel-inner rounded border" style="background-color: #000;">
                                 {% for m in r.media %}
-                                    <button type="button"
-                                            data-bs-target="#browse-carousel-{{ r.id }}"
-                                            data-bs-slide-to="{{ loop.index0 }}"
-                                            class="{{ 'active' if loop.first else '' }}"
-                                            aria-label="Slide {{ loop.index }}"></button>
+                                    <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                                        {% if m.media_type == 'image' %}
+                                            <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                                 class="d-block w-100"
+                                                 style="height: 400px; object-fit: contain;"
+                                                 alt="{{ m.original_name }}">
+                                        {% else %}
+                                            <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                                   controls
+                                                   class="d-block w-100"
+                                                   style="height: 400px; object-fit: contain; background: #000;"></video>
+                                        {% endif %}
+                                    </div>
                                 {% endfor %}
                             </div>
-                        {% endif %}
 
-                        <div class="carousel-inner rounded border" style="background-color: #000;">
-                            {% for m in r.media %}
-                                <div class="carousel-item {{ 'active' if loop.first else '' }}">
-                                    {% if m.media_type == 'image' %}
-                                        <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
-                                             class="d-block w-100"
-                                             style="height: 400px; object-fit: contain;"
-                                             alt="{{ m.original_name }}">
-                                    {% else %}
-                                        <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
-                                               controls
-                                               class="d-block w-100"
-                                               style="height: 400px; object-fit: contain; background: #000;"></video>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
+                            {% if r.media | length > 1 %}
+                                <button class="carousel-control-prev" type="button"
+                                        data-bs-target="#browse-carousel-{{ r.id }}" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button"
+                                        data-bs-target="#browse-carousel-{{ r.id }}" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            {% endif %}
                         </div>
-
-                        {% if r.media | length > 1 %}
-                            <button class="carousel-control-prev" type="button"
-                                    data-bs-target="#browse-carousel-{{ r.id }}" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button"
-                                    data-bs-target="#browse-carousel-{{ r.id }}" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
-                        {% endif %}
-                    </div>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-
-    {# pagination controls — only rendered when there's more than one page #}
-    {% if pagination.pages > 1 %}
-        <nav aria-label="Reports pagination">
-            <ul class="pagination justify-content-center">
-                {# carry filter ids through pagination — url_for omits None values #}
-                <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
-                    <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_prev else '#' }}">Previous</a>
-                </li>
-                {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                    {% if p %}
-                        <li class="page-item {{ 'active' if p == pagination.page else '' }}">
-                            <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) }}">{{ p }}</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">…</span></li>
                     {% endif %}
-                {% endfor %}
-                <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
-                    <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_next else '#' }}">Next</a>
                 </li>
-            </ul>
-        </nav>
+            {% endfor %}
+        </ul>
+
+        {% if pagination.pages > 1 %}
+            <nav class="listing-pagination" aria-label="Reports pagination">
+                <ul class="pagination justify-content-center">
+                    {# carry filter ids through pagination — url_for omits None values #}
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
+                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_prev else '#' }}">Previous</a>
+                    </li>
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                                <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) }}">{{ p }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
+                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_next else '#' }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="listing-empty">
+            No reports yet. Be the first to <a href="{{ url_for('reports_page') }}">submit one</a>.
+        </div>
     {% endif %}
-{% else %}
-    <p class="text-muted">No reports yet. Be the first to <a href="{{ url_for('reports_page') }}">submit one</a>.</p>
-{% endif %}
+</section>
 {% endblock %}
