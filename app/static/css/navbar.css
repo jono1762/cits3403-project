@@ -14,7 +14,9 @@
 
 .app-account-toggle {
     color: #fff;
-    font-size: 1rem;
+    font-family: 'Italiana', serif;     /* matches the brand text — elegant serif */
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
 }
 
 .app-account-toggle:hover,
