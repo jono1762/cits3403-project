@@ -227,23 +227,41 @@
     gap: 0.4rem;
     padding: 0.5rem 1rem;
     border-radius: 999px;
-    background: #fff;
+    /* subtle diagonal shading: white in the top-left fading into a tint of the
+       category colour in the bottom-right — gives the pill a 3D / glossy feel */
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
     border: 1.5px solid var(--cat);
     color: var(--cat);
     font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.01em;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    transition: background 0.2s ease, color 0.2s ease,
-                transform 0.18s ease, box-shadow 0.18s ease;
+    transition: background 0.22s ease, color 0.22s ease,
+                transform 0.18s ease, box-shadow 0.22s ease;
     cursor: default;
 }
 
 .landing-cat:hover {
-    background: var(--cat);
+    /* on hover the gradient deepens — category colour fades to a darker shade of itself */
+    background: linear-gradient(135deg, var(--cat) 0%, color-mix(in srgb, var(--cat) 75%, black) 100%);
     color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 8px 16px color-mix(in srgb, var(--cat) 35%, transparent);
+}
+
+/* "Coming soon" placeholder pill — muted slate, dashed border, no hover lift */
+.landing-cat-soon {
+    border-style: dashed !important;
+    font-style: italic;
+    font-weight: 500;
+}
+
+.landing-cat-soon:hover {
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
+    color: var(--cat);
+    transform: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    cursor: default;
 }
 
 
