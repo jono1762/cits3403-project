@@ -29,6 +29,12 @@
 body {
     background-color: var(--color-bg);
     color: var(--color-text);
+    /* modern system-font stack — picks the OS's native UI font so the app
+       feels right on every platform without downloading anything */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto,
+                 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     /* isolation creates a new stacking context so the z-index:-1
        pseudo-elements below sit ABOVE the body background and
        BELOW everything else — without this, blobs disappear */

@@ -13,11 +13,13 @@
     left: 0;
     width: var(--sidebar-width);
     height: calc(100vh - var(--navbar-height));
-    background-color: #000;
+    /* slate-900 with a subtle indigo glow at the top, ties the sidebar to the brand */
+    background-color: #0f172a;
+    background-image: radial-gradient(20rem 16rem at 0% 0%, rgba(79, 70, 229, 0.18), transparent 70%);
     color: #fff;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
     overflow-y: auto;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    /* inherit the body font (Inter) instead of pinning Segoe UI */
     z-index: 1000;
 }
 
@@ -31,12 +33,12 @@
 }
 
 .app-sidebar-group-header {
-    margin: 12px 0 6px;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
+    margin: 18px 4px 8px;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;            /* wider tracking so it reads as a label, not a link */
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
-    font-weight: 600;
+    color: #a5b4fc;                    /* light indigo — ties to the brand */
+    font-weight: 700;
 }
 
 .app-sidebar-group-header:first-child {
@@ -45,24 +47,33 @@
 
 .app-sidebar-link {
     display: block;
-    padding: 10px 12px;
-    color: rgba(255, 255, 255, 0.9);
+    padding: 11px 14px;
+    color: rgba(255, 255, 255, 0.78);
     text-decoration: none;
-    font-weight: 400;
+    font-weight: 500;
+    font-size: 1.05rem;
     border-radius: 8px;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .app-sidebar-link:hover,
 .app-sidebar-link:focus {
-    background-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(99, 102, 241, 0.15);     /* soft indigo tint on hover */
     color: #fff;
 }
 
+/* active page — gradient pill with a colored glow, matches the brand's CTA buttons */
 .app-sidebar-link.active {
-    background-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
     color: #fff;
     font-weight: 600;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.app-sidebar-link.active:hover,
+.app-sidebar-link.active:focus {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #fff;
 }
 
 .app-main-content {
