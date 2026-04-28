@@ -19,8 +19,16 @@
     color: #fff;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     overflow-y: auto;
-    /* inherit the body font (Inter) instead of pinning Segoe UI */
+    /* flex column so the logout button sits pinned at the bottom */
+    display: flex;
+    flex-direction: column;
     z-index: 1000;
+}
+
+/* mobile offcanvas body uses the same flex column layout */
+.offcanvas-body {
+    display: flex;
+    flex-direction: column;
 }
 
 .app-sidebar-nav {
@@ -95,4 +103,48 @@
     .app-main-content {
         margin-left: 0;
     }
+}
+
+/* Log Out — pinned to the bottom of the sidebar with a "kicking out" exit icon.
+   Subtle red tint by default so it reads as "leave/danger" without shouting. */
+.app-sidebar-logout {
+    margin-top: auto;            /* pushes itself to the bottom of the flex column */
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    padding: 14px 22px;          /* a bit more padding since it now spans full width */
+    border-radius: 0;            /* flush square edges so it sits right at the bottom */
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    color: rgba(252, 165, 165, 0.95);     /* light red-200 — readable on dark */
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.22);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.18s ease;
+}
+
+.app-sidebar-logout:hover,
+.app-sidebar-logout:focus {
+    /* on hover, fills with red and slides slightly right — like getting kicked out the door */
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    border-color: transparent;
+    color: #fff;
+    transform: translateX(3px);
+    box-shadow: 0 6px 14px rgba(239, 68, 68, 0.35);
+}
+
+.app-sidebar-logout svg {
+    flex-shrink: 0;
+    transition: transform 0.18s ease;
+}
+
+.app-sidebar-logout:hover svg {
+    transform: translateX(2px);   /* the arrow inside the icon scoots forward on hover */
 }
