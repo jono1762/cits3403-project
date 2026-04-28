@@ -61,3 +61,46 @@
     font-size: 1.6rem;
     letter-spacing: 0.04em;    /* slight extra tracking, typical for elegant serifs */
 }
+
+/* Logged-out navbar buttons — refined pill shape, ghost Log In + filled Sign Up,
+   so they coexist with the landing-page CTAs without competing */
+.app-navbar .btn-outline-light {
+    background: transparent;
+    border: 1px solid rgba(165, 180, 252, 0.5);   /* soft indigo border — ties to brand */
+    color: #c7d2fe;                                /* indigo-200 — light enough to read on dark */
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;                        /* editorial tracking, echoes the Italiana brand */
+    padding: 0.45rem 1.1rem;
+    border-radius: 999px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.app-navbar .btn-outline-light:hover,
+.app-navbar .btn-outline-light:focus {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(165, 180, 252, 0.85);
+    color: #fff;
+}
+
+.app-navbar .btn-light {
+    background: #fff;
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 0.45rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid #fff;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-navbar .btn-light:hover,
+.app-navbar .btn-light:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+    background: #fff;
+    color: #0f172a;
+}
