@@ -17,14 +17,6 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('index') }}">Australia Explorer</a>
 
-            {% if current_user.is_authenticated %}
-                {# quick search bar in the navbar — jumps to the full /search page on submit #}
-                <form class="d-flex mx-3 flex-grow-1" method="get" action="{{ url_for('search_users_page') }}" style="max-width: 400px;">
-                    <input class="form-control form-control-sm" type="search" name="q"
-                           placeholder="Search users..." value="{{ request.args.get('q', '') }}">
-                    <button class="btn btn-sm btn-outline-light ms-2" type="submit">Go</button>
-                </form>
-            {% endif %}
 
             <div>
                 {% if current_user.is_authenticated %}
@@ -66,6 +58,7 @@
 
                     <div class="app-sidebar-group-header">Account</div>
                     <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                    <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
@@ -96,6 +89,7 @@
 
                     <div class="app-sidebar-group-header">Account</div>
                     <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                    <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
@@ -130,6 +124,21 @@
     {% if current_user.is_authenticated %}
             </main>
         </div>
+
+        {# Slide-out user search panel — Instagram-style.
+           Opens to the right of the sidebar when "Search Users" is clicked. #}
+        <aside id="user-search-panel" class="user-search-panel" aria-hidden="true">
+            <div class="user-search-header">
+                <h3 class="user-search-title">Search Users</h3>
+                <button type="button" class="user-search-close" aria-label="Close search">×</button>
+            </div>
+            <div class="user-search-input-wrap">
+                <input type="search" id="user-search-input" class="user-search-input"
+                       placeholder="Search by username..." autocomplete="off">
+            </div>
+            <ul id="user-search-results" class="user-search-results"></ul>
+            <p id="user-search-empty" class="user-search-empty">Start typing to find people.</p>
+        </aside>
     {% endif %}
 
     <script>
@@ -146,6 +155,79 @@
             });
         });
     </script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        // Sliding user-search panel — Instagram-style.
+        // Click "Search Users" in the sidebar → panel slides out to its right.
+        // Live results via /api/search-users with debounced fetches.
+        (function () {
+            const panel = document.getElementById('user-search-panel');
+            const input = document.getElementById('user-search-input');
+            const results = document.getElementById('user-search-results');
+            const empty = document.getElementById('user-search-empty');
+            const closeBtn = panel.querySelector('.user-search-close');
+            const toggles = document.querySelectorAll('[data-search-toggle]');
+
+            function openPanel() {
+                panel.classList.add('is-open');
+                panel.setAttribute('aria-hidden', 'false');
+                setTimeout(() => input.focus(), 200);
+            }
+            function closePanel() {
+                panel.classList.remove('is-open');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+
+            toggles.forEach((btn) => btn.addEventListener('click', openPanel));
+            closeBtn.addEventListener('click', closePanel);
+
+            // close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && panel.classList.contains('is-open')) closePanel();
+            });
+            // close on outside click (anywhere except panel + the toggle)
+            document.addEventListener('click', (e) => {
+                if (!panel.classList.contains('is-open')) return;
+                if (panel.contains(e.target)) return;
+                if (e.target.closest('[data-search-toggle]')) return;
+                closePanel();
+            });
+
+            // debounced live search
+            let searchTimer;
+            input.addEventListener('input', () => {
+                clearTimeout(searchTimer);
+                const q = input.value.trim();
+                if (!q) {
+                    results.innerHTML = '';
+                    empty.textContent = 'Start typing to find people.';
+                    empty.style.display = '';
+                    return;
+                }
+                searchTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch('/api/search-users?q=' + encodeURIComponent(q));
+                        const data = await res.json();
+                        if (data.length === 0) {
+                            results.innerHTML = '';
+                            empty.textContent = 'No users found.';
+                            empty.style.display = '';
+                        } else {
+                            empty.style.display = 'none';
+                            results.innerHTML = data.map(u =>
+                                `<li class="user-search-result"><a href="${u.profile_url}">${u.username}</a></li>`
+                            ).join('');
+                        }
+                    } catch (err) {
+                        empty.textContent = 'Search failed.';
+                        empty.style.display = '';
+                    }
+                }, 200);
+            });
+        })();
+    </script>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

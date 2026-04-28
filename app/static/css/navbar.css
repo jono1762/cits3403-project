@@ -12,6 +12,28 @@
     height: var(--navbar-height);
 }
 
+/* small magnifier icon button in the navbar — opens the /search page */
+.navbar-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    text-decoration: none;
+    margin-right: 0.6rem;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.navbar-search-icon:hover,
+.navbar-search-icon:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: scale(1.05);
+}
+
 .app-account-toggle {
     color: #fff;
     font-family: 'Italiana', serif;     /* matches the brand text — elegant serif */

@@ -140,6 +140,29 @@ def search_users_page():
         )
     return render_template('search.html', q=q, users=users)
 
+# /api/search-users — JSON endpoint for the sidebar search panel.
+# Returns top 10 username matches as you type, no full page reload needed.
+@app.route('/api/search-users')
+@login_required
+def api_search_users():
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify([])
+    users = (
+        User.query
+        .filter(User.username.ilike(f'%{q}%'))
+        .order_by(User.username)
+        .limit(10)
+        .all()
+    )
+    return jsonify([
+        {
+            'username': u.username,
+            'profile_url': url_for('user_profile_page', username=u.username),
+        }
+        for u in users
+    ])
+
 # /reports/<id>/edit — GET renders the edit form, POST saves changes
 # only the original author can edit; everyone else gets 403
 @app.route('/reports/<int:report_id>/edit', methods=['GET', 'POST'])
