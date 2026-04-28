@@ -10,6 +10,26 @@
 	<h1>Map</h1>
 	<p>Explore situation reports across Australia</p>
 
+	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
+	   Card 3 links to the user's favourites page (stub for now). #}
+	<div class="map-stats">
+		<div class="stat-card">
+			<div class="stat-label">Top trending cities</div>
+			<div class="stat-num">Sydney</div>
+			<div class="stat-trend">142 reports · last hour</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-label">Top trending categories</div>
+			<div class="stat-num">Hazards</div>
+			<div class="stat-trend">387 reports today</div>
+		</div>
+		<a href="#" class="stat-card stat-card-alert app-stub-link" data-stub-message="Stub: open Favourites page.">
+			<div class="stat-label stat-label-alert">⚠ Watching · favourites</div>
+			<div class="stat-num">Storm warning</div>
+			<div class="stat-trend stat-trend-alert">Bondi (saved) · 24 min ago</div>
+		</a>
+	</div>
+
 	<div class="search-wrapper">
 		<div class="search-row">
 			<div class="search-input-area">
@@ -19,6 +39,14 @@
 			<button type="button" id="searchButton">Search</button>
 		</div>
 	</div>
+
+	{# Attention-grabbing CTA banner — sits above the map so it catches the eye first #}
+	<section class="map-cta">
+		<div class="map-cta-text">
+			<h2 class="map-cta-title">Spotted something? Share it.</h2>
+		</div>
+		<a href="{{ url_for('reports_page') }}" class="map-cta-btn">+ Submit a report</a>
+	</section>
 
 	<div class="map-wrapper">
 		<div id="map" aria-label="Interactive Australia map"></div>
@@ -66,6 +94,8 @@
 	const cityMarkerLayer = L.layerGroup().addTo(map);
 	let suggestionsOpen = false;
 
+	// OpenStreetMap default tiles — colorful base (greens for land, blues for water)
+	// then we tint the whole pane via CSS filter to push the palette toward purple-green
 	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 	}).addTo(map);
@@ -73,9 +103,21 @@
 	function initializeCityMarkers() {
 		cityMarkerLayer.clearLayers();
 
+		// custom indigo teardrop pin — built as a DivIcon with HTML/CSS,
+		// no image asset needed, matches the brand
+		const cityPinIcon = L.divIcon({
+			className: 'city-pin',
+			html: '<div class="pin-body"><div class="pin-dot"></div></div>',
+			iconSize: [26, 36],
+			iconAnchor: [13, 34]
+		});
+
 		cityData.forEach((city) => {
-			const marker = L.marker([city.lat, city.lng]).addTo(cityMarkerLayer);
-			marker.bindPopup(`<strong>${city.name}</strong><br>${city.state}`);
+			const marker = L.marker([city.lat, city.lng], { icon: cityPinIcon }).addTo(cityMarkerLayer);
+
+			marker.bindPopup(
+				`<strong>${city.name}</strong><br><span class="popup-state">${city.state}</span>`
+			);
 
 			marker.on("click", function () {
 				searchBar.value = city.name;
