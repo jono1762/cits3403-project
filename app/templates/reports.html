@@ -1,11 +1,17 @@
 {% extends "base.html" %}
 
-{% block content %}
-<h1>Create New Report</h1>
-<p class="text-muted">Share real-time conditions in your area.</p>
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+{% endblock %}
 
-<div class="card">
-    <div class="card-body">
+{% block content %}
+<section class="report-page">
+    <div class="report-card">
+        <div class="report-header">
+            <h1 class="report-title">Create new report</h1>
+            <p class="report-subtitle">Share real-time conditions in your area.</p>
+        </div>
+
         <form id="report-form">
             <div class="mb-3">
                 <label class="form-label">State <span class="text-danger">*</span></label>
@@ -54,7 +60,7 @@
             <button type="submit" class="btn btn-primary">Submit Report</button>
         </form>
     </div>
-</div>
+</section>
 
 <script>
 // pre-loaded lookup: { stateId: [{id, name}, ...] } — populated from the server on page load
