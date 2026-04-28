@@ -24,8 +24,15 @@ def _media_type_for(filename):
     return None
 
 @app.route('/')
-@login_required
 def index():
+    # logged-out users see the landing page; logged-in users see the map
+    if not current_user.is_authenticated:
+        return render_template('landing.html')
+    return render_template('index.html')
+
+@app.route('/map')
+def map_page():
+    # public map view — used by the "Start as guest" button on the landing page
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])

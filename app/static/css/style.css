@@ -1,0 +1,104 @@
+/* ============================================================
+   Landing page
+   ============================================================ */
+.landing-hero {
+    position: relative;
+    text-align: center;
+    padding: 5rem 1.5rem 6rem;
+    overflow: hidden;
+}
+
+/* big soft blurred gradient blobs sitting behind the hero text */
+.landing-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.55;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.landing-blob-1 {
+    width: 30rem; height: 30rem;
+    background: radial-gradient(circle, #4f46e5, transparent 70%);
+    top: -8rem; left: -8rem;
+}
+
+.landing-blob-2 {
+    width: 28rem; height: 28rem;
+    background: radial-gradient(circle, #06b6d4, transparent 70%);
+    bottom: -6rem; right: -6rem;
+}
+
+.landing-badge {
+    display: inline-block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #4f46e5;
+    background-color: #eef2ff;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+}
+
+.landing-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin: 0 0 1.5rem;
+    color: #1e293b;
+}
+
+.landing-title-accent {
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.landing-subtitle {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: #64748b;
+    max-width: 36rem;
+    margin: 0 auto 2.5rem;
+}
+
+.landing-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-bottom: 4rem;
+}
+
+.landing-btn {
+    padding: 0.85rem 1.75rem;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+.landing-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+}
+
+.landing-cat {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid var(--cat);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1e293b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+

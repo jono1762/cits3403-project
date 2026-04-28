@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="landing-hero">
+    {# decorative gradient blobs sit behind the hero text #}
+    <div class="landing-blob landing-blob-1" aria-hidden="true"></div>
+    <div class="landing-blob landing-blob-2" aria-hidden="true"></div>
+
+    <span class="landing-badge">LIVE · AUSTRALIA</span>
+
+    <h1 class="landing-title">
+        Know what's happening<br>
+        <span class="landing-title-accent">in your suburb.</span>
+    </h1>
+
+    <p class="landing-subtitle">
+        Real-time community reports — weather, hazards, traffic, noise, and emergencies.
+        Posted by your neighbours, verified by your community.
+    </p>
+
+    <div class="landing-cta">
+        <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
+    </div>
+
+    <div class="landing-categories">
+        <span class="landing-cat" style="--cat:#3498db">☁️ Weather</span>
+        <span class="landing-cat" style="--cat:#9b59b6">🔊 Noisiness</span>
+        <span class="landing-cat" style="--cat:#e67e22">⚠️ Hazards</span>
+        <span class="landing-cat" style="--cat:#f1c40f">🚦 Traffic</span>
+        <span class="landing-cat" style="--cat:#e74c3c">🚨 Emergency</span>
+    </div>
+</section>
+{% endblock %}
