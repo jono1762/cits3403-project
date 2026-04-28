@@ -159,22 +159,25 @@
                 background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
-/* Primary CTA — "Start as guest". Gradient indigo→cyan with a colored glow. */
+/* Start as guest — same outline + gradient-hover as Log in and Sign up,
+   so all three landing CTAs are visually one design family */
 .landing-btn.btn-primary {
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 55%, #06b6d4 130%);
-    border: none;
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28);
+    background: transparent;
+    border: 1.5px solid #4f46e5;
+    color: #4f46e5;
+    box-shadow: none;
 }
 
 .landing-btn.btn-primary:hover,
 .landing-btn.btn-primary:focus {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.42);
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    border-color: transparent;
     color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(79, 70, 229, 0.30);
 }
 
-/* Secondary — "Log in". Indigo outline, fills indigo on hover. */
+/* Log in — same outline + gradient hover as Start as guest and Sign up */
 .landing-btn.btn-outline-primary {
     background: transparent;
     border: 1.5px solid #4f46e5;
@@ -183,26 +186,28 @@
 
 .landing-btn.btn-outline-primary:hover,
 .landing-btn.btn-outline-primary:focus {
-    background: #4f46e5;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    border-color: transparent;
     color: #fff;
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(79, 70, 229, 0.30);
 }
 
-/* Tertiary — "Sign up". Clean white card-ish button with hairline border. */
+/* Sign up — same outline + gradient hover as Log in, so secondary CTAs share one design */
 .landing-btn.btn-light {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    color: #1e293b;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    background: transparent;
+    border: 1.5px solid #4f46e5;
+    color: #4f46e5;
+    box-shadow: none;
 }
 
 .landing-btn.btn-light:hover,
 .landing-btn.btn-light:focus {
-    border-color: #cbd5e1;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    border-color: transparent;
+    color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
-    color: #1e293b;
+    box-shadow: 0 8px 18px rgba(79, 70, 229, 0.30);
 }
 
 

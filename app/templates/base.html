@@ -40,9 +40,6 @@
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log Out</a></li>
                         </ul>
                     </div>
-                {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2">Sign in</a>
-                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-sm">Get started</a>
                 {% endif %}
             </div>
         </div>
