@@ -3,9 +3,31 @@
    ============================================================ */
 .landing-hero {
     position: relative;
-    text-align: center;
     padding: 5rem 1.5rem 6rem;
     overflow: hidden;
+}
+
+/* two-column layout: hero text on the left, phone mockup on the right */
+.landing-hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* mobile: stack vertically and re-center everything */
+@media (max-width: 900px) {
+    .landing-hero-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        text-align: center;
+    }
+    .landing-hero-text .landing-cta,
+    .landing-hero-text .landing-categories {
+        justify-content: center;
+    }
 }
 
 /* big soft blurred gradient blobs sitting behind the hero text */
@@ -66,15 +88,14 @@
     line-height: 1.6;
     color: #64748b;
     max-width: 36rem;
-    margin: 0 auto 2.5rem;
+    margin: 0 0 2.5rem;
 }
 
 .landing-cta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
-    justify-content: center;
-    margin-bottom: 4rem;
+    margin-bottom: 2.5rem;
 }
 
 .landing-btn {
@@ -87,7 +108,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
-    justify-content: center;
 }
 
 .landing-cat {
@@ -100,5 +120,63 @@
     font-weight: 500;
     color: #1e293b;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+
+/* ============================================================
+   Desktop monitor mockup — pure SVG, no images
+   ============================================================ */
+.landing-illustration-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.landing-illustration {
+    width: 100%;
+    max-width: 540px;
+    height: auto;
+    filter: drop-shadow(0 30px 50px rgba(15, 23, 42, 0.18));
+}
+
+/* Each report card slides in from a different direction so the screen feels alive,
+   not like every post is dropping from the same place */
+.landing-row {
+    transform-box: fill-box;
+    transform-origin: center;
+    opacity: 0;
+    animation-duration: 0.55s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+}
+
+.landing-row-from-left   { animation-name: slideFromLeft;   }
+.landing-row-from-right  { animation-name: slideFromRight;  }
+.landing-row-from-top    { animation-name: slideFromTop;    }
+.landing-row-from-bottom { animation-name: slideFromBottom; }
+
+/* staggered timing so cards arrive in a rhythm, not all at once */
+.landing-row-1 { animation-delay: 0.15s; }
+.landing-row-2 { animation-delay: 0.40s; }
+.landing-row-3 { animation-delay: 0.65s; }
+.landing-row-4 { animation-delay: 0.30s; }
+.landing-row-5 { animation-delay: 0.55s; }
+.landing-row-6 { animation-delay: 0.80s; }
+
+@keyframes slideFromLeft {
+    0%   { opacity: 0; transform: translateX(-18px); }
+    100% { opacity: 1; transform: translateX(0);     }
+}
+@keyframes slideFromRight {
+    0%   { opacity: 0; transform: translateX(18px); }
+    100% { opacity: 1; transform: translateX(0);    }
+}
+@keyframes slideFromTop {
+    0%   { opacity: 0; transform: translateY(-14px); }
+    100% { opacity: 1; transform: translateY(0);     }
+}
+@keyframes slideFromBottom {
+    0%   { opacity: 0; transform: translateY(14px); }
+    100% { opacity: 1; transform: translateY(0);    }
 }
 

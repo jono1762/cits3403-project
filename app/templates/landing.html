@@ -2,34 +2,199 @@
 
 {% block content %}
 <section class="landing-hero">
-    {# decorative gradient blobs sit behind the hero text #}
+    {# decorative gradient blobs sit behind everything #}
     <div class="landing-blob landing-blob-1" aria-hidden="true"></div>
     <div class="landing-blob landing-blob-2" aria-hidden="true"></div>
 
-    <span class="landing-badge">LIVE · AUSTRALIA</span>
+    <div class="landing-hero-grid">
+        {# ---------- left column: hero text + buttons ---------- #}
+        <div class="landing-hero-text">
+            <span class="landing-badge">LIVE · AUSTRALIA</span>
 
-    <h1 class="landing-title">
-        Know what's happening<br>
-        <span class="landing-title-accent">in your suburb.</span>
-    </h1>
+            <h1 class="landing-title">
+                Know what's happening<br>
+                <span class="landing-title-accent">in your suburb.</span>
+            </h1>
 
-    <p class="landing-subtitle">
-        Real-time community reports — weather, hazards, traffic, noise, and emergencies.
-        Posted by your neighbours, verified by your community.
-    </p>
+            <p class="landing-subtitle">
+                Real-time community reports — weather, hazards, traffic, noise, and emergencies.
+                Posted by your neighbours, verified by your community.
+            </p>
 
-    <div class="landing-cta">
-        <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
-        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
-        <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
-    </div>
+            <div class="landing-cta">
+                <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
+                <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
+            </div>
 
-    <div class="landing-categories">
-        <span class="landing-cat" style="--cat:#3498db">☁️ Weather</span>
-        <span class="landing-cat" style="--cat:#9b59b6">🔊 Noisiness</span>
-        <span class="landing-cat" style="--cat:#e67e22">⚠️ Hazards</span>
-        <span class="landing-cat" style="--cat:#f1c40f">🚦 Traffic</span>
-        <span class="landing-cat" style="--cat:#e74c3c">🚨 Emergency</span>
+            <div class="landing-categories">
+                <span class="landing-cat" style="--cat:#3498db">☁️ Weather</span>
+                <span class="landing-cat" style="--cat:#9b59b6">🔊 Noisiness</span>
+                <span class="landing-cat" style="--cat:#e67e22">⚠️ Hazards</span>
+                <span class="landing-cat" style="--cat:#f1c40f">🚦 Traffic</span>
+                <span class="landing-cat" style="--cat:#e74c3c">🚨 Emergency</span>
+            </div>
+        </div>
+
+        {# ---------- right column: desktop monitor showing the app ---------- #}
+        <div class="landing-illustration-wrap">
+            <svg class="landing-illustration" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.4"/>
+                        <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.4"/>
+                    </linearGradient>
+                </defs>
+
+                {# soft circular background behind the monitor #}
+                <circle cx="250" cy="200" r="200" fill="url(#bgGrad)"/>
+
+                {# ============== MONITOR FRAME ============== #}
+                <rect x="20" y="20" width="460" height="320" rx="14" fill="#1e293b"/>
+                <rect x="24" y="24" width="452" height="312" rx="10" fill="#0f172a"/>
+                <rect x="30" y="30" width="440" height="300" rx="6" fill="#f8fafc"/>
+
+                {# ============== APP CHROME INSIDE THE SCREEN ============== #}
+                {# top navbar #}
+                <rect x="30" y="30" width="440" height="34" fill="#0f172a"/>
+                <text x="44" y="52" font-family="Italiana, serif" font-size="14" fill="#fff" letter-spacing="0.5">Australia Explorer</text>
+                <rect x="316" y="40" width="100" height="18" rx="9" fill="rgba(255,255,255,0.1)"/>
+                <circle cx="438" cy="49" r="9" fill="#4f46e5"/>
+
+                {# left sidebar #}
+                <rect x="30" y="64" width="100" height="266" fill="#0f172a"/>
+                <text x="44" y="86" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">LOCATIONS</text>
+                <text x="50" y="106" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Map</text>
+                <text x="50" y="128" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Favourites</text>
+                <text x="44" y="156" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">REPORTS</text>
+                <text x="50" y="174" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Create Report</text>
+                {# Top Reports — now the active page (indigo highlight, white bold text) #}
+                <rect x="40" y="184" width="80" height="20" rx="5" fill="#4f46e5"/>
+                <text x="50" y="198" font-size="10" fill="#fff" font-weight="600"
+                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
+
+                {# main heading — now "Top Reports" with a trending subhead #}
+                <text x="146" y="86" font-size="13" font-weight="700" fill="#1e293b"
+                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
+                <text x="146" y="100" font-size="9" fill="#64748b"
+                      font-family="Inter, system-ui, sans-serif">🔥 Trending across Australia · last 24h</text>
+
+                {# ============== 6 REPORT CARDS — 2 COLUMNS, EACH SLIDING FROM A DIFFERENT DIRECTION ============== #}
+
+                {# Each card now has TWO nested <g> elements:
+                   - outer <g transform="translate(...)"> handles POSITIONING (SVG attribute)
+                   - inner <g class="landing-row ..."> handles ANIMATION (CSS transform)
+                   Without this nesting, the CSS transform overrides the SVG transform attribute,
+                   which is why every card was sliding in from (0,0) — the top-left of the SVG. #}
+
+                {# --- LEFT COLUMN --- #}
+                {# 1. WEATHER — slides in from LEFT #}
+                <g transform="translate(146, 110)">
+                    <g class="landing-row landing-row-from-left landing-row-1">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 142</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Heavy rain at Stirling</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Perth · 2m ago</text>
+                    </g>
+                </g>
+
+                {# 2. HAZARDS — slides in from BELOW #}
+                <g transform="translate(146, 180)">
+                    <g class="landing-row landing-row-from-bottom landing-row-2">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="60" height="15" rx="7.5" fill="#e67e22"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">⚠ HAZARDS</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 87</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Tree down on path</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Cottesloe · 5m ago</text>
+                    </g>
+                </g>
+
+                {# 3. TRAFFIC — slides in from LEFT #}
+                <g transform="translate(146, 250)">
+                    <g class="landing-row landing-row-from-left landing-row-3">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="58" height="15" rx="7.5" fill="#f1c40f"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🚦 TRAFFIC</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 54</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Mitchell Fwy jam</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Joondalup · 8m ago</text>
+                    </g>
+                </g>
+
+                {# --- RIGHT COLUMN --- #}
+                {# 4. EMERGENCY — slides in from RIGHT #}
+                <g transform="translate(308, 110)">
+                    <g class="landing-row landing-row-from-right landing-row-4">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="76" height="15" rx="7.5" fill="#e74c3c"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🚨 EMERGENCY</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 203</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Power outage</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Joondalup · 12m ago</text>
+                    </g>
+                </g>
+
+                {# 5. NOISINESS — slides in from TOP #}
+                <g transform="translate(308, 180)">
+                    <g class="landing-row landing-row-from-top landing-row-5">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="68" height="15" rx="7.5" fill="#9b59b6"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🔊 NOISINESS</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 31</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Construction noise</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Subiaco · 18m ago</text>
+                    </g>
+                </g>
+
+                {# 6. WEATHER (storm) — slides in from RIGHT #}
+                <g transform="translate(308, 250)">
+                    <g class="landing-row landing-row-from-right landing-row-6">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 96</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Storm warning</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Fremantle · 24m ago</text>
+                    </g>
+                </g>
+
+                {# ============== MONITOR STAND ============== #}
+                <rect x="230" y="340" width="40" height="34" fill="#334155"/>
+                <rect x="180" y="370" width="140" height="14" rx="6" fill="#475569"/>
+            </svg>
+        </div>
     </div>
 </section>
 {% endblock %}
