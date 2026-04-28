@@ -18,8 +18,9 @@
     {% set is_landing = request.endpoint == 'home_landing' or (request.endpoint == 'index' and not current_user.is_authenticated) %}
 
     {# Show the full app shell (sidebar + navbar account stuff) for authenticated users
-       AND for guests browsing the public map. Landing page stays as a clean intro screen. #}
-    {% set show_app = (current_user.is_authenticated or request.endpoint == 'map_page') and not is_landing %}
+       AND for guests browsing public pages (map, listing). Landing stays a clean intro. #}
+    {% set guest_pages = ['map_page', 'listing_page'] %}
+    {% set show_app = (current_user.is_authenticated or request.endpoint in guest_pages) and not is_landing %}
     {% set is_guest = show_app and not current_user.is_authenticated %}
 
     {# Navbar hidden on the landing page so it stays a clean marketing-style intro #}

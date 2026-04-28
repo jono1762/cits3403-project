@@ -271,9 +271,9 @@ def edit_report_page(report_id):
         suburbs_by_state=suburbs_by_state,
     )
 
-# /listing — list all reports, most recent first, with optional state / suburb filters
+# /listing — list all reports, most recent first, with optional state / suburb filters.
+# Public — guests can browse without an account.
 @app.route('/listing')
-@login_required
 def listing_page():
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)

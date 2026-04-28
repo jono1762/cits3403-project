@@ -9,7 +9,12 @@
 <section class="listing-page">
     <header class="listing-header">
         <h1 class="listing-title">All Reports</h1>
-        <a href="{{ url_for('reports_page') }}" class="listing-new-btn">+ New Report</a>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('reports_page') }}" class="listing-new-btn">+ New Report</a>
+        {% else %}
+            {# guest — point at signup so they can join and post #}
+            <a href="{{ url_for('signup') }}" class="listing-new-btn">Sign up to post</a>
+        {% endif %}
     </header>
 
     {# Location filter (form) — suburb dropdown only lights up once a state is picked.
