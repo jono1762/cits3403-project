@@ -47,29 +47,6 @@
     }
 }
 
-/* big soft blurred gradient blobs sitting behind the hero text */
-.landing-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.55;
-    z-index: -1;
-    pointer-events: none;
-}
-
-.landing-blob-1 {
-    width: 30rem; height: 30rem;
-    background: radial-gradient(circle, #4f46e5, transparent 70%);
-    top: -8rem; left: -8rem;
-}
-
-.landing-blob-2 {
-    width: 28rem; height: 28rem;
-    background: radial-gradient(circle, #06b6d4, transparent 70%);
-    bottom: -6rem; right: -6rem;
-}
-
-
 /* ============================================================
    Hero text column — badge / title / subtitle / buttons / pills
    ============================================================ */

@@ -47,7 +47,7 @@ body::before {
     border-radius: 50%;
     background: radial-gradient(circle, var(--color-primary), transparent 70%);
     filter: blur(90px);
-    opacity: 0.40;
+    opacity: 0.65;
     z-index: -1;
     pointer-events: none;
 }
@@ -63,7 +63,7 @@ body::after {
     border-radius: 50%;
     background: radial-gradient(circle, var(--color-accent), transparent 70%);
     filter: blur(90px);
-    opacity: 0.40;
+    opacity: 0.65;
     z-index: -1;
     pointer-events: none;
 }
