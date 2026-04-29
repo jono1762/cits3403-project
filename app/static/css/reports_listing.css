@@ -1,0 +1,370 @@
+/* ============================================================
+   reports_listing.css — All Reports listing page
+   Loaded via {% block styles %} on reports_listing.html
+   (alongside profile.css which provides the carousel arrow styling).
+   ============================================================ */
+
+.listing-page {
+    max-width: 1000px;
+    margin: 1rem auto 3rem;
+    padding: 0 1rem;
+}
+
+
+/* ============================================================
+   Header — gradient title + "New Report" CTA
+   ============================================================ */
+.listing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.listing-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.listing-new-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    border: none;
+    padding: 0.55rem 1.15rem;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.listing-new-btn:hover,
+.listing-new-btn:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.42);
+    color: #fff;
+}
+
+
+/* ============================================================
+   Filter card — frosted background with branded form fields
+   ============================================================ */
+.listing-filters {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    margin-bottom: 1.5rem;
+}
+
+.listing-filters .form-label {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3rem;
+    display: block;
+}
+
+.listing-filters .form-select {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: #fff;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.listing-filters .form-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    outline: none;
+}
+
+.listing-filters .form-select:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
+.listing-filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.listing-filter-apply {
+    flex: 1;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.listing-filter-apply:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.40);
+}
+
+.listing-filter-clear {
+    flex: 1;
+    background: #fff;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.listing-filter-clear:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+
+/* ============================================================
+   Category filter chips — clickable colored pills (replaces the dropdown)
+   ============================================================ */
+.listing-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.listing-cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 1.35rem;
+    border-radius: 999px;
+    /* lighter gradient so the text contrast is stronger */
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat, #94a3b8) 12%, white) 100%);
+    border: 1.5px solid var(--cat, #cbd5e1);
+    /* darken the category color for the text — original colour is too pale on a tinted bg */
+    color: color-mix(in srgb, var(--cat, #475569) 70%, black);
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: background 0.18s ease, color 0.18s ease,
+                transform 0.15s ease, box-shadow 0.18s ease;
+}
+
+.listing-cat-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.10);
+}
+
+/* selected chip — fills with the category color, white text */
+.listing-cat-chip.is-active {
+    background: linear-gradient(135deg, var(--cat) 0%, color-mix(in srgb, var(--cat) 75%, black) 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--cat) 35%, transparent);
+}
+
+/* the "All categories" chip uses indigo since it has no per-category color */
+.listing-cat-chip-all {
+    --cat: #4f46e5;
+}
+
+
+/* ============================================================
+   Report cards — frosted, with a category color stripe on the left
+   ============================================================ */
+.listing-feed {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.listing-item {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--cat, #cbd5e1);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.listing-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.listing-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.listing-item-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: #475569;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+/* category badge — same gradient-shaded pill as the landing page categories.
+   White-to-tint gradient + colored border + colored text */
+.listing-item-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
+    border: 1.5px solid var(--cat);
+    color: var(--cat);
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.listing-item-author {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.listing-item-author a {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.listing-item-author a:hover {
+    text-decoration: underline;
+}
+
+.listing-item-edit {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    padding: 0.3rem 0.85rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.listing-item-edit:hover {
+    background: #eef2ff;
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+
+.listing-item-address {
+    margin: 0.5rem 0 0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+}
+
+.listing-item-desc {
+    margin: 0.5rem 0 0;
+    color: #1e293b;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   Pagination — pills with branded active state
+   ============================================================ */
+.listing-pagination {
+    margin-top: 1.5rem;
+}
+
+.listing-pagination .pagination {
+    gap: 4px;
+}
+
+.listing-pagination .page-link {
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.listing-pagination .page-link:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+    border-color: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.listing-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    border-color: #4f46e5;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.30);
+}
+
+.listing-pagination .page-item.disabled .page-link {
+    opacity: 0.5;
+}
+
+
+/* ============================================================
+   Empty state
+   ============================================================ */
+.listing-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 12px;
+}
+
+.listing-empty a {
+    color: #4f46e5;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.listing-empty a:hover {
+    text-decoration: underline;
+}

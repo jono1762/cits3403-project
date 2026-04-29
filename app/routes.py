@@ -24,9 +24,22 @@ def _media_type_for(filename):
     return None
 
 @app.route('/')
-@login_required
 def index():
+    # logged-out users see the landing page; logged-in users see the map
+    if not current_user.is_authenticated:
+        return render_template('landing.html')
     return render_template('index.html')
+
+@app.route('/map')
+def map_page():
+    # public map view — used by the "Start as guest" button on the landing page
+    return render_template('index.html')
+
+# /landing — always renders the landing/intro page regardless of auth state.
+# Lets logged-in users revisit the public-facing home if they want.
+@app.route('/landing')
+def home_landing():
+    return render_template('landing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -133,6 +146,29 @@ def search_users_page():
         )
     return render_template('search.html', q=q, users=users)
 
+# /api/search-users — JSON endpoint for the sidebar search panel.
+# Returns top 10 username matches as you type, no full page reload needed.
+@app.route('/api/search-users')
+@login_required
+def api_search_users():
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify([])
+    users = (
+        User.query
+        .filter(User.username.ilike(f'%{q}%'))
+        .order_by(User.username)
+        .limit(10)
+        .all()
+    )
+    return jsonify([
+        {
+            'username': u.username,
+            'profile_url': url_for('user_profile_page', username=u.username),
+        }
+        for u in users
+    ])
+
 # /reports/<id>/edit — GET renders the edit form, POST saves changes
 # only the original author can edit; everyone else gets 403
 @app.route('/reports/<int:report_id>/edit', methods=['GET', 'POST'])
@@ -235,9 +271,9 @@ def edit_report_page(report_id):
         suburbs_by_state=suburbs_by_state,
     )
 
-# /listing — list all reports, most recent first, with optional state / suburb filters
+# /listing — list all reports, most recent first, with optional state / suburb filters.
+# Public — guests can browse without an account.
 @app.route('/listing')
-@login_required
 def listing_page():
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)

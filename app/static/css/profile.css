@@ -29,3 +29,269 @@
     background-color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.4);
 }
+
+
+/* ============================================================
+   Profile page — page wrapper
+   ============================================================ */
+.profile-page {
+    max-width: 880px;
+    margin: 1rem auto 3rem;
+    padding: 0 1rem;
+}
+
+
+/* ============================================================
+   Header card — avatar + username + email
+   ============================================================ */
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    margin-bottom: 1.25rem;
+}
+
+/* big initial-letter avatar — gradient circle that doubles as a unique-ish visual ID */
+.profile-avatar {
+    flex-shrink: 0;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.25rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.30);
+    text-transform: uppercase;
+}
+
+.profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0 0 0.2rem;
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.profile-handle {
+    margin: 0 0 0.4rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.profile-email {
+    margin: 0;
+    color: #475569;
+    font-size: 0.9rem;
+}
+
+.profile-email strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+
+/* ============================================================
+   Stats row — 3 small cards under the header
+   ============================================================ */
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+}
+
+.profile-stat {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85rem 1.1rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.profile-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.07);
+    border-color: rgba(79, 70, 229, 0.25);
+}
+
+.profile-stat-label {
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.2rem;
+}
+
+.profile-stat-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+
+/* ============================================================
+   Recent reports section
+   ============================================================ */
+.profile-section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+}
+
+.profile-section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.profile-section-meta {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+
+/* ============================================================
+   Report items — same visual language as the listing page
+   ============================================================ */
+.profile-feed {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.profile-item {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--cat, #cbd5e1);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.profile-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.profile-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.profile-item-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: #475569;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+.profile-item-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
+    border: 1.5px solid var(--cat);
+    color: color-mix(in srgb, var(--cat) 70%, black);
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.profile-item-loc {
+    color: #1e293b;
+}
+
+.profile-item-time {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.profile-item-edit {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    padding: 0.3rem 0.85rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.profile-item-edit:hover {
+    background: #eef2ff;
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+
+.profile-item-desc {
+    margin: 0.6rem 0 0;
+    color: #1e293b;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   Empty state — when this user has no reports yet
+   ============================================================ */
+.profile-empty {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 12px;
+}

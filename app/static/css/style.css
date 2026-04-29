@@ -1,0 +1,75 @@
+/* ============================================================
+   style.css — global design system
+   Loaded on EVERY page via base.html, so anything here applies
+   site-wide. Keep this file for shared visual language only.
+   ============================================================ */
+
+
+/* ============================================================
+   1. Design tokens — single source of truth for brand colours
+   ============================================================ */
+:root {
+    --color-primary:       #4f46e5;     /* indigo brand */
+    --color-primary-soft:  #eef2ff;     /* light indigo, used for hovers */
+    --color-accent:        #06b6d4;     /* cyan accent for gradients */
+    --color-bg:            #f6f7fb;     /* page background — soft off-white */
+    --color-surface:       #ffffff;     /* card / panel background */
+    --color-text:          #1e293b;     /* slate-800 — body text */
+    --color-text-muted:    #64748b;     /* slate-500 */
+    --color-border:        #e2e8f0;     /* slate-200 */
+}
+
+
+/* ============================================================
+   2. Page background + aurora gradient blobs
+   Same vibe as the landing hero, but layered behind every page
+   so the whole site feels cohesive. Blobs are fixed-position so
+   they stay in view as the user scrolls.
+   ============================================================ */
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    /* modern system-font stack — picks the OS's native UI font so the app
+       feels right on every platform without downloading anything */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto,
+                 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* isolation creates a new stacking context so the z-index:-1
+       pseudo-elements below sit ABOVE the body background and
+       BELOW everything else — without this, blobs disappear */
+    position: relative;
+    isolation: isolate;
+}
+
+/* indigo blob — top-left of the viewport */
+body::before {
+    content: "";
+    position: fixed;
+    top: -8rem;
+    left: -8rem;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-primary), transparent 70%);
+    filter: blur(90px);
+    opacity: 0.65;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* cyan blob — bottom-right of the viewport */
+body::after {
+    content: "";
+    position: fixed;
+    bottom: -8rem;
+    right: -8rem;
+    width: 30rem;
+    height: 30rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-accent), transparent 70%);
+    filter: blur(90px);
+    opacity: 0.65;
+    z-index: -1;
+    pointer-events: none;
+}

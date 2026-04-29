@@ -12,9 +12,78 @@
     height: var(--navbar-height);
 }
 
+/* small magnifier icon button in the navbar — opens the /search page */
+.navbar-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    text-decoration: none;
+    margin-right: 0.6rem;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.navbar-search-icon:hover,
+.navbar-search-icon:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: scale(1.05);
+}
+
 .app-account-toggle {
     color: #fff;
-    font-size: 1rem;
+    font-family: 'Italiana', serif;     /* matches the brand text — elegant serif */
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+}
+
+.app-account-toggle:hover,
+.app-account-toggle:focus {
+    opacity: 0.85;
+    text-decoration: none;
+    color: #fff;
+}
+
+/* Guest label in the navbar — same Italiana font but italic + slightly muted
+   so it visually reads as "not signed in" without competing with usernames */
+.app-account-guest {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: default;
+}
+
+/* Group the navbar right-side items (home icon + username) so they sit inline */
+.app-navbar-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* Small home icon next to the username/guest label — takes anyone back to landing */
+.app-navbar-home {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.app-navbar-home:hover,
+.app-navbar-home:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: scale(1.05);
 }
 
 .app-account-toggle:hover,
@@ -47,4 +116,81 @@
     :root {
         --navbar-height: 56px;
     }
+}
+
+.app-navbar.bg-dark {
+    background-color: #0f172a !important;   /* slate-900 — softer than pure black */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-brand {
+    font-family: 'Italiana', serif;
+    font-weight: 400;          /* Italiana only ships in 400 — looks best at regular weight */
+    font-size: 1.6rem;
+    letter-spacing: 0.04em;    /* slight extra tracking, typical for elegant serifs */
+}
+
+/* "Please log in" placeholder — sits in the same slot the username will fill after login */
+.navbar-login-link {
+    color: #c7d2fe;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    text-decoration: none;
+    transition: color 0.18s ease;
+}
+
+.navbar-login-link:hover,
+.navbar-login-link:focus {
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Sign in — ghost outline pill, fills with the indigo→cyan gradient on hover (shallow→dark) */
+.app-navbar .btn-outline-light {
+    background: transparent;
+    border: 1px solid rgba(165, 180, 252, 0.5);
+    color: #c7d2fe;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 0.45rem 1.1rem;
+    border-radius: 999px;
+    transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease,
+                transform 0.18s ease, box-shadow 0.22s ease;
+}
+
+.app-navbar .btn-outline-light:hover,
+.app-navbar .btn-outline-light:focus {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    border-color: transparent;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+}
+
+/* Get started — gradient-filled by default, matching the landing's "Start as guest" CTA.
+   Lifts and intensifies its glow on hover. */
+.app-navbar .btn-light {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 0.45rem 1.2rem;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    transition: transform 0.18s ease, box-shadow 0.22s ease, color 0.22s ease;
+}
+
+.app-navbar .btn-light:hover,
+.app-navbar .btn-light:focus {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.55);
 }

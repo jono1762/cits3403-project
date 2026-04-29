@@ -5,49 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Australia Explorer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Italiana&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css', v='1') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css', v='1') }}">
     {% block styles %}{% endblock %}
 </head>
 <body>
+    {# Detect whether we're rendering the public landing page.
+       True for /landing AND for / when the user is not authenticated. #}
+    {% set is_landing = request.endpoint == 'home_landing' or (request.endpoint == 'index' and not current_user.is_authenticated) %}
+
+    {# Show the full app shell (sidebar + navbar account stuff) for authenticated users
+       AND for guests browsing public pages (map, listing). Landing stays a clean intro. #}
+    {% set guest_pages = ['map_page', 'listing_page'] %}
+    {% set show_app = (current_user.is_authenticated or request.endpoint in guest_pages) and not is_landing %}
+    {% set is_guest = show_app and not current_user.is_authenticated %}
+
+    {# Navbar hidden on the landing page so it stays a clean marketing-style intro #}
+    {% if not is_landing %}
     <nav class="navbar navbar-dark bg-dark fixed-top app-navbar">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('index') }}">Australia Explorer</a>
 
-            {% if current_user.is_authenticated %}
-                {# quick search bar in the navbar — jumps to the full /search page on submit #}
-                <form class="d-flex mx-3 flex-grow-1" method="get" action="{{ url_for('search_users_page') }}" style="max-width: 400px;">
-                    <input class="form-control form-control-sm" type="search" name="q"
-                           placeholder="Search users..." value="{{ request.args.get('q', '') }}">
-                    <button class="btn btn-sm btn-outline-light ms-2" type="submit">Go</button>
-                </form>
-            {% endif %}
 
-            <div>
+            <div class="app-navbar-right">
+                {# small home icon — takes anyone back to the landing page.
+                   Shown on every page (login, signup, map, profile, etc.) so users
+                   can always get back to the start. #}
+                <a href="{{ url_for('home_landing') }}" class="app-navbar-home" aria-label="Home" title="Home">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-5h-2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    </svg>
+                </a>
                 {% if current_user.is_authenticated %}
-                    <div class="dropdown">
-                        <button class="btn btn-link text-light text-decoration-none dropdown-toggle p-0 border-0 app-account-toggle"
-                                type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ current_user.username }}
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('profile_page') }}">Profile</a></li>
-                            <li><a class="dropdown-item app-stub-link" href="#" data-stub-message="Stub: open Settings page.">Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log Out</a></li>
-                        </ul>
-                    </div>
-                {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2">Log In</a>
-                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-sm">Sign Up</a>
+                    {# username links straight to the profile page now that the dropdown is gone #}
+                    <a href="{{ url_for('profile_page') }}" class="app-account-toggle">{{ current_user.username }}</a>
+                {% elif is_guest %}
+                    {# guest viewing the public map — visually shows they're not signed in #}
+                    <span class="app-account-toggle app-account-guest">Guest</span>
                 {% endif %}
             </div>
         </div>
     </nav>
 
     <div class="navbar-spacer" aria-hidden="true"></div>
+    {% endif %}
 
-    {% if current_user.is_authenticated %}
+    {% if show_app %}
         {% set path = request.path %}
 
         <button class="btn btn-sm btn-outline-light d-md-none app-mobile-menu-floating"
@@ -67,17 +73,59 @@
             <div class="offcanvas-body p-0">
                 <nav class="app-sidebar-nav mobile-sidebar-nav" aria-label="Mobile Sidebar Navigation">
                     <div class="app-sidebar-group-header">Locations</div>
-                    <a href="{{ url_for('index') }}" class="app-sidebar-link {{ 'active' if path == url_for('index') else '' }}">Map</a>
+                    <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page." data-bs-dismiss="offcanvas">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page." data-bs-dismiss="offcanvas">Top Reports</a>
 
+                    <div class="app-sidebar-group-header">Account</div>
+                    {% if is_guest %}
+                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile." data-bs-dismiss="offcanvas">Profile</a>
+                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to search for users." data-bs-dismiss="offcanvas">Search Users</a>
+                    {% else %}
+                        <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                        <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
+                    {% endif %}
+                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
+
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page." data-bs-dismiss="offcanvas">Help</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page." data-bs-dismiss="offcanvas">About</a>
                 </nav>
+                {% if is_guest %}
+                    <div class="app-sidebar-guest-actions">
+                        {# Log in — door with arrow pointing INTO it (mirror of logout icon) #}
+                        <a href="{{ url_for('login') }}" class="app-sidebar-guest-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                                <polyline points="10 17 15 12 10 7"/>
+                                <line x1="15" y1="12" x2="3" y2="12"/>
+                            </svg>
+                            <span>Log in</span>
+                        </a>
+                        {# Sign up — person + plus icon #}
+                        <a href="{{ url_for('signup') }}" class="app-sidebar-guest-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="8.5" cy="7" r="4"/>
+                                <line x1="20" y1="8" x2="20" y2="14"/>
+                                <line x1="23" y1="11" x2="17" y2="11"/>
+                            </svg>
+                            <span>Sign up</span>
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('logout') }}" class="app-sidebar-logout">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span>Log out</span>
+                    </a>
+                {% endif %}
             </div>
         </div>
 
@@ -85,17 +133,59 @@
             <aside class="app-sidebar d-none d-md-block" aria-label="Sidebar Navigation">
                 <nav class="app-sidebar-nav">
                     <div class="app-sidebar-group-header">Locations</div>
-                    <a href="{{ url_for('index') }}" class="app-sidebar-link {{ 'active' if path == url_for('index') else '' }}">Map</a>
+                    <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page.">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page.">Top Reports</a>
 
+                    <div class="app-sidebar-group-header">Account</div>
+                    {% if is_guest %}
+                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile.">Profile</a>
+                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to search for users.">Search Users</a>
+                    {% else %}
+                        <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                        <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
+                    {% endif %}
+                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
+
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page.">Help</a>
                     <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page.">About</a>
                 </nav>
+                {% if is_guest %}
+                    <div class="app-sidebar-guest-actions">
+                        {# Log in — door with arrow pointing INTO it (mirror of logout icon) #}
+                        <a href="{{ url_for('login') }}" class="app-sidebar-guest-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                                <polyline points="10 17 15 12 10 7"/>
+                                <line x1="15" y1="12" x2="3" y2="12"/>
+                            </svg>
+                            <span>Log in</span>
+                        </a>
+                        {# Sign up — person + plus icon #}
+                        <a href="{{ url_for('signup') }}" class="app-sidebar-guest-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="8.5" cy="7" r="4"/>
+                                <line x1="20" y1="8" x2="20" y2="14"/>
+                                <line x1="23" y1="11" x2="17" y2="11"/>
+                            </svg>
+                            <span>Sign up</span>
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('logout') }}" class="app-sidebar-logout">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span>Log out</span>
+                    </a>
+                {% endif %}
             </aside>
             <main class="app-main-content">
     {% endif %}
@@ -113,9 +203,26 @@
                     {% block content %}{% endblock %}
                 </div>
 
-    {% if current_user.is_authenticated %}
+    {% if show_app %}
             </main>
         </div>
+
+        {% if current_user.is_authenticated %}
+            {# Slide-out user search panel — Instagram-style.
+               Auth-only: guests get a stub alert instead. #}
+            <aside id="user-search-panel" class="user-search-panel" aria-hidden="true">
+                <div class="user-search-header">
+                    <h3 class="user-search-title">Search Users</h3>
+                    <button type="button" class="user-search-close" aria-label="Close search">×</button>
+                </div>
+                <div class="user-search-input-wrap">
+                    <input type="search" id="user-search-input" class="user-search-input"
+                           placeholder="Search by username..." autocomplete="off">
+                </div>
+                <ul id="user-search-results" class="user-search-results"></ul>
+                <p id="user-search-empty" class="user-search-empty">Start typing to find people.</p>
+            </aside>
+        {% endif %}
     {% endif %}
 
     <script>
@@ -132,6 +239,79 @@
             });
         });
     </script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        // Sliding user-search panel — Instagram-style.
+        // Click "Search Users" in the sidebar → panel slides out to its right.
+        // Live results via /api/search-users with debounced fetches.
+        (function () {
+            const panel = document.getElementById('user-search-panel');
+            const input = document.getElementById('user-search-input');
+            const results = document.getElementById('user-search-results');
+            const empty = document.getElementById('user-search-empty');
+            const closeBtn = panel.querySelector('.user-search-close');
+            const toggles = document.querySelectorAll('[data-search-toggle]');
+
+            function openPanel() {
+                panel.classList.add('is-open');
+                panel.setAttribute('aria-hidden', 'false');
+                setTimeout(() => input.focus(), 200);
+            }
+            function closePanel() {
+                panel.classList.remove('is-open');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+
+            toggles.forEach((btn) => btn.addEventListener('click', openPanel));
+            closeBtn.addEventListener('click', closePanel);
+
+            // close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && panel.classList.contains('is-open')) closePanel();
+            });
+            // close on outside click (anywhere except panel + the toggle)
+            document.addEventListener('click', (e) => {
+                if (!panel.classList.contains('is-open')) return;
+                if (panel.contains(e.target)) return;
+                if (e.target.closest('[data-search-toggle]')) return;
+                closePanel();
+            });
+
+            // debounced live search
+            let searchTimer;
+            input.addEventListener('input', () => {
+                clearTimeout(searchTimer);
+                const q = input.value.trim();
+                if (!q) {
+                    results.innerHTML = '';
+                    empty.textContent = 'Start typing to find people.';
+                    empty.style.display = '';
+                    return;
+                }
+                searchTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch('/api/search-users?q=' + encodeURIComponent(q));
+                        const data = await res.json();
+                        if (data.length === 0) {
+                            results.innerHTML = '';
+                            empty.textContent = 'No users found.';
+                            empty.style.display = '';
+                        } else {
+                            empty.style.display = 'none';
+                            results.innerHTML = data.map(u =>
+                                `<li class="user-search-result"><a href="${u.profile_url}">${u.username}</a></li>`
+                            ).join('');
+                        }
+                    } catch (err) {
+                        empty.textContent = 'Search failed.';
+                        empty.style.display = '';
+                    }
+                }, 200);
+            });
+        })();
+    </script>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

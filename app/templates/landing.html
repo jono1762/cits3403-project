@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="landing-hero">
+    <div class="landing-hero-grid">
+        {# ---------- left column: hero text + buttons ---------- #}
+        <div class="landing-hero-text">
+            <span class="landing-badge">
+                <span class="landing-live-dot" aria-hidden="true"></span>
+                LIVE · AUSTRALIA
+            </span>
+
+            {% if current_user.is_authenticated %}
+                {# Logged-in version — personal greeting, single "open the map" CTA #}
+                <h1 class="landing-title">
+                    Welcome back,<br>
+                    <span class="landing-title-accent">{{ current_user.username }}.</span>
+                </h1>
+
+                <p class="landing-subtitle">
+                    Here's what's happening across Australia today. Pick up where you left off,
+                    or jump straight onto the map.
+                </p>
+
+                <div class="landing-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Open the map</a>
+                    <a href="{{ url_for('reports_page') }}" class="btn btn-outline-primary btn-lg landing-btn">Submit a report</a>
+                </div>
+            {% else %}
+                {# Logged-out / guest version — original public CTAs #}
+                <h1 class="landing-title">
+                    Know what's happening<br>
+                    <span class="landing-title-accent">in your city.</span>
+                </h1>
+
+                <p class="landing-subtitle">
+                    Real-time community reports — weather, hazards, traffic, noise, and emergencies.
+                    Posted by your neighbours, verified by your community.
+                </p>
+
+                <div class="landing-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
+                </div>
+            {% endif %}
+
+            <div class="landing-categories">
+                <span class="landing-cat" style="--cat:#3498db">☁️ Weather</span>
+                <span class="landing-cat" style="--cat:#9b59b6">🔊 Noisiness</span>
+                <span class="landing-cat" style="--cat:#e67e22">⚠️ Hazards</span>
+                <span class="landing-cat" style="--cat:#f1c40f">🚦 Traffic</span>
+                <span class="landing-cat" style="--cat:#e74c3c">🚨 Emergency</span>
+                {# coming-soon placeholder — single muted pill teasing future categories #}
+                <span class="landing-cat landing-cat-soon" style="--cat:#94a3b8">+ More categories coming soon</span>
+            </div>
+        </div>
+
+        {# ---------- right column: desktop monitor showing the app ---------- #}
+        <div class="landing-illustration-wrap">
+            <svg class="landing-illustration" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.4"/>
+                        <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.4"/>
+                    </linearGradient>
+                </defs>
+
+                {# soft circular background behind the monitor #}
+                <circle cx="250" cy="200" r="200" fill="url(#bgGrad)"/>
+
+                {# ============== MONITOR FRAME ============== #}
+                <rect x="20" y="20" width="460" height="320" rx="14" fill="#1e293b"/>
+                <rect x="24" y="24" width="452" height="312" rx="10" fill="#0f172a"/>
+                <rect x="30" y="30" width="440" height="300" rx="6" fill="#f8fafc"/>
+
+                {# ============== APP CHROME INSIDE THE SCREEN ============== #}
+                {# top navbar #}
+                <rect x="30" y="30" width="440" height="34" fill="#0f172a"/>
+                <text x="44" y="52" font-family="Italiana, serif" font-size="14" fill="#fff" letter-spacing="0.5">Australia Explorer</text>
+                <rect x="316" y="40" width="100" height="18" rx="9" fill="rgba(255,255,255,0.1)"/>
+                {# magnifier glyph + the city name; both updated by JS as the city cycles #}
+                <text x="324" y="53" font-size="9" fill="rgba(255,255,255,0.55)"
+                      font-family="Inter, system-ui, sans-serif">⌕</text>
+                <text id="landing-search-text" x="366" y="53" font-size="8.5" fill="rgba(255,255,255,0.85)" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Sydney</text>
+                <circle cx="438" cy="49" r="9" fill="#4f46e5"/>
+
+                {# left sidebar #}
+                <rect x="30" y="64" width="100" height="266" fill="#0f172a"/>
+                <text x="44" y="86" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">LOCATIONS</text>
+                <text x="50" y="106" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Map</text>
+                <text x="50" y="128" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Favourites</text>
+                <text x="44" y="156" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">REPORTS</text>
+                <text x="50" y="174" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Create Report</text>
+                {# Top Reports — now the active page (indigo highlight, white bold text) #}
+                <rect x="40" y="184" width="80" height="20" rx="5" fill="#4f46e5"/>
+                <text x="50" y="198" font-size="10" fill="#fff" font-weight="600"
+                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
+
+                {# main heading — now "Top Reports" with a trending subhead #}
+                <text x="146" y="86" font-size="13" font-weight="700" fill="#1e293b"
+                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
+                <text x="146" y="100" font-size="9" fill="#64748b"
+                      font-family="Inter, system-ui, sans-serif">🔥 Trending across Australia · last 24h</text>
+
+                {# ============== 6 REPORT CARDS — 2 COLUMNS, EACH SLIDING FROM A DIFFERENT DIRECTION ============== #}
+
+                {# Each card now has TWO nested <g> elements:
+                   - outer <g transform="translate(...)"> handles POSITIONING (SVG attribute)
+                   - inner <g class="landing-row ..."> handles ANIMATION (CSS transform)
+                   Without this nesting, the CSS transform overrides the SVG transform attribute,
+                   which is why every card was sliding in from (0,0) — the top-left of the SVG. #}
+
+                {# --- LEFT COLUMN --- #}
+                {# 1. WEATHER — slides in from LEFT #}
+                <g transform="translate(146, 110)">
+                    <g class="landing-row landing-row-from-left landing-row-1">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 142</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Heavy rain across CBD</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Sydney · 2m ago</text>
+                    </g>
+                </g>
+
+                {# 2. HAZARDS — slides in from BELOW #}
+                <g transform="translate(146, 180)">
+                    <g class="landing-row landing-row-from-bottom landing-row-2">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="60" height="15" rx="7.5" fill="#e67e22"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">⚠ HAZARDS</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 87</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Tree down on Yarra trail</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Melbourne · 5m ago</text>
+                    </g>
+                </g>
+
+                {# 3. TRAFFIC — slides in from LEFT #}
+                <g transform="translate(146, 250)">
+                    <g class="landing-row landing-row-from-left landing-row-3">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="58" height="15" rx="7.5" fill="#f1c40f"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🚦 TRAFFIC</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 54</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">M1 backed up</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Brisbane · 8m ago</text>
+                    </g>
+                </g>
+
+                {# --- RIGHT COLUMN --- #}
+                {# 4. EMERGENCY — slides in from RIGHT #}
+                <g transform="translate(308, 110)">
+                    <g class="landing-row landing-row-from-right landing-row-4">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="76" height="15" rx="7.5" fill="#e74c3c"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🚨 EMERGENCY</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 203</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Power outage citywide</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Perth · 12m ago</text>
+                    </g>
+                </g>
+
+                {# 5. NOISINESS — slides in from TOP #}
+                <g transform="translate(308, 180)">
+                    <g class="landing-row landing-row-from-top landing-row-5">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="68" height="15" rx="7.5" fill="#9b59b6"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🔊 NOISINESS</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 31</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Construction noise</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Adelaide · 18m ago</text>
+                    </g>
+                </g>
+
+                {# 6. WEATHER (storm) — slides in from RIGHT #}
+                <g transform="translate(308, 250)">
+                    <g class="landing-row landing-row-from-right landing-row-6">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 96</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Storm warning issued</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Sydney · 24m ago</text>
+                    </g>
+                </g>
+
+                {# ============== MONITOR STAND ============== #}
+                <rect x="230" y="340" width="40" height="34" fill="#334155"/>
+                <rect x="180" y="370" width="140" height="14" rx="6" fill="#475569"/>
+            </svg>
+        </div>
+    </div>
+</section>
+
+<script>
+// Cycle the search bar + the 6 report cards through Australian cities every few seconds,
+// to make the monitor feel "live" — like the user is searching different cities.
+(function () {
+    const cities = [
+        { name: 'Sydney',    posts: ['Heavy rain across CBD', 'Tree down at Centennial', 'M5 backed up south', 'Power outage in Bondi', 'Construction Pyrmont', 'Storm warning issued'] },
+        { name: 'Melbourne', posts: ['Hail across the city',  'Tree down Yarra trail',   'Tram delays Flinders', 'Power cut Brunswick',   'Construction Carlton',  'Storm warning issued'] },
+        { name: 'Brisbane',  posts: ['Heavy rain in CBD',     'Tree down at South Bank', 'M1 backed up south',   'Flood warning Logan',    'Construction West End', 'Severe storm warning'] },
+        { name: 'Perth',     posts: ['Rain at Stirling Hwy',  'Tree down Kings Park',    'Mitchell Fwy jam',     'Power outage citywide',  'Construction Subiaco',  'Bushfire watch issued'] },
+        { name: 'Adelaide',  posts: ['Heavy rain in CBD',     'Tree down North Adelaide','South Rd backed up',   'Power outage Norwood',   'Construction Glenelg',  'Severe storm warning'] },
+    ];
+
+    // timestamps stay the same per slot — only the city + post text changes
+    const times = ['2m ago', '5m ago', '8m ago', '12m ago', '18m ago', '24m ago'];
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const cards   = () => document.querySelectorAll('.landing-illustration .landing-row');
+    const search  = () => document.getElementById('landing-search-text');
+
+    // type / delete one character at a time — the typewriter effect on the search bar
+    async function deleteText(el) {
+        while (el.textContent.length > 0) {
+            el.textContent = el.textContent.slice(0, -1);
+            await sleep(45);
+        }
+    }
+    async function typeText(el, text) {
+        for (let i = 1; i <= text.length; i++) {
+            el.textContent = text.substring(0, i);
+            await sleep(95);
+        }
+    }
+
+    function updateCardContent(city) {
+        cards().forEach((card, n) => {
+            if (n >= city.posts.length) return;
+            const texts = card.querySelectorAll('text');
+            // text order inside each card: [0] badge label, [1] fire count, [2] title, [3] meta
+            if (texts[2]) texts[2].textContent = city.posts[n];
+            if (texts[3]) texts[3].textContent = city.name + ' · ' + times[n];
+        });
+    }
+
+    // Re-trigger the existing slide-in CSS animation on each card.
+    // Single-frame `none → ''` toggles get optimized away by the browser, so we use
+    // requestAnimationFrame twice to guarantee the reset is rendered in one frame
+    // BEFORE we re-attach the animation in the next frame.
+    function replaySlideIns() {
+        const all = Array.from(cards());
+        // 1. kill the running animations + force the cards back to their pre-animation state
+        all.forEach((card) => {
+            card.style.animation = 'none';
+            card.style.opacity = '0';
+        });
+        // 2. let the browser paint that "hidden" state
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                // 3. drop the inline overrides so the CSS classes' keyframes fire from frame 0
+                all.forEach((card) => {
+                    card.style.animation = '';
+                    card.style.opacity = '';
+                });
+            });
+        });
+    }
+
+    async function loop() {
+        // give the initial page-load slide-in time to finish before we start cycling
+        await sleep(2800);
+
+        let cursor = 0;
+        while (true) {
+            cursor = (cursor + 1) % cities.length;
+            const city = cities[cursor];
+            const s = search();
+
+            if (s) {
+                await deleteText(s);              // 1. delete previous city, char by char
+                await typeText(s, city.name);     // 2. type new city, char by char
+            }
+            await sleep(250);                     // brief pause so the typed name registers
+
+            updateCardContent(city);              // 3. swap 6 cards' titles + meta lines
+            replaySlideIns();                     // 4. cards slide in fresh, like a refresh
+
+            await sleep(3800);                    // 5. let the user read before the next city
+        }
+    }
+
+    loop();
+})();
+</script>
+{% endblock %}
