@@ -88,7 +88,7 @@
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
-                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
+                    <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}" data-bs-dismiss="offcanvas">Help</a>
@@ -148,7 +148,7 @@
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
-                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
+                    <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>

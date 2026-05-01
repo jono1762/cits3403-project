@@ -108,6 +108,18 @@ def favourites_page():
     )
 
 
+# /settings — UI-only stub. Renders the form, accepts POST, flashes a
+# success message, but doesn't persist anything yet. Wire to real
+# username/email/password update logic in a follow-up branch.
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings_page():
+    if request.method == 'POST':
+        flash('Settings saved.', 'success')
+        return redirect(url_for('settings_page'))
+    return render_template('settings.html')
+
+
 # /help — static FAQ page, public
 @app.route('/help')
 def help_page():
