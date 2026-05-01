@@ -136,12 +136,35 @@ def map_page():
     # public map view — used by the "Start as guest" button on the landing page
     suburb_ids = {s.name: s.id for s in Suburb.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
+
+    # real top-trending city = suburb with the most reports overall
+    top_city_row = (
+        db.session.query(Suburb.name, db.func.count(Report.id))
+        .join(Report, Report.suburb_id == Suburb.id)
+        .group_by(Suburb.id)
+        .order_by(db.func.count(Report.id).desc())
+        .first()
+    )
+    top_city = {'name': top_city_row[0], 'count': top_city_row[1]} if top_city_row else None
+
+    # real top-trending category = category with the most reports overall
+    top_cat_row = (
+        db.session.query(Category.name, db.func.count(Report.id))
+        .join(Report, Report.category_id == Category.id)
+        .group_by(Category.id)
+        .order_by(db.func.count(Report.id).desc())
+        .first()
+    )
+    top_category = {'name': top_cat_row[0], 'count': top_cat_row[1]} if top_cat_row else None
+
     return render_template(
         'index.html',
         suburb_ids_by_name=suburb_ids,
         category_ids_by_name=category_ids,
         city_to_state=CITY_TO_STATE,
         state_flag_url=STATE_FLAG_URL,
+        top_city=top_city,
+        top_category=top_category,
     )
 
 # /landing — always renders the landing/intro page regardless of auth state.

@@ -13,43 +13,61 @@
 	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
 	   Card 3 links to the user's favourites page (stub for now). #}
 	<div class="map-stats">
-		{# whole card is the click target — fire emoji is decorative #}
-		{% set trending_city = 'Sydney' %}
-		{% set trending_state = city_to_state.get(trending_city) %}
-		{% set trending_flag = state_flag_url.get(trending_state) %}
-		<a class="stat-card stat-card-trending"
-		   href="{{ url_for('listing_page', suburb_id=suburb_ids_by_name.get(trending_city)) }}"
-		   aria-label="View reports for {{ trending_city }}">
-			<div class="stat-label">Top trending cities</div>
-			<div class="stat-num">
-				{% if trending_flag %}
-					<img class="stat-flag" src="{{ trending_flag }}"
-					     alt="{{ trending_state|upper }} flag"
-					     onerror="this.style.display='none'">
-				{% endif %}
-				{{ trending_city }}
+		{# Top trending cities — pulled from server-side aggregation (no fake numbers) #}
+		{% if top_city %}
+			{% set trending_state = city_to_state.get(top_city.name) %}
+			{% set trending_flag = state_flag_url.get(trending_state) %}
+			<a class="stat-card stat-card-trending"
+			   href="{{ url_for('listing_page', suburb_id=suburb_ids_by_name.get(top_city.name)) }}"
+			   aria-label="View reports for {{ top_city.name }}">
+				<div class="stat-label">Top trending cities</div>
+				<div class="stat-num">
+					{% if trending_flag %}
+						<img class="stat-flag" src="{{ trending_flag }}"
+						     alt="{{ trending_state|upper }} flag"
+						     onerror="this.style.display='none'">
+					{% endif %}
+					{{ top_city.name }}
+				</div>
+				<div class="stat-trend">{{ top_city.count }} report{{ 's' if top_city.count != 1 else '' }} so far</div>
+				<span class="stat-card-fire" aria-hidden="true">🔥</span>
+			</a>
+		{% else %}
+			<div class="stat-card stat-card-trending">
+				<div class="stat-label">Top trending cities</div>
+				<div class="stat-num">No reports yet</div>
+				<div class="stat-trend">Be the first to post one</div>
+				<span class="stat-card-fire" aria-hidden="true">🔥</span>
 			</div>
-			<div class="stat-trend">142 reports · last hour</div>
-			<span class="stat-card-fire" aria-hidden="true">🔥</span>
-		</a>
-		{# whole card clickable — same treatment as the cities card but indigo/purple instead of fire #}
-		{% set trending_cat = 'Hazards' %}
-		{% set trending_cat_emoji = CATEGORY_EMOJI.get(trending_cat, '') %}
-		<a class="stat-card stat-card-trending-cat"
-		   href="{{ url_for('listing_page', category_id=category_ids_by_name.get(trending_cat)) }}"
-		   aria-label="View reports for {{ trending_cat }}">
-			<div class="stat-label">Top trending categories</div>
-			<div class="stat-num">
-				<span class="stat-cat-emoji" aria-hidden="true">{{ trending_cat_emoji }}</span>
-				{{ trending_cat }}
+		{% endif %}
+
+		{# Top trending categories — also from server-side aggregation #}
+		{% if top_category %}
+			<a class="stat-card stat-card-trending-cat"
+			   href="{{ url_for('listing_page', category_id=category_ids_by_name.get(top_category.name)) }}"
+			   aria-label="View reports for {{ top_category.name }}">
+				<div class="stat-label">Top trending categories</div>
+				<div class="stat-num">
+					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_category.name, '') }}</span>
+					{{ top_category.name }}
+				</div>
+				<div class="stat-trend">{{ top_category.count }} report{{ 's' if top_category.count != 1 else '' }} so far</div>
+				<span class="stat-card-spark" aria-hidden="true">📈</span>
+			</a>
+		{% else %}
+			<div class="stat-card stat-card-trending-cat">
+				<div class="stat-label">Top trending categories</div>
+				<div class="stat-num">No reports yet</div>
+				<div class="stat-trend">Be the first to post one</div>
+				<span class="stat-card-spark" aria-hidden="true">📈</span>
 			</div>
-			<div class="stat-trend">387 reports today</div>
-			<span class="stat-card-spark" aria-hidden="true">📈</span>
-		</a>
+		{% endif %}
+
+		{# Favourites — generic prompt for now (no Favourite model yet, no fake count) #}
 		<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
 			<div class="stat-label">Watching · favourites</div>
-			<div class="stat-num">Storm warning</div>
-			<div class="stat-trend">Bondi (saved) · 24 min ago</div>
+			<div class="stat-num">Saved places</div>
+			<div class="stat-trend">Star a report to follow it</div>
 			<span class="stat-card-star" aria-hidden="true">⭐</span>
 		</a>
 	</div>
