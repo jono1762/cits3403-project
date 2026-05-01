@@ -5,7 +5,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from .models import db, User, Category, Report, State, Suburb, ReportMedia
+from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -370,14 +370,16 @@ def edit_report_page(report_id):
         suburbs_by_state=suburbs_by_state,
     )
 
-# /listing — list all reports, most recent first, with optional state / suburb filters.
+# /listing — list all reports.
 # Public — guests can browse without an account.
+# Default sort = newest first; ?sort=top sorts by verification count (top reports).
 @app.route('/listing')
 def listing_page():
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     suburb_id = request.args.get('suburb_id', type=int)
     category_id = request.args.get('category_id', type=int)
+    sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
     query = Report.query
     # state filter has to go through Suburb because Report only stores suburb_id, not state_id
@@ -388,7 +390,15 @@ def listing_page():
     if category_id:
         query = query.filter(Report.category_id == category_id)
 
-    query = query.order_by(Report.created_at.desc())
+    if sort == 'top':
+        # outer-join + group + count so reports with zero verifications still appear
+        query = (
+            query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(db.func.count(Verification.id).desc(), Report.created_at.desc())
+        )
+    else:
+        query = query.order_by(Report.created_at.desc())
     pagination = query.paginate(page=page, per_page=20, error_out=False)
 
     # dropdown data — same shape the create form uses, so the cascade JS is identical
@@ -408,6 +418,7 @@ def listing_page():
         selected_state_id=state_id,
         selected_suburb_id=suburb_id,
         selected_category_id=category_id,
+        sort=sort,
     )
 
 # /reports — page where a logged-in user fills out and submits a report
