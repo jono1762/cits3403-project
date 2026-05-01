@@ -36,7 +36,10 @@
 				<input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its state...">
 				<ul id="suggestions"></ul>
 			</div>
+			{# "Search" zooms the map to the matched city's pin and opens its popup #}
 			<button type="button" id="searchButton">Search</button>
+			{# "View Reports" navigates to the filtered listing for that city #}
+			<button type="button" id="viewReportsButton">View Reports</button>
 		</div>
 	</div>
 
@@ -141,6 +144,9 @@
 				clearSuggestions();
 				focusCity(city);
 			});
+
+			// keep a reference on the city so onSearchSubmit can openPopup() on it
+			city.marker = marker;
 		});
 	}
 
@@ -222,32 +228,48 @@
 		}
 	}
 
-	function onSearchSubmit(event) {
-		event.stopPropagation();
-
+	// shared helper — both buttons need to find the city the user typed
+	function findCityFromQuery() {
 		const query = searchBar.value.trim().toLowerCase();
 		if (!query) {
 			alert("Please enter a location to search.");
-			return;
+			return null;
 		}
-
-		const selectedCity = cityData.find((item) => (
+		const match = cityData.find((item) => (
 			item.name.toLowerCase() === query ||
 			item.name.toLowerCase().includes(query) ||
 			item.state.toLowerCase().includes(query)
 		));
-
-		if (!selectedCity) {
+		if (!match) {
 			alert("No matching location found.");
-			return;
+			return null;
 		}
+		return match;
+	}
 
+	// "Search" — zoom the map to the matched city's pin and open its popup
+	function onSearchSubmit(event) {
+		event.stopPropagation();
+		const selectedCity = findCityFromQuery();
+		if (!selectedCity) return;
 		searchBar.value = selectedCity.name;
 		focusCity(selectedCity);
 		clearSuggestions();
+		// open the marker's popup so the user lands on the same UI as a pin click
+		if (selectedCity.marker) selectedCity.marker.openPopup();
+	}
 
-		// Stub for future navigation to a location-specific report page.
-		alert("Stub: open report page for " + selectedCity.name);
+	// "View Reports" — navigate to the listing filtered by this city's suburb
+	function onViewReportsSubmit(event) {
+		event.stopPropagation();
+		const selectedCity = findCityFromQuery();
+		if (!selectedCity) return;
+		const shortName = selectedCity.name.split(",")[0].trim();
+		const suburbId = SUBURB_IDS_BY_NAME[shortName];
+		const url = suburbId
+			? `{{ url_for('listing_page') }}?suburb_id=${suburbId}`
+			: `{{ url_for('listing_page') }}`;
+		window.location = url;
 	}
 
 	function onSearchBarKeyDown(event) {
@@ -265,10 +287,13 @@
 		map.setView(defaultView.center, defaultView.zoom);
 	}
 
+	const viewReportsButton = document.getElementById("viewReportsButton");
+
 	searchBar.addEventListener("click", onSearchBarClick);
 	searchBar.addEventListener("input", search);
 	searchBar.addEventListener("keydown", onSearchBarKeyDown);
 	searchButton.addEventListener("click", onSearchSubmit);
+	viewReportsButton.addEventListener("click", onViewReportsSubmit);
 	document.body.addEventListener("click", minimise);
 	suggestions.addEventListener("click", autocomplete);
 	map.on("moveend", clampMapCenterToAustralia);
