@@ -120,11 +120,10 @@
    Trending stat card — fire-colored number + on-hover fire halo
    ============================================================ */
 
-/* the city name in fire colors. Same compact size as the default stat-num,
-   with uppercase + tracking so the word reads as a "designed" label rather
-   than just plain text — keeps the box small but the typography looks intentional */
+/* the city name uses the brand indigo→cyan gradient (same as the page title)
+   with uppercase + tracking so it reads as a "designed" label */
 .stat-card-trending .stat-num {
-    background: linear-gradient(135deg, #dc2626 0%, #f97316 50%, #fbbf24 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #06b6d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -206,6 +205,98 @@ a.stat-card-trending:visited {
             -22px 0 44px rgba(251, 146, 60, 0.90),
              0 0 90px rgba(239, 68, 68, 0.70),
              0 0 130px rgba(251, 146, 60, 0.45);
+        transform: translateY(-3px);
+    }
+}
+
+
+/* ============================================================
+   Trending categories stat card — same shape as the cities card
+   but uses the brand indigo/purple halo instead of fire colors
+   ============================================================ */
+
+/* category name in indigo→purple→cyan gradient text */
+.stat-card-trending-cat .stat-num {
+    background: linear-gradient(135deg, #4f46e5 0%, #a855f7 50%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* the inline category emoji should NOT be tinted by the gradient text-fill */
+.stat-cat-emoji {
+    -webkit-text-fill-color: initial;
+}
+
+/* whole card is a clickable <a> — strip every default link decoration */
+a.stat-card-trending-cat,
+a.stat-card-trending-cat:hover,
+a.stat-card-trending-cat:focus,
+a.stat-card-trending-cat:active,
+a.stat-card-trending-cat:visited {
+    text-decoration: none !important;
+    color: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+/* on hover, indigo→purple halo wraps the card */
+.stat-card-trending-cat:hover {
+    border-color: transparent;
+    animation: cardOnIndigo 0.55s ease-in-out infinite alternate;
+}
+
+/* corner sparkle emoji — flickers on card hover, like the fire emoji */
+.stat-card-spark {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    font-size: 2.2rem;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.18s ease, filter 0.18s ease;
+    pointer-events: none;
+}
+
+.stat-card-trending-cat:hover .stat-card-spark {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.65))
+            drop-shadow(0 0 12px rgba(79, 70, 229, 0.45));
+    animation: sparkPulse 0.7s ease-in-out infinite;
+}
+
+@keyframes sparkPulse {
+    0%, 100% { transform: scale(1)    rotate(0deg); }
+    25%      { transform: scale(1.18) rotate(-8deg); }
+    50%      { transform: scale(1.10) rotate(6deg); }
+    75%      { transform: scale(1.22) rotate(-4deg); }
+}
+
+@keyframes cardOnIndigo {
+    0% {
+        box-shadow:
+            0 -10px 28px rgba(79, 70, 229, 0.70),     /* indigo, top */
+             10px 0 28px rgba(168, 85, 247, 0.65),    /* purple, right */
+             0 10px 30px rgba(99, 102, 241, 0.60),    /* indigo-violet, bottom */
+            -10px 0 28px rgba(168, 85, 247, 0.65),    /* purple, left */
+             0 0 60px rgba(79, 70, 229, 0.50),        /* indigo wide diffuse */
+             0 0 90px rgba(168, 85, 247, 0.30);       /* purple second halo */
+        transform: translateY(-1px);
+    }
+    100% {
+        box-shadow:
+            0 -22px 44px rgba(79, 70, 229, 0.95),
+             22px 0 44px rgba(168, 85, 247, 0.90),
+             0 22px 48px rgba(99, 102, 241, 0.85),
+            -22px 0 44px rgba(168, 85, 247, 0.90),
+             0 0 90px rgba(79, 70, 229, 0.70),
+             0 0 130px rgba(168, 85, 247, 0.45);
         transform: translateY(-3px);
     }
 }

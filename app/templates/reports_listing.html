@@ -53,16 +53,6 @@
         {% endif %}
     </form>
 
-    {# Emoji lookup keyed by category name — keeps the icons consistent
-       wherever categories show up #}
-    {% set CATEGORY_EMOJI = {
-        'Weather': '☁️',
-        'Noisiness': '🔊',
-        'Hazards': '⚠️',
-        'Traffic': '🚦',
-        'Emergency': '🚨'
-    } %}
-
     {# Category chips — click any one to filter. Each link carries the current
        state/suburb so users don't lose those filters when changing category. #}
     <div class="listing-categories">

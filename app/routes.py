@@ -43,6 +43,23 @@ def index():
         return render_template('landing.html')
     return render_template('index.html')
 
+# single source of truth for the category-name → emoji map.
+# Injected into every template via the context processor below so the same
+# emoji shows up consistently on the listing chips, profile cards, trending
+# stat card, etc. — change once, applies everywhere.
+CATEGORY_EMOJI = {
+    'Weather':   '☁️',
+    'Noisiness': '🔊',
+    'Hazards':   '⚠️',
+    'Traffic':   '🚦',
+    'Emergency': '🚨',
+}
+
+@app.context_processor
+def inject_category_emoji():
+    return {'CATEGORY_EMOJI': CATEGORY_EMOJI}
+
+
 # mapping each city to its state code (lowercase, used as the flag dictionary key)
 CITY_TO_STATE = {
     'Sydney': 'nsw', 'Newcastle': 'nsw', 'Wollongong': 'nsw', 'Central Coast': 'nsw',
@@ -72,9 +89,11 @@ STATE_FLAG_URL = {
 def map_page():
     # public map view — used by the "Start as guest" button on the landing page
     suburb_ids = {s.name: s.id for s in Suburb.query.all()}
+    category_ids = {c.name: c.id for c in Category.query.all()}
     return render_template(
         'index.html',
         suburb_ids_by_name=suburb_ids,
+        category_ids_by_name=category_ids,
         city_to_state=CITY_TO_STATE,
         state_flag_url=STATE_FLAG_URL,
     )

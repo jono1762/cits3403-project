@@ -6,15 +6,6 @@
 {% endblock %}
 
 {% block content %}
-{# Emoji lookup — same map used elsewhere so badges stay consistent #}
-{% set CATEGORY_EMOJI = {
-    'Weather': '☁️',
-    'Noisiness': '🔊',
-    'Hazards': '⚠️',
-    'Traffic': '🚦',
-    'Emergency': '🚨'
-} %}
-
 <section class="report-view-page">
     <a href="{{ url_for('listing_page') }}" class="report-view-back">← Back to all reports</a>
 
