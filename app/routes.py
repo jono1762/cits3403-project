@@ -46,7 +46,10 @@ def index():
 @app.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the landing page
-    return render_template('index.html')
+    # pass a {suburb_name -> suburb_id} lookup so map markers can build
+    # /listing?suburb_id=... links when clicked
+    suburb_ids = {s.name: s.id for s in Suburb.query.all()}
+    return render_template('index.html', suburb_ids_by_name=suburb_ids)
 
 # /landing — always renders the landing/intro page regardless of auth state.
 # Lets logged-in users revisit the public-facing home if they want.

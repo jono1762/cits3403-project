@@ -59,7 +59,13 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+{# server-rendered { suburb_name: suburb_id } lookup, read by the map JS below
+   so each marker can build a /listing?suburb_id=... link in its popup #}
+<script type="application/json" id="suburb-ids-data">{{ suburb_ids_by_name|tojson }}</script>
+
 <script>
+	const SUBURB_IDS_BY_NAME = JSON.parse(document.getElementById("suburb-ids-data").textContent);
 	const searchBar = document.getElementById("searchBar");
 	const searchButton = document.getElementById("searchButton");
 	const suggestions = document.getElementById("suggestions");
@@ -115,9 +121,20 @@
 		cityData.forEach((city) => {
 			const marker = L.marker([city.lat, city.lng], { icon: cityPinIcon }).addTo(cityMarkerLayer);
 
-			marker.bindPopup(
-				`<strong>${city.name}</strong><br><span class="popup-state">${city.state}</span>`
-			);
+			// city.name is "Sydney, New South Wales" — short name is just "Sydney"
+			const shortName = city.name.split(",")[0].trim();
+			const suburbId = SUBURB_IDS_BY_NAME[shortName];
+			// build the listing URL with the suburb filter if we know the id,
+			// otherwise fall back to the unfiltered listing
+			const listingHref = suburbId
+				? `{{ url_for('listing_page') }}?suburb_id=${suburbId}`
+				: `{{ url_for('listing_page') }}`;
+
+			marker.bindPopup(`
+				<strong>${city.name}</strong>
+				<span class="popup-state">${city.state}</span>
+				<a href="${listingHref}" class="popup-action">View reports for ${shortName} →</a>
+			`);
 
 			marker.on("click", function () {
 				searchBar.value = city.name;
