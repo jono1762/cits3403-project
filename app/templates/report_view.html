@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css') }}">
+{% endblock %}
+
+{% block content %}
+{# Emoji lookup — same map used elsewhere so badges stay consistent #}
+{% set CATEGORY_EMOJI = {
+    'Weather': '☁️',
+    'Noisiness': '🔊',
+    'Hazards': '⚠️',
+    'Traffic': '🚦',
+    'Emergency': '🚨'
+} %}
+
+<section class="report-view-page">
+    <a href="{{ url_for('listing_page') }}" class="report-view-back">← Back to all reports</a>
+
+    <article class="report-view-card" style="--cat: {{ report.category.marker_color }};">
+        <header class="report-view-header">
+            <span class="report-view-badge">
+                {{ CATEGORY_EMOJI.get(report.category.name, '') }} {{ report.category.name }}
+            </span>
+            <span class="report-view-time">{{ report.created_at.strftime('%d %b %Y · %H:%M') }}</span>
+        </header>
+
+        <h1 class="report-view-title">{{ report.suburb.name }}, {{ report.suburb.state.name }}</h1>
+
+        {% if report.address %}
+            <p class="report-view-address">{{ report.address }}</p>
+        {% endif %}
+
+        <p class="report-view-author">
+            Posted by
+            <a href="{{ url_for('user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
+        </p>
+
+        {% if report.description %}
+            <p class="report-view-desc">{{ report.description }}</p>
+        {% endif %}
+
+        {# media carousel — same pattern as profile/listing #}
+        {% if report.media %}
+            <div id="carousel-{{ report.id }}" class="carousel slide mt-3" data-bs-ride="false">
+                {% if report.media | length > 1 %}
+                    <div class="carousel-indicators">
+                        {% for m in report.media %}
+                            <button type="button"
+                                    data-bs-target="#carousel-{{ report.id }}"
+                                    data-bs-slide-to="{{ loop.index0 }}"
+                                    class="{{ 'active' if loop.first else '' }}"
+                                    aria-label="Slide {{ loop.index }}"></button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="carousel-inner rounded border" style="background-color: #000;">
+                    {% for m in report.media %}
+                        <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                            {% if m.media_type == 'image' %}
+                                <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                     class="d-block w-100"
+                                     style="height: 480px; object-fit: contain;"
+                                     alt="{{ m.original_name }}">
+                            {% else %}
+                                <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                       controls
+                                       class="d-block w-100"
+                                       style="height: 480px; object-fit: contain; background: #000;"></video>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if report.media | length > 1 %}
+                    <button class="carousel-control-prev" type="button"
+                            data-bs-target="#carousel-{{ report.id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button"
+                            data-bs-target="#carousel-{{ report.id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {# author can edit straight from the view #}
+        {% if current_user.is_authenticated and report.user_id == current_user.id %}
+            <div class="report-view-actions">
+                <a href="{{ url_for('edit_report_page', report_id=report.id) }}" class="report-view-edit-btn">
+                    Edit this report
+                </a>
+            </div>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

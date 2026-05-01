@@ -4,8 +4,21 @@ from flask import current_app as app
 from flask import render_template, redirect, url_for, flash, request, jsonify, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
+from itsdangerous import URLSafeSerializer, BadSignature
 from .models import db, User, Category, Report, State, Suburb, ReportMedia
 from .forms import LoginForm, EmailLoginForm, SignupForm
+
+# Encode/decode helpers for the public report URL.
+# Hides the integer DB id behind a signed token so visitors can't iterate
+# /reports/1, /reports/2, ... to enumerate the database.
+def _report_serializer():
+    return URLSafeSerializer(app.config['SECRET_KEY'], salt='report-id')
+
+@app.template_filter('report_token')
+def _encode_report_id(report_id):
+    """Jinja filter: turn a Report.id into the opaque URL token."""
+    return _report_serializer().dumps(report_id)
+
 
 # whitelist of file types the upload endpoint accepts
 ALLOWED_IMAGE_EXTS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
@@ -168,6 +181,19 @@ def api_search_users():
         }
         for u in users
     ])
+
+# /reports/<token> — public read-only view of a single report.
+# `<token>` is the signed URLSafeSerializer-encoded id, not the raw integer,
+# so guests can't iterate /reports/1, /reports/2, ... to scrape the database.
+@app.route('/reports/<string:token>')
+def view_report(token):
+    try:
+        report_id = _report_serializer().loads(token)
+    except BadSignature:
+        abort(404)
+    report = Report.query.get_or_404(report_id)
+    return render_template('report_view.html', report=report)
+
 
 # /reports/<id>/edit — GET renders the edit form, POST saves changes
 # only the original author can edit; everyone else gets 403
