@@ -43,13 +43,41 @@ def index():
         return render_template('landing.html')
     return render_template('index.html')
 
+# mapping each city to its state code (lowercase, used as the flag dictionary key)
+CITY_TO_STATE = {
+    'Sydney': 'nsw', 'Newcastle': 'nsw', 'Wollongong': 'nsw', 'Central Coast': 'nsw',
+    'Melbourne': 'vic', 'Geelong': 'vic', 'Ballarat': 'vic',
+    'Brisbane': 'qld', 'Gold Coast': 'qld', 'Sunshine Coast': 'qld', 'Cairns': 'qld', 'Townsville': 'qld',
+    'Perth': 'wa', 'Fremantle': 'wa', 'Mandurah': 'wa', 'Bunbury': 'wa',
+    'Adelaide': 'sa', 'Mount Gambier': 'sa',
+    'Hobart': 'tas', 'Launceston': 'tas',
+    'Canberra': 'act',
+    'Darwin': 'nt', 'Alice Springs': 'nt',
+}
+
+# state code -> local flag image path served from /static/images/flags/
+STATE_FLAG_URL = {
+    'nsw': '/static/images/flags/nsw.png',
+    'vic': '/static/images/flags/vic.png',
+    'qld': '/static/images/flags/qld.png',
+    'wa':  '/static/images/flags/wa.png',
+    'sa':  '/static/images/flags/sa.png',
+    'tas': '/static/images/flags/tas.png',
+    'act': '/static/images/flags/act.png',
+    'nt':  '/static/images/flags/nt.png',
+}
+
+
 @app.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the landing page
-    # pass a {suburb_name -> suburb_id} lookup so map markers can build
-    # /listing?suburb_id=... links when clicked
     suburb_ids = {s.name: s.id for s in Suburb.query.all()}
-    return render_template('index.html', suburb_ids_by_name=suburb_ids)
+    return render_template(
+        'index.html',
+        suburb_ids_by_name=suburb_ids,
+        city_to_state=CITY_TO_STATE,
+        state_flag_url=STATE_FLAG_URL,
+    )
 
 # /landing — always renders the landing/intro page regardless of auth state.
 # Lets logged-in users revisit the public-facing home if they want.

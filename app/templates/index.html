@@ -13,11 +13,25 @@
 	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
 	   Card 3 links to the user's favourites page (stub for now). #}
 	<div class="map-stats">
-		<div class="stat-card">
+		{# whole card is the click target — fire emoji is decorative #}
+		{% set trending_city = 'Sydney' %}
+		{% set trending_state = city_to_state.get(trending_city) %}
+		{% set trending_flag = state_flag_url.get(trending_state) %}
+		<a class="stat-card stat-card-trending"
+		   href="{{ url_for('listing_page', suburb_id=suburb_ids_by_name.get(trending_city)) }}"
+		   aria-label="View reports for {{ trending_city }}">
 			<div class="stat-label">Top trending cities</div>
-			<div class="stat-num">Sydney</div>
+			<div class="stat-num">
+				{% if trending_flag %}
+					<img class="stat-flag" src="{{ trending_flag }}"
+					     alt="{{ trending_state|upper }} flag"
+					     onerror="this.style.display='none'">
+				{% endif %}
+				{{ trending_city }}
+			</div>
 			<div class="stat-trend">142 reports · last hour</div>
-		</div>
+			<span class="stat-card-fire" aria-hidden="true">🔥</span>
+		</a>
 		<div class="stat-card">
 			<div class="stat-label">Top trending categories</div>
 			<div class="stat-num">Hazards</div>
