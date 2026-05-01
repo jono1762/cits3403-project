@@ -226,6 +226,28 @@
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
+/* the wrapper that the stretched-link sits inside — only the text part of
+   the card is clickable, the carousel below it stays interactive */
+.listing-item-text {
+    position: relative;
+    cursor: pointer;
+}
+
+/* invisible <a> covering the text area — clicking anywhere here navigates
+   to the single-report view */
+.listing-item-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+/* sub-clickables sit above the stretched link so they keep their own behavior */
+.listing-item-author a,
+.listing-item-edit {
+    position: relative;
+    z-index: 2;
+}
+
 .listing-item-top {
     display: flex;
     justify-content: space-between;

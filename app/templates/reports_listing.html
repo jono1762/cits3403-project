@@ -103,22 +103,29 @@
         <ul class="listing-feed">
             {% for r in pagination.items %}
                 <li class="listing-item" style="--cat: {{ r.category.marker_color }};">
-                    <div class="listing-item-top">
-                        <div class="listing-item-meta">
-                            <span class="listing-item-badge">{{ r.category.name }}</span>
-                            <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
-                            <span class="listing-item-author">— by
-                                <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
-                                on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
-                            </span>
+                    {# the text area is one big click target via the stretched link below;
+                       Edit button + author profile link sit above it via z-index. #}
+                    <div class="listing-item-text">
+                        <a class="listing-item-link"
+                           href="{{ url_for('view_report', token=r.id|report_token) }}"
+                           aria-label="View report"></a>
+
+                        <div class="listing-item-top">
+                            <div class="listing-item-meta">
+                                <span class="listing-item-badge">{{ r.category.name }}</span>
+                                <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
+                                <span class="listing-item-author">— by
+                                    <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
+                                    on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
+                                </span>
+                            </div>
+                            {% if r.user_id == current_user.id %}
+                                <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="listing-item-edit">Edit</a>
+                            {% endif %}
                         </div>
-                        {# author can edit their own report straight from the listing #}
-                        {% if r.user_id == current_user.id %}
-                            <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="listing-item-edit">Edit</a>
-                        {% endif %}
+                        {% if r.address %}<p class="listing-item-address">{{ r.address }}</p>{% endif %}
+                        {% if r.description %}<p class="listing-item-desc">{{ r.description }}</p>{% endif %}
                     </div>
-                    {% if r.address %}<p class="listing-item-address">{{ r.address }}</p>{% endif %}
-                    {% if r.description %}<p class="listing-item-desc">{{ r.description }}</p>{% endif %}
 
                     {# carousel for image/video attachments — same pattern as profile.html #}
                     {% if r.media %}
