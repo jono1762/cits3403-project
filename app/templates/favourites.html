@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/favourites.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="fav-page">
+    <header class="fav-header">
+        <h1 class="fav-title">⭐ Your favourites</h1>
+        <p class="fav-subtitle">Suburbs you watch and reports you've starred.</p>
+    </header>
+
+    {# ============== Saved suburbs ============== #}
+    <h2 class="fav-section-title">Saved suburbs</h2>
+    {% if fake_suburbs %}
+        <ul class="fav-suburb-list">
+            {% for s in fake_suburbs %}
+                <li class="fav-suburb-card">
+                    <div class="fav-suburb-info">
+                        <span class="fav-star" aria-hidden="true">⭐</span>
+                        <div>
+                            <div class="fav-suburb-name">{{ s.name }}</div>
+                            <div class="fav-suburb-state">{{ s.state_code }}</div>
+                        </div>
+                    </div>
+                    <div class="fav-suburb-meta">{{ s.reports_today }} reports today</div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="fav-empty">
+            No saved suburbs yet. Star a suburb on the map to track it here.
+        </div>
+    {% endif %}
+
+    {# ============== Saved reports ============== #}
+    <h2 class="fav-section-title">Saved reports</h2>
+    {% if fake_reports %}
+        <ul class="fav-report-list">
+            {% for r in fake_reports %}
+                <li class="fav-report-card" style="--cat: {{ r.color }};">
+                    <div class="fav-report-meta">
+                        <span class="fav-report-badge">
+                            {{ CATEGORY_EMOJI.get(r.category, '') }} {{ r.category }}
+                        </span>
+                        <span class="fav-report-time">{{ r.when }}</span>
+                    </div>
+                    <h3 class="fav-report-title">{{ r.title }}</h3>
+                    <p class="fav-report-where">{{ r.where }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="fav-empty">
+            No saved reports yet. Star a report's view page to keep it here.
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

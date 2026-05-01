@@ -74,7 +74,7 @@
                 <nav class="app-sidebar-nav mobile-sidebar-nav" aria-label="Mobile Sidebar Navigation">
                     <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page." data-bs-dismiss="offcanvas">Favourites</a>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}" data-bs-dismiss="offcanvas">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
@@ -134,7 +134,7 @@
                 <nav class="app-sidebar-nav">
                     <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page.">Favourites</a>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>

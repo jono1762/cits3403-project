@@ -120,8 +120,8 @@
    Trending stat card — fire-colored number + on-hover fire halo
    ============================================================ */
 
-/* the city name uses the brand indigo→cyan gradient (same as the page title)
-   with uppercase + tracking so it reads as a "designed" label */
+/* the city name uses the brand indigo→cyan gradient at rest;
+   switches to fire colors on hover to match the flame halo */
 .stat-card-trending .stat-num {
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #06b6d4 100%);
     -webkit-background-clip: text;
@@ -133,6 +133,13 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-family: 'Space Grotesk', sans-serif;
+}
+
+.stat-card-trending:hover .stat-num {
+    background: linear-gradient(135deg, #dc2626 0%, #f97316 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 /* state flag inside the trending card — waves continuously like wind is blowing.
@@ -215,9 +222,10 @@ a.stat-card-trending:visited {
    but uses the brand indigo/purple halo instead of fire colors
    ============================================================ */
 
-/* category name in indigo→purple→cyan gradient text */
+/* category name uses the brand indigo→cyan gradient at rest, like the other
+   cards; switches to brighter cyan→sky on hover to match the cyan halo */
 .stat-card-trending-cat .stat-num {
-    background: linear-gradient(135deg, #4f46e5 0%, #a855f7 50%, #06b6d4 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #06b6d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -227,6 +235,13 @@ a.stat-card-trending:visited {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-family: 'Space Grotesk', sans-serif;
+}
+
+.stat-card-trending-cat:hover .stat-num {
+    background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 50%, #67e8f9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 /* the inline category emoji should NOT be tinted by the gradient text-fill */
@@ -246,10 +261,10 @@ a.stat-card-trending-cat:visited {
     cursor: pointer;
 }
 
-/* on hover, indigo→purple halo wraps the card */
+/* on hover, bright cyan/sky halo wraps the card — light + obvious */
 .stat-card-trending-cat:hover {
     border-color: transparent;
-    animation: cardOnIndigo 0.55s ease-in-out infinite alternate;
+    animation: cardOnCyan 0.55s ease-in-out infinite alternate;
 }
 
 /* corner sparkle emoji — flickers on card hover, like the fire emoji */
@@ -266,8 +281,8 @@ a.stat-card-trending-cat:visited {
 
 .stat-card-trending-cat:hover .stat-card-spark {
     opacity: 1;
-    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.65))
-            drop-shadow(0 0 12px rgba(79, 70, 229, 0.45));
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.65))
+            drop-shadow(0 0 12px rgba(103, 232, 249, 0.45));
     animation: sparkPulse 0.7s ease-in-out infinite;
 }
 
@@ -278,25 +293,25 @@ a.stat-card-trending-cat:visited {
     75%      { transform: scale(1.22) rotate(-4deg); }
 }
 
-@keyframes cardOnIndigo {
+@keyframes cardOnCyan {
     0% {
         box-shadow:
-            0 -10px 28px rgba(79, 70, 229, 0.70),     /* indigo, top */
-             10px 0 28px rgba(168, 85, 247, 0.65),    /* purple, right */
-             0 10px 30px rgba(99, 102, 241, 0.60),    /* indigo-violet, bottom */
-            -10px 0 28px rgba(168, 85, 247, 0.65),    /* purple, left */
-             0 0 60px rgba(79, 70, 229, 0.50),        /* indigo wide diffuse */
-             0 0 90px rgba(168, 85, 247, 0.30);       /* purple second halo */
+            0 -10px 28px rgba(6, 182, 212, 0.70),     /* cyan, top */
+             10px 0 28px rgba(34, 211, 238, 0.65),    /* bright cyan, right */
+             0 10px 30px rgba(103, 232, 249, 0.60),   /* sky-cyan, bottom */
+            -10px 0 28px rgba(34, 211, 238, 0.65),    /* bright cyan, left */
+             0 0 60px rgba(6, 182, 212, 0.50),        /* cyan wide diffuse */
+             0 0 90px rgba(103, 232, 249, 0.30);      /* sky second halo */
         transform: translateY(-1px);
     }
     100% {
         box-shadow:
-            0 -22px 44px rgba(79, 70, 229, 0.95),
-             22px 0 44px rgba(168, 85, 247, 0.90),
-             0 22px 48px rgba(99, 102, 241, 0.85),
-            -22px 0 44px rgba(168, 85, 247, 0.90),
-             0 0 90px rgba(79, 70, 229, 0.70),
-             0 0 130px rgba(168, 85, 247, 0.45);
+            0 -22px 44px rgba(6, 182, 212, 0.95),
+             22px 0 44px rgba(34, 211, 238, 0.90),
+             0 22px 48px rgba(103, 232, 249, 0.85),
+            -22px 0 44px rgba(34, 211, 238, 0.90),
+             0 0 90px rgba(6, 182, 212, 0.70),
+             0 0 130px rgba(103, 232, 249, 0.45);
         transform: translateY(-3px);
     }
 }
@@ -336,35 +351,80 @@ a.stat-card-trending-cat:visited {
     color: #dc2626;          /* red if a card later needs a downward trend */
 }
 
-/* third card variant — links to favourites, uses an "alert" red→orange palette
-   so it visually flags "this is the one you should worry about" */
-.stat-card-alert {
-    text-decoration: none;
+/* favourites card — uses default brand colors at rest. Star in the top-right
+   twinkles + the box gets a yellow halo on hover (same shape as the fire
+   halo but warm yellow). */
+a.stat-card-fav,
+a.stat-card-fav:hover,
+a.stat-card-fav:focus,
+a.stat-card-fav:active,
+a.stat-card-fav:visited {
+    text-decoration: none !important;
     color: inherit;
-    display: block;
-    border-left: 4px solid #ef4444;     /* red stripe on the left edge */
+    outline: none;
+    cursor: pointer;
 }
 
-.stat-card-alert:hover {
-    border-color: #ef4444;
-    box-shadow: 0 8px 18px rgba(239, 68, 68, 0.18);
+/* corner star — same style/position as the fire emoji on the cities card */
+.stat-card-star {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    font-size: 2.2rem;
+    line-height: 1;
+    opacity: 0.75;
+    transition: opacity 0.18s ease, filter 0.18s ease;
+    pointer-events: none;
 }
 
-.stat-label-alert {
-    color: #dc2626 !important;
+.stat-card-fav:hover {
+    border-color: transparent;
+    animation: cardOnYellow 0.55s ease-in-out infinite alternate;
 }
 
-/* big number on the alert card uses a red→orange gradient */
-.stat-card-alert .stat-num {
-    background: linear-gradient(135deg, #dc2626 0%, #f97316 100%);
+/* on hover, the title text shifts to gold/yellow to match the halo */
+.stat-card-fav:hover .stat-num {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #facc15 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.stat-trend-alert {
-    color: #b91c1c;
-    font-weight: 600;
+.stat-card-fav:hover .stat-card-star {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.65))
+            drop-shadow(0 0 12px rgba(251, 191, 36, 0.45));
+    animation: starTwinkle 0.7s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+    0%, 100% { transform: scale(1)    rotate(0deg); }
+    25%      { transform: scale(1.18) rotate(-10deg); }
+    50%      { transform: scale(1.10) rotate(8deg); }
+    75%      { transform: scale(1.22) rotate(-5deg); }
+}
+
+@keyframes cardOnYellow {
+    0% {
+        box-shadow:
+            0 -10px 28px rgba(251, 191, 36, 0.70),     /* gold yellow, top */
+             10px 0 28px rgba(250, 204, 21, 0.65),    /* bright yellow, right */
+             0 10px 30px rgba(234, 179, 8, 0.60),     /* deep yellow, bottom */
+            -10px 0 28px rgba(250, 204, 21, 0.65),    /* bright yellow, left */
+             0 0 60px rgba(251, 191, 36, 0.50),       /* wide diffuse */
+             0 0 90px rgba(250, 204, 21, 0.30);       /* second halo */
+        transform: translateY(-1px);
+    }
+    100% {
+        box-shadow:
+            0 -22px 44px rgba(251, 191, 36, 0.95),
+             22px 0 44px rgba(250, 204, 21, 0.90),
+             0 22px 48px rgba(234, 179, 8, 0.85),
+            -22px 0 44px rgba(250, 204, 21, 0.90),
+             0 0 90px rgba(251, 191, 36, 0.70),
+             0 0 130px rgba(250, 204, 21, 0.45);
+        transform: translateY(-3px);
+    }
 }
 
 

@@ -85,6 +85,29 @@ STATE_FLAG_URL = {
 }
 
 
+# /favourites — saved suburbs + saved reports for the logged-in user.
+# Backend doesn't actually persist favourites yet — page renders placeholder
+# items so the UI exists. Wire to a real Favourite model later.
+@app.route('/favourites')
+@login_required
+def favourites_page():
+    fake_suburbs = [
+        {'name': 'Bondi', 'state_code': 'NSW', 'reports_today': 8},
+        {'name': 'Stirling', 'state_code': 'WA', 'reports_today': 3},
+        {'name': 'Yarra Trail', 'state_code': 'VIC', 'reports_today': 5},
+    ]
+    fake_reports = [
+        {'category': 'Weather',  'color': '#3498db', 'title': 'Storm warning issued',  'where': 'Bondi · NSW',     'when': '24 min ago'},
+        {'category': 'Hazards',  'color': '#e67e22', 'title': 'Tree down at Yarra',    'where': 'Melbourne · VIC', 'when': '5 min ago'},
+        {'category': 'Traffic',  'color': '#f1c40f', 'title': 'Mitchell Fwy backed up','where': 'Perth · WA',      'when': '8 min ago'},
+    ]
+    return render_template(
+        'favourites.html',
+        fake_suburbs=fake_suburbs,
+        fake_reports=fake_reports,
+    )
+
+
 @app.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the landing page

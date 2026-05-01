@@ -46,10 +46,11 @@
 			<div class="stat-trend">387 reports today</div>
 			<span class="stat-card-spark" aria-hidden="true">📈</span>
 		</a>
-		<a href="#" class="stat-card stat-card-alert app-stub-link" data-stub-message="Stub: open Favourites page.">
-			<div class="stat-label stat-label-alert">⚠ Watching · favourites</div>
+		<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
+			<div class="stat-label">Watching · favourites</div>
 			<div class="stat-num">Storm warning</div>
-			<div class="stat-trend stat-trend-alert">Bondi (saved) · 24 min ago</div>
+			<div class="stat-trend">Bondi (saved) · 24 min ago</div>
+			<span class="stat-card-star" aria-hidden="true">⭐</span>
 		</a>
 	</div>
 
