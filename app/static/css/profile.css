@@ -217,6 +217,27 @@
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
+/* the wrapper that the stretched-link sits inside — only the text part of
+   the card is clickable, the carousel below it stays interactive */
+.profile-item-text {
+    position: relative;
+    cursor: pointer;
+}
+
+/* invisible <a> covering the text area — clicking anywhere here navigates
+   to the single-report view */
+.profile-item-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+/* Edit button sits above the stretched link so it keeps its own behavior */
+.profile-item-edit {
+    position: relative;
+    z-index: 2;
+}
+
 .profile-item-top {
     display: flex;
     justify-content: space-between;

@@ -53,21 +53,29 @@
         <ul class="profile-feed">
             {% for r in recent_reports %}
                 <li class="profile-item" style="--cat: {{ r.category.marker_color }};">
-                    <div class="profile-item-top">
-                        <div class="profile-item-meta">
-                            <span class="profile-item-badge">
-                                {{ CATEGORY_EMOJI.get(r.category.name, '') }} {{ r.category.name }}
-                            </span>
-                            <span class="profile-item-loc">{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
-                            <span class="profile-item-time">· {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                    {# the text area is one big click target via the stretched link below;
+                       Edit button sits above it via z-index. #}
+                    <div class="profile-item-text">
+                        <a class="profile-item-link"
+                           href="{{ url_for('view_report', token=r.id|report_token) }}"
+                           aria-label="View report"></a>
+
+                        <div class="profile-item-top">
+                            <div class="profile-item-meta">
+                                <span class="profile-item-badge">
+                                    {{ CATEGORY_EMOJI.get(r.category.name, '') }} {{ r.category.name }}
+                                </span>
+                                <span class="profile-item-loc">{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
+                                <span class="profile-item-time">· {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                            </div>
+                            {% if is_own_profile %}
+                                <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="profile-item-edit">Edit</a>
+                            {% endif %}
                         </div>
-                        {% if is_own_profile %}
-                            <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="profile-item-edit">Edit</a>
+                        {% if r.description %}
+                            <p class="profile-item-desc">{{ r.description }}</p>
                         {% endif %}
                     </div>
-                    {% if r.description %}
-                        <p class="profile-item-desc">{{ r.description }}</p>
-                    {% endif %}
 
                     {# carousel for image/video attachments #}
                     {% if r.media %}
