@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/info.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="info-page">
+    <header class="info-header">
+        <h1 class="info-title">About Australia Explorer</h1>
+        <p class="info-subtitle">A community-driven map of real-time situation reports.</p>
+    </header>
+
+    <article class="info-block">
+        <h2>What we do</h2>
+        <p>
+            Australia Explorer surfaces real-time situation reports — weather,
+            hazards, traffic, noisiness, and emergencies — across every state and
+            territory. Locals post what they see, the community verifies it, and
+            everyone benefits from a clearer picture of what's happening right now.
+        </p>
+    </article>
+
+    <article class="info-block">
+        <h2>The team</h2>
+        <ul class="info-team">
+            <li><strong>Jonathan Abraham</strong> · Routing &amp; database integration</li>
+            <li><strong>Zavier Heobert</strong> · UI / front-end design</li>
+            <li><strong>Tyler Yeoh</strong> · Map &amp; reports features</li>
+            <li><strong>Zi Hao Bai</strong> · Documentation &amp; testing</li>
+        </ul>
+    </article>
+
+    <article class="info-block">
+        <h2>Tech stack</h2>
+        <p>
+            Python · Flask · Flask-Login · Flask-WTF · SQLAlchemy · SQLite ·
+            Bootstrap 5 · Leaflet · Inter / Italiana / Space Grotesk fonts.
+        </p>
+    </article>
+
+    <article class="info-block">
+        <h2>Course context</h2>
+        <p>
+            Built for <strong>CITS3403 Agile Web Development</strong> at the
+            University of Western Australia. Educational project; not affiliated
+            with any government or commercial entity.
+        </p>
+    </article>
+</section>
+{% endblock %}

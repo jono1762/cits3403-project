@@ -91,8 +91,8 @@
                     <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page." data-bs-dismiss="offcanvas">Help</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page." data-bs-dismiss="offcanvas">About</a>
+                    <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}" data-bs-dismiss="offcanvas">Help</a>
+                    <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}" data-bs-dismiss="offcanvas">About</a>
                 </nav>
                 {% if is_guest %}
                     <div class="app-sidebar-guest-actions">
@@ -151,8 +151,8 @@
                     <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page.">Help</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page.">About</a>
+                    <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>
+                    <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}">About</a>
                 </nav>
                 {% if is_guest %}
                     <div class="app-sidebar-guest-actions">

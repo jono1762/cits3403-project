@@ -108,6 +108,17 @@ def favourites_page():
     )
 
 
+# /help — static FAQ page, public
+@app.route('/help')
+def help_page():
+    return render_template('help.html')
+
+# /about — static team / project info page, public
+@app.route('/about')
+def about_page():
+    return render_template('about.html')
+
+
 @app.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the landing page
