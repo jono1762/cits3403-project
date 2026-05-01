@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/info.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="info-page">
+    <header class="info-header">
+        <h1 class="info-title">Help &amp; FAQ</h1>
+        <p class="info-subtitle">Common questions about Australia Explorer.</p>
+    </header>
+
+    <div class="info-faq">
+        <details class="info-q" open>
+            <summary>What is Australia Explorer?</summary>
+            <p>A community-driven map of real-time situation reports across Australia — weather, hazards, traffic, noise, and emergencies, posted by your neighbours and verified by your community.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>How do I post a report?</summary>
+            <p>Click <strong>Create Report</strong> in the sidebar, fill in the state, suburb, category, and a short description. You can attach up to 5 images or videos.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>What are the categories?</summary>
+            <p>Five categories: <strong>☁️ Weather</strong>, <strong>🔊 Noisiness</strong>, <strong>⚠️ Hazards</strong>, <strong>🚦 Traffic</strong>, and <strong>🚨 Emergency</strong>. Pick whichever best matches what you're reporting.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>What are favourites?</summary>
+            <p>Suburbs and reports you've starred ⭐ to keep an eye on. View them anytime from the <strong>Favourites</strong> link in the sidebar.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>How do trust scores work?</summary>
+            <p>Each verified report you post adds to your trust score. Higher trust scores indicate users whose reports are most often confirmed by others.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Can I browse without an account?</summary>
+            <p>Yes — click <strong>Continue as guest</strong> on the landing page. Guests can view the map and the reports listing, but need to sign up to post or save favourites.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>I found a bug. Where do I report it?</summary>
+            <p>Open an issue on our GitHub repo, or message a project member directly. We'll triage and fix as quickly as we can.</p>
+        </details>
+    </div>
+</section>
+{% endblock %}

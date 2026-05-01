@@ -4,8 +4,21 @@ from flask import current_app as app
 from flask import render_template, redirect, url_for, flash, request, jsonify, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
-from .models import db, User, Category, Report, State, Suburb, ReportMedia
+from itsdangerous import URLSafeSerializer, BadSignature
+from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification
 from .forms import LoginForm, EmailLoginForm, SignupForm
+
+# Encode/decode helpers for the public report URL.
+# Hides the integer DB id behind a signed token so visitors can't iterate
+# /reports/1, /reports/2, ... to enumerate the database.
+def _report_serializer():
+    return URLSafeSerializer(app.config['SECRET_KEY'], salt='report-id')
+
+@app.template_filter('report_token')
+def _encode_report_id(report_id):
+    """Jinja filter: turn a Report.id into the opaque URL token."""
+    return _report_serializer().dumps(report_id)
+
 
 # whitelist of file types the upload endpoint accepts
 ALLOWED_IMAGE_EXTS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
@@ -30,10 +43,129 @@ def index():
         return render_template('landing.html')
     return render_template('index.html')
 
+# single source of truth for the category-name → emoji map.
+# Injected into every template via the context processor below so the same
+# emoji shows up consistently on the listing chips, profile cards, trending
+# stat card, etc. — change once, applies everywhere.
+CATEGORY_EMOJI = {
+    'Weather':   '☁️',
+    'Noisiness': '🔊',
+    'Hazards':   '⚠️',
+    'Traffic':   '🚦',
+    'Emergency': '🚨',
+}
+
+@app.context_processor
+def inject_category_emoji():
+    return {'CATEGORY_EMOJI': CATEGORY_EMOJI}
+
+
+# mapping each city to its state code (lowercase, used as the flag dictionary key)
+CITY_TO_STATE = {
+    'Sydney': 'nsw', 'Newcastle': 'nsw', 'Wollongong': 'nsw', 'Central Coast': 'nsw',
+    'Melbourne': 'vic', 'Geelong': 'vic', 'Ballarat': 'vic',
+    'Brisbane': 'qld', 'Gold Coast': 'qld', 'Sunshine Coast': 'qld', 'Cairns': 'qld', 'Townsville': 'qld',
+    'Perth': 'wa', 'Fremantle': 'wa', 'Mandurah': 'wa', 'Bunbury': 'wa',
+    'Adelaide': 'sa', 'Mount Gambier': 'sa',
+    'Hobart': 'tas', 'Launceston': 'tas',
+    'Canberra': 'act',
+    'Darwin': 'nt', 'Alice Springs': 'nt',
+}
+
+# state code -> local flag image path served from /static/images/flags/
+STATE_FLAG_URL = {
+    'nsw': '/static/images/flags/nsw.png',
+    'vic': '/static/images/flags/vic.png',
+    'qld': '/static/images/flags/qld.png',
+    'wa':  '/static/images/flags/wa.png',
+    'sa':  '/static/images/flags/sa.png',
+    'tas': '/static/images/flags/tas.png',
+    'act': '/static/images/flags/act.png',
+    'nt':  '/static/images/flags/nt.png',
+}
+
+
+# /favourites — saved suburbs + saved reports for the logged-in user.
+# Backend doesn't actually persist favourites yet — page renders placeholder
+# items so the UI exists. Wire to a real Favourite model later.
+@app.route('/favourites')
+@login_required
+def favourites_page():
+    fake_suburbs = [
+        {'name': 'Bondi', 'state_code': 'NSW', 'reports_today': 8},
+        {'name': 'Stirling', 'state_code': 'WA', 'reports_today': 3},
+        {'name': 'Yarra Trail', 'state_code': 'VIC', 'reports_today': 5},
+    ]
+    fake_reports = [
+        {'category': 'Weather',  'color': '#3498db', 'title': 'Storm warning issued',  'where': 'Bondi · NSW',     'when': '24 min ago'},
+        {'category': 'Hazards',  'color': '#e67e22', 'title': 'Tree down at Yarra',    'where': 'Melbourne · VIC', 'when': '5 min ago'},
+        {'category': 'Traffic',  'color': '#f1c40f', 'title': 'Mitchell Fwy backed up','where': 'Perth · WA',      'when': '8 min ago'},
+    ]
+    return render_template(
+        'favourites.html',
+        fake_suburbs=fake_suburbs,
+        fake_reports=fake_reports,
+    )
+
+
+# /settings — UI-only stub. Renders the form, accepts POST, flashes a
+# success message, but doesn't persist anything yet. Wire to real
+# username/email/password update logic in a follow-up branch.
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings_page():
+    if request.method == 'POST':
+        flash('Settings saved.', 'success')
+        return redirect(url_for('settings_page'))
+    return render_template('settings.html')
+
+
+# /help — static FAQ page, public
+@app.route('/help')
+def help_page():
+    return render_template('help.html')
+
+# /about — static team / project info page, public
+@app.route('/about')
+def about_page():
+    return render_template('about.html')
+
+
 @app.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the landing page
-    return render_template('index.html')
+    suburb_ids = {s.name: s.id for s in Suburb.query.all()}
+    category_ids = {c.name: c.id for c in Category.query.all()}
+
+    # real top-trending city = suburb with the most reports overall
+    top_city_row = (
+        db.session.query(Suburb.name, db.func.count(Report.id))
+        .join(Report, Report.suburb_id == Suburb.id)
+        .group_by(Suburb.id)
+        .order_by(db.func.count(Report.id).desc())
+        .first()
+    )
+    top_city = {'name': top_city_row[0], 'count': top_city_row[1]} if top_city_row else None
+
+    # real top-trending category = category with the most reports overall
+    top_cat_row = (
+        db.session.query(Category.name, db.func.count(Report.id))
+        .join(Report, Report.category_id == Category.id)
+        .group_by(Category.id)
+        .order_by(db.func.count(Report.id).desc())
+        .first()
+    )
+    top_category = {'name': top_cat_row[0], 'count': top_cat_row[1]} if top_cat_row else None
+
+    return render_template(
+        'index.html',
+        suburb_ids_by_name=suburb_ids,
+        category_ids_by_name=category_ids,
+        city_to_state=CITY_TO_STATE,
+        state_flag_url=STATE_FLAG_URL,
+        top_city=top_city,
+        top_category=top_category,
+    )
 
 # /landing — always renders the landing/intro page regardless of auth state.
 # Lets logged-in users revisit the public-facing home if they want.
@@ -169,6 +301,19 @@ def api_search_users():
         for u in users
     ])
 
+# /reports/<token> — public read-only view of a single report.
+# `<token>` is the signed URLSafeSerializer-encoded id, not the raw integer,
+# so guests can't iterate /reports/1, /reports/2, ... to scrape the database.
+@app.route('/reports/<string:token>')
+def view_report(token):
+    try:
+        report_id = _report_serializer().loads(token)
+    except BadSignature:
+        abort(404)
+    report = Report.query.get_or_404(report_id)
+    return render_template('report_view.html', report=report)
+
+
 # /reports/<id>/edit — GET renders the edit form, POST saves changes
 # only the original author can edit; everyone else gets 403
 @app.route('/reports/<int:report_id>/edit', methods=['GET', 'POST'])
@@ -271,14 +416,16 @@ def edit_report_page(report_id):
         suburbs_by_state=suburbs_by_state,
     )
 
-# /listing — list all reports, most recent first, with optional state / suburb filters.
+# /listing — list all reports.
 # Public — guests can browse without an account.
+# Default sort = newest first; ?sort=top sorts by verification count (top reports).
 @app.route('/listing')
 def listing_page():
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     suburb_id = request.args.get('suburb_id', type=int)
     category_id = request.args.get('category_id', type=int)
+    sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
     query = Report.query
     # state filter has to go through Suburb because Report only stores suburb_id, not state_id
@@ -289,7 +436,15 @@ def listing_page():
     if category_id:
         query = query.filter(Report.category_id == category_id)
 
-    query = query.order_by(Report.created_at.desc())
+    if sort == 'top':
+        # outer-join + group + count so reports with zero verifications still appear
+        query = (
+            query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(db.func.count(Verification.id).desc(), Report.created_at.desc())
+        )
+    else:
+        query = query.order_by(Report.created_at.desc())
     pagination = query.paginate(page=page, per_page=20, error_out=False)
 
     # dropdown data — same shape the create form uses, so the cascade JS is identical
@@ -309,6 +464,7 @@ def listing_page():
         selected_state_id=state_id,
         selected_suburb_id=suburb_id,
         selected_category_id=category_id,
+        sort=sort,
     )
 
 # /reports — page where a logged-in user fills out and submits a report

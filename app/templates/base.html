@@ -74,11 +74,11 @@
                 <nav class="app-sidebar-nav mobile-sidebar-nav" aria-label="Mobile Sidebar Navigation">
                     <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page." data-bs-dismiss="offcanvas">Favourites</a>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}" data-bs-dismiss="offcanvas">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page." data-bs-dismiss="offcanvas">Top Reports</a>
+                    <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Top Reports</a>
 
                     <div class="app-sidebar-group-header">Account</div>
                     {% if is_guest %}
@@ -88,11 +88,11 @@
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
-                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
+                    <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page." data-bs-dismiss="offcanvas">Help</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page." data-bs-dismiss="offcanvas">About</a>
+                    <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}" data-bs-dismiss="offcanvas">Help</a>
+                    <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}" data-bs-dismiss="offcanvas">About</a>
                 </nav>
                 {% if is_guest %}
                     <div class="app-sidebar-guest-actions">
@@ -134,11 +134,11 @@
                 <nav class="app-sidebar-nav">
                     <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/favourites.html' else '' }}" data-stub-message="Stub: open Favourites page.">Favourites</a>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/top-reports.html' else '' }}" data-stub-message="Stub: open Top Reports page.">Top Reports</a>
+                    <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}">Top Reports</a>
 
                     <div class="app-sidebar-group-header">Account</div>
                     {% if is_guest %}
@@ -148,11 +148,11 @@
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
-                    <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="Stub: open Settings page.">Settings</a>
+                    <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/help.html' else '' }}" data-stub-message="Stub: open Help page.">Help</a>
-                    <a href="#" class="app-sidebar-link app-stub-link {{ 'active' if path == '/about.html' else '' }}" data-stub-message="Stub: open About page.">About</a>
+                    <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>
+                    <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}">About</a>
                 </nav>
                 {% if is_guest %}
                     <div class="app-sidebar-guest-actions">

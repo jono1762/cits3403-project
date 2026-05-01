@@ -1,0 +1,162 @@
+/* ============================================================
+   settings.css — account settings page
+   ============================================================ */
+
+.settings-page {
+    max-width: 720px;
+    margin: 1rem auto 3rem;
+    padding: 0 1rem;
+}
+
+
+/* ============================================================
+   Header
+   ============================================================ */
+.settings-header {
+    margin-bottom: 1.5rem;
+}
+
+.settings-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0 0 0.4rem;
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.settings-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   Section card (frosted)
+   ============================================================ */
+.settings-card {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05),
+                0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.settings-section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 1rem;
+    letter-spacing: -0.01em;
+}
+
+
+/* ============================================================
+   Form fields — same focus ring + spacing as the auth pages
+   ============================================================ */
+.settings-field {
+    margin-bottom: 0.85rem;
+}
+
+.settings-card .form-label {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.88rem;
+    margin-bottom: 0.35rem;
+    display: block;
+}
+
+.settings-card .form-control {
+    width: 100%;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.95rem;
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.85);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.settings-card .form-control:focus {
+    border-color: #4f46e5;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
+    outline: none;
+}
+
+
+/* ============================================================
+   Save button — same gradient family as the rest of the brand CTAs
+   ============================================================ */
+.settings-save {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    border: none;
+    color: #fff;
+    padding: 0.65rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    margin-top: 0.4rem;
+}
+
+.settings-save:hover,
+.settings-save:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(79, 70, 229, 0.42);
+}
+
+
+/* ============================================================
+   Danger zone — red accents to flag destructive actions
+   ============================================================ */
+.settings-card-danger {
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    background: rgba(254, 242, 242, 0.85);
+}
+
+.settings-card-danger .settings-section-title {
+    color: #b91c1c;
+}
+
+.settings-danger-desc {
+    margin: 0 0 1rem;
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.settings-danger-btn {
+    background: #fff;
+    color: #b91c1c;
+    border: 1.5px solid #ef4444;
+    padding: 0.55rem 1.2rem;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.settings-danger-btn:hover:not(:disabled) {
+    background: #ef4444;
+    color: #fff;
+}
+
+.settings-danger-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

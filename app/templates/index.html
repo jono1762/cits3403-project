@@ -13,20 +13,62 @@
 	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
 	   Card 3 links to the user's favourites page (stub for now). #}
 	<div class="map-stats">
-		<div class="stat-card">
-			<div class="stat-label">Top trending cities</div>
-			<div class="stat-num">Sydney</div>
-			<div class="stat-trend">142 reports · last hour</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-label">Top trending categories</div>
-			<div class="stat-num">Hazards</div>
-			<div class="stat-trend">387 reports today</div>
-		</div>
-		<a href="#" class="stat-card stat-card-alert app-stub-link" data-stub-message="Stub: open Favourites page.">
-			<div class="stat-label stat-label-alert">⚠ Watching · favourites</div>
-			<div class="stat-num">Storm warning</div>
-			<div class="stat-trend stat-trend-alert">Bondi (saved) · 24 min ago</div>
+		{# Top trending cities — pulled from server-side aggregation (no fake numbers) #}
+		{% if top_city %}
+			{% set trending_state = city_to_state.get(top_city.name) %}
+			{% set trending_flag = state_flag_url.get(trending_state) %}
+			<a class="stat-card stat-card-trending"
+			   href="{{ url_for('listing_page', suburb_id=suburb_ids_by_name.get(top_city.name)) }}"
+			   aria-label="View reports for {{ top_city.name }}">
+				<div class="stat-label">Top trending cities</div>
+				<div class="stat-num">
+					{% if trending_flag %}
+						<img class="stat-flag" src="{{ trending_flag }}"
+						     alt="{{ trending_state|upper }} flag"
+						     onerror="this.style.display='none'">
+					{% endif %}
+					{{ top_city.name }}
+				</div>
+				<div class="stat-trend">{{ top_city.count }} report{{ 's' if top_city.count != 1 else '' }} so far</div>
+				<span class="stat-card-fire" aria-hidden="true">🔥</span>
+			</a>
+		{% else %}
+			<div class="stat-card stat-card-trending">
+				<div class="stat-label">Top trending cities</div>
+				<div class="stat-num">No reports yet</div>
+				<div class="stat-trend">Be the first to post one</div>
+				<span class="stat-card-fire" aria-hidden="true">🔥</span>
+			</div>
+		{% endif %}
+
+		{# Top trending categories — also from server-side aggregation #}
+		{% if top_category %}
+			<a class="stat-card stat-card-trending-cat"
+			   href="{{ url_for('listing_page', category_id=category_ids_by_name.get(top_category.name)) }}"
+			   aria-label="View reports for {{ top_category.name }}">
+				<div class="stat-label">Top trending categories</div>
+				<div class="stat-num">
+					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_category.name, '') }}</span>
+					{{ top_category.name }}
+				</div>
+				<div class="stat-trend">{{ top_category.count }} report{{ 's' if top_category.count != 1 else '' }} so far</div>
+				<span class="stat-card-spark" aria-hidden="true">📈</span>
+			</a>
+		{% else %}
+			<div class="stat-card stat-card-trending-cat">
+				<div class="stat-label">Top trending categories</div>
+				<div class="stat-num">No reports yet</div>
+				<div class="stat-trend">Be the first to post one</div>
+				<span class="stat-card-spark" aria-hidden="true">📈</span>
+			</div>
+		{% endif %}
+
+		{# Favourites — generic prompt for now (no Favourite model yet, no fake count) #}
+		<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
+			<div class="stat-label">Watching · favourites</div>
+			<div class="stat-num">Saved places</div>
+			<div class="stat-trend">Star a report to follow it</div>
+			<span class="stat-card-star" aria-hidden="true">⭐</span>
 		</a>
 	</div>
 
@@ -36,7 +78,10 @@
 				<input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its state...">
 				<ul id="suggestions"></ul>
 			</div>
+			{# "Search" zooms the map to the matched city's pin and opens its popup #}
 			<button type="button" id="searchButton">Search</button>
+			{# "View Reports" navigates to the filtered listing for that city #}
+			<button type="button" id="viewReportsButton">View Reports</button>
 		</div>
 	</div>
 
@@ -59,7 +104,13 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+{# server-rendered { suburb_name: suburb_id } lookup, read by the map JS below
+   so each marker can build a /listing?suburb_id=... link in its popup #}
+<script type="application/json" id="suburb-ids-data">{{ suburb_ids_by_name|tojson }}</script>
+
 <script>
+	const SUBURB_IDS_BY_NAME = JSON.parse(document.getElementById("suburb-ids-data").textContent);
 	const searchBar = document.getElementById("searchBar");
 	const searchButton = document.getElementById("searchButton");
 	const suggestions = document.getElementById("suggestions");
@@ -115,15 +166,29 @@
 		cityData.forEach((city) => {
 			const marker = L.marker([city.lat, city.lng], { icon: cityPinIcon }).addTo(cityMarkerLayer);
 
-			marker.bindPopup(
-				`<strong>${city.name}</strong><br><span class="popup-state">${city.state}</span>`
-			);
+			// city.name is "Sydney, New South Wales" — short name is just "Sydney"
+			const shortName = city.name.split(",")[0].trim();
+			const suburbId = SUBURB_IDS_BY_NAME[shortName];
+			// build the listing URL with the suburb filter if we know the id,
+			// otherwise fall back to the unfiltered listing
+			const listingHref = suburbId
+				? `{{ url_for('listing_page') }}?suburb_id=${suburbId}`
+				: `{{ url_for('listing_page') }}`;
+
+			marker.bindPopup(`
+				<strong>${city.name}</strong>
+				<span class="popup-state">${city.state}</span>
+				<a href="${listingHref}" class="popup-action">View reports for ${shortName} →</a>
+			`);
 
 			marker.on("click", function () {
 				searchBar.value = city.name;
 				clearSuggestions();
 				focusCity(city);
 			});
+
+			// keep a reference on the city so onSearchSubmit can openPopup() on it
+			city.marker = marker;
 		});
 	}
 
@@ -205,32 +270,48 @@
 		}
 	}
 
-	function onSearchSubmit(event) {
-		event.stopPropagation();
-
+	// shared helper — both buttons need to find the city the user typed
+	function findCityFromQuery() {
 		const query = searchBar.value.trim().toLowerCase();
 		if (!query) {
 			alert("Please enter a location to search.");
-			return;
+			return null;
 		}
-
-		const selectedCity = cityData.find((item) => (
+		const match = cityData.find((item) => (
 			item.name.toLowerCase() === query ||
 			item.name.toLowerCase().includes(query) ||
 			item.state.toLowerCase().includes(query)
 		));
-
-		if (!selectedCity) {
+		if (!match) {
 			alert("No matching location found.");
-			return;
+			return null;
 		}
+		return match;
+	}
 
+	// "Search" — zoom the map to the matched city's pin and open its popup
+	function onSearchSubmit(event) {
+		event.stopPropagation();
+		const selectedCity = findCityFromQuery();
+		if (!selectedCity) return;
 		searchBar.value = selectedCity.name;
 		focusCity(selectedCity);
 		clearSuggestions();
+		// open the marker's popup so the user lands on the same UI as a pin click
+		if (selectedCity.marker) selectedCity.marker.openPopup();
+	}
 
-		// Stub for future navigation to a location-specific report page.
-		alert("Stub: open report page for " + selectedCity.name);
+	// "View Reports" — navigate to the listing filtered by this city's suburb
+	function onViewReportsSubmit(event) {
+		event.stopPropagation();
+		const selectedCity = findCityFromQuery();
+		if (!selectedCity) return;
+		const shortName = selectedCity.name.split(",")[0].trim();
+		const suburbId = SUBURB_IDS_BY_NAME[shortName];
+		const url = suburbId
+			? `{{ url_for('listing_page') }}?suburb_id=${suburbId}`
+			: `{{ url_for('listing_page') }}`;
+		window.location = url;
 	}
 
 	function onSearchBarKeyDown(event) {
@@ -248,10 +329,13 @@
 		map.setView(defaultView.center, defaultView.zoom);
 	}
 
+	const viewReportsButton = document.getElementById("viewReportsButton");
+
 	searchBar.addEventListener("click", onSearchBarClick);
 	searchBar.addEventListener("input", search);
 	searchBar.addEventListener("keydown", onSearchBarKeyDown);
 	searchButton.addEventListener("click", onSearchSubmit);
+	viewReportsButton.addEventListener("click", onViewReportsSubmit);
 	document.body.addEventListener("click", minimise);
 	suggestions.addEventListener("click", autocomplete);
 	map.on("moveend", clampMapCenterToAustralia);

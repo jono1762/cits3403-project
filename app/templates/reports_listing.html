@@ -8,7 +8,7 @@
 {% block content %}
 <section class="listing-page">
     <header class="listing-header">
-        <h1 class="listing-title">All Reports</h1>
+        <h1 class="listing-title">{{ 'Top Reports' if sort == 'top' else 'All Reports' }}</h1>
         {% if current_user.is_authenticated %}
             <a href="{{ url_for('reports_page') }}" class="listing-new-btn">+ New Report</a>
         {% else %}
@@ -51,27 +51,22 @@
         {% if selected_category_id %}
             <input type="hidden" name="category_id" value="{{ selected_category_id }}">
         {% endif %}
+        {# preserve the sort mode (top vs recent) when applying location filters #}
+        {% if sort and sort != 'recent' %}
+            <input type="hidden" name="sort" value="{{ sort }}">
+        {% endif %}
     </form>
-
-    {# Emoji lookup keyed by category name — keeps the icons consistent
-       wherever categories show up #}
-    {% set CATEGORY_EMOJI = {
-        'Weather': '☁️',
-        'Noisiness': '🔊',
-        'Hazards': '⚠️',
-        'Traffic': '🚦',
-        'Emergency': '🚨'
-    } %}
 
     {# Category chips — click any one to filter. Each link carries the current
        state/suburb so users don't lose those filters when changing category. #}
+    {% set keep_sort = sort if sort != 'recent' else None %}
     <div class="listing-categories">
-        <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id) }}"
+        <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, sort=keep_sort) }}"
            class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
             🌏 All categories
         </a>
         {% for cat in categories %}
-            <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=cat.id) }}"
+            <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=cat.id, sort=keep_sort) }}"
                class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
                style="--cat: {{ cat.marker_color }};">
                 {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
@@ -103,22 +98,29 @@
         <ul class="listing-feed">
             {% for r in pagination.items %}
                 <li class="listing-item" style="--cat: {{ r.category.marker_color }};">
-                    <div class="listing-item-top">
-                        <div class="listing-item-meta">
-                            <span class="listing-item-badge">{{ r.category.name }}</span>
-                            <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
-                            <span class="listing-item-author">— by
-                                <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
-                                on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
-                            </span>
+                    {# the text area is one big click target via the stretched link below;
+                       Edit button + author profile link sit above it via z-index. #}
+                    <div class="listing-item-text">
+                        <a class="listing-item-link"
+                           href="{{ url_for('view_report', token=r.id|report_token) }}"
+                           aria-label="View report"></a>
+
+                        <div class="listing-item-top">
+                            <div class="listing-item-meta">
+                                <span class="listing-item-badge">{{ r.category.name }}</span>
+                                <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
+                                <span class="listing-item-author">— by
+                                    <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
+                                    on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
+                                </span>
+                            </div>
+                            {% if r.user_id == current_user.id %}
+                                <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="listing-item-edit">Edit</a>
+                            {% endif %}
                         </div>
-                        {# author can edit their own report straight from the listing #}
-                        {% if r.user_id == current_user.id %}
-                            <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="listing-item-edit">Edit</a>
-                        {% endif %}
+                        {% if r.address %}<p class="listing-item-address">{{ r.address }}</p>{% endif %}
+                        {% if r.description %}<p class="listing-item-desc">{{ r.description }}</p>{% endif %}
                     </div>
-                    {% if r.address %}<p class="listing-item-address">{{ r.address }}</p>{% endif %}
-                    {% if r.description %}<p class="listing-item-desc">{{ r.description }}</p>{% endif %}
 
                     {# carousel for image/video attachments — same pattern as profile.html #}
                     {% if r.media %}
@@ -176,19 +178,19 @@
                 <ul class="pagination justify-content-center">
                     {# carry filter ids through pagination — url_for omits None values #}
                     <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
-                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_prev else '#' }}">Previous</a>
+                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_prev else '#' }}">Previous</a>
                     </li>
                     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                         {% if p %}
                             <li class="page-item {{ 'active' if p == pagination.page else '' }}">
-                                <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) }}">{{ p }}</a>
+                                <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) }}">{{ p }}</a>
                             </li>
                         {% else %}
                             <li class="page-item disabled"><span class="page-link">…</span></li>
                         {% endif %}
                     {% endfor %}
                     <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
-                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id) if pagination.has_next else '#' }}">Next</a>
+                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_next else '#' }}">Next</a>
                     </li>
                 </ul>
             </nav>

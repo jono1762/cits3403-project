@@ -1,0 +1,198 @@
+/* ============================================================
+   favourites.css — saved suburbs + saved reports page
+   ============================================================ */
+
+.fav-page {
+    max-width: 880px;
+    margin: 1rem auto 3rem;
+    padding: 0 1rem;
+}
+
+
+/* ============================================================
+   Header — gold gradient title with star
+   ============================================================ */
+.fav-header {
+    margin-bottom: 1.5rem;
+}
+
+.fav-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0 0 0.4rem;
+    background: linear-gradient(135deg, #1e293b 0%, #f59e0b 60%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.fav-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   Section header
+   ============================================================ */
+.fav-section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 1.5rem 0 0.75rem;
+    letter-spacing: -0.01em;
+}
+
+
+/* ============================================================
+   Saved suburbs — horizontal list of compact cards
+   ============================================================ */
+.fav-suburb-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.fav-suburb-card {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #f59e0b;     /* gold accent on the left */
+    border-radius: 12px;
+    padding: 0.85rem 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.fav-suburb-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(245, 158, 11, 0.18);
+}
+
+.fav-suburb-info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.fav-star {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.fav-suburb-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.1;
+}
+
+.fav-suburb-state {
+    font-size: 0.78rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+.fav-suburb-meta {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: right;
+}
+
+
+/* ============================================================
+   Saved reports — vertical list of report cards
+   ============================================================ */
+.fav-report-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fav-report-card {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--cat, #cbd5e1);
+    border-radius: 12px;
+    padding: 0.95rem 1.15rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.fav-report-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.fav-report-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+.fav-report-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
+    border: 1.5px solid var(--cat);
+    color: color-mix(in srgb, var(--cat) 70%, black);
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.fav-report-time {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.fav-report-title {
+    margin: 0 0 0.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.fav-report-where {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+
+/* ============================================================
+   Empty state
+   ============================================================ */
+.fav-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}

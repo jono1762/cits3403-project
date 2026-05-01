@@ -18,6 +18,8 @@
     flex-direction: column;
     gap: var(--page-gap);
     padding: 0.5rem 0;
+    /* lock the page to one viewport — the map will eat all leftover space */
+    height: calc(100vh - var(--navbar-height, 64px) - 2rem);
 }
 
 /* ============================================================
@@ -59,13 +61,17 @@
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.92);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    position: relative;             /* anchor for the fire button below */
+    /* cool-toned diagonal gradient — white → pale indigo → pale cyan.
+       Stays subtle at rest, but the cool palette sets up a strong contrast
+       when warm fire colors wrap the card on hover. */
+    background: linear-gradient(135deg, #ffffff 0%, #eef2ff 55%, #ecfeff 100%);
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 0.65rem 1rem;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),    /* top inner highlight — glassy feel */
+        0 2px 8px rgba(15, 23, 42, 0.04);
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
@@ -75,8 +81,243 @@
     border-color: rgba(79, 70, 229, 0.25);
 }
 
+/* small fire emoji button in the top-right of a stat card — clickable shortcut
+   to that card's filtered listing. Flickers like a real flame on hover. */
+.stat-card-fire {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    font-size: 2.2rem;        /* bigger — the fire is now an obvious focal point */
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    /* sit slightly translucent at rest so it doesn't compete with the number */
+    opacity: 0.7;
+    transition: opacity 0.18s ease, filter 0.18s ease;
+    /* turn off outline + underline */
+    outline: none;
+}
+
+.stat-card-fire:hover,
+.stat-card-fire:focus {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.65))
+            drop-shadow(0 0 12px rgba(251, 191, 36, 0.45));
+    /* flicker animation makes the flame "burn" while hovered */
+    animation: fireFlicker 0.6s ease-in-out infinite;
+}
+
+@keyframes fireFlicker {
+    0%, 100% { transform: scale(1)    rotate(0deg)  translateY(0);    }
+    20%      { transform: scale(1.18) rotate(-4deg) translateY(-1px); }
+    40%      { transform: scale(1.10) rotate(3deg)  translateY(0);    }
+    60%      { transform: scale(1.22) rotate(-2deg) translateY(-2px); }
+    80%      { transform: scale(1.12) rotate(4deg)  translateY(-1px); }
+}
+
+
+/* ============================================================
+   Trending stat card — fire-colored number + on-hover fire halo
+   ============================================================ */
+
+/* the city name uses the brand indigo→cyan gradient at rest;
+   switches to fire colors on hover to match the flame halo */
+.stat-card-trending .stat-num {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.stat-card-trending:hover .stat-num {
+    background: linear-gradient(135deg, #dc2626 0%, #f97316 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* state flag inside the trending card — waves continuously like wind is blowing.
+   Anchored at left so the right edge flutters; faster wave on hover. */
+.stat-flag {
+    height: 1.4rem;                /* matches the compact stat-num size */
+    width: auto;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    border-radius: 2px;
+    transform-origin: left center;
+    /* solid color again so the gradient text-fill on the parent doesn't tint it */
+    -webkit-text-fill-color: initial;
+    animation: flagWave 2.4s ease-in-out infinite;
+}
+
+.stat-card-trending:hover .stat-flag {
+    animation-duration: 1.2s;       /* gust of wind on hover */
+}
+
+@keyframes flagWave {
+    0%, 100% { transform: skewX(0deg)  rotate(0deg); }
+    25%      { transform: skewX(-7deg) rotate(-1.5deg); }
+    50%      { transform: skewX(3deg)  rotate(1deg); }
+    75%      { transform: skewX(-3deg) rotate(-0.5deg); }
+}
+
+/* the whole card is a clickable <a> — strip every default link decoration
+   so it still looks identical to a static card */
+a.stat-card-trending,
+a.stat-card-trending:hover,
+a.stat-card-trending:focus,
+a.stat-card-trending:active,
+a.stat-card-trending:visited {
+    text-decoration: none !important;
+    color: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+/* on hover, layered box-shadows wrap the card in flames + flicker */
+.stat-card-trending:hover {
+    border-color: transparent;
+    animation: cardOnFire 0.55s ease-in-out infinite alternate;
+}
+
+/* small bonus — kick the inner fire emoji into its flicker too */
+.stat-card-trending:hover .stat-card-fire {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.65))
+            drop-shadow(0 0 12px rgba(251, 191, 36, 0.45));
+    animation: fireFlicker 0.6s ease-in-out infinite;
+}
+
+@keyframes cardOnFire {
+    0% {
+        box-shadow:
+            0 -10px 28px rgba(239, 68, 68, 0.70),     /* red, top */
+             10px 0 28px rgba(251, 146, 60, 0.65),    /* orange, right */
+             0 10px 30px rgba(251, 191, 36, 0.60),    /* yellow, bottom */
+            -10px 0 28px rgba(251, 146, 60, 0.65),    /* orange, left */
+             0 0 60px rgba(239, 68, 68, 0.50),        /* red wide diffuse */
+             0 0 90px rgba(251, 146, 60, 0.30);       /* second wider halo */
+        transform: translateY(-1px);
+    }
+    100% {
+        box-shadow:
+            0 -22px 44px rgba(239, 68, 68, 0.95),
+             22px 0 44px rgba(251, 146, 60, 0.90),
+             0 22px 48px rgba(251, 191, 36, 0.85),
+            -22px 0 44px rgba(251, 146, 60, 0.90),
+             0 0 90px rgba(239, 68, 68, 0.70),
+             0 0 130px rgba(251, 146, 60, 0.45);
+        transform: translateY(-3px);
+    }
+}
+
+
+/* ============================================================
+   Trending categories stat card — same shape as the cities card
+   but uses the brand indigo/purple halo instead of fire colors
+   ============================================================ */
+
+/* category name uses the brand indigo→cyan gradient at rest, like the other
+   cards; switches to brighter cyan→sky on hover to match the cyan halo */
+.stat-card-trending-cat .stat-num {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.stat-card-trending-cat:hover .stat-num {
+    background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 50%, #67e8f9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* the inline category emoji should NOT be tinted by the gradient text-fill */
+.stat-cat-emoji {
+    -webkit-text-fill-color: initial;
+}
+
+/* whole card is a clickable <a> — strip every default link decoration */
+a.stat-card-trending-cat,
+a.stat-card-trending-cat:hover,
+a.stat-card-trending-cat:focus,
+a.stat-card-trending-cat:active,
+a.stat-card-trending-cat:visited {
+    text-decoration: none !important;
+    color: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+/* on hover, bright cyan/sky halo wraps the card — light + obvious */
+.stat-card-trending-cat:hover {
+    border-color: transparent;
+    animation: cardOnCyan 0.55s ease-in-out infinite alternate;
+}
+
+/* corner sparkle emoji — flickers on card hover, like the fire emoji */
+.stat-card-spark {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    font-size: 2.2rem;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.18s ease, filter 0.18s ease;
+    pointer-events: none;
+}
+
+.stat-card-trending-cat:hover .stat-card-spark {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.65))
+            drop-shadow(0 0 12px rgba(103, 232, 249, 0.45));
+    animation: sparkPulse 0.7s ease-in-out infinite;
+}
+
+@keyframes sparkPulse {
+    0%, 100% { transform: scale(1)    rotate(0deg); }
+    25%      { transform: scale(1.18) rotate(-8deg); }
+    50%      { transform: scale(1.10) rotate(6deg); }
+    75%      { transform: scale(1.22) rotate(-4deg); }
+}
+
+@keyframes cardOnCyan {
+    0% {
+        box-shadow:
+            0 -10px 28px rgba(6, 182, 212, 0.70),     /* cyan, top */
+             10px 0 28px rgba(34, 211, 238, 0.65),    /* bright cyan, right */
+             0 10px 30px rgba(103, 232, 249, 0.60),   /* sky-cyan, bottom */
+            -10px 0 28px rgba(34, 211, 238, 0.65),    /* bright cyan, left */
+             0 0 60px rgba(6, 182, 212, 0.50),        /* cyan wide diffuse */
+             0 0 90px rgba(103, 232, 249, 0.30);      /* sky second halo */
+        transform: translateY(-1px);
+    }
+    100% {
+        box-shadow:
+            0 -22px 44px rgba(6, 182, 212, 0.95),
+             22px 0 44px rgba(34, 211, 238, 0.90),
+             0 22px 48px rgba(103, 232, 249, 0.85),
+            -22px 0 44px rgba(34, 211, 238, 0.90),
+             0 0 90px rgba(6, 182, 212, 0.70),
+             0 0 130px rgba(103, 232, 249, 0.45);
+        transform: translateY(-3px);
+    }
+}
+
 .stat-label {
-    color: #64748b;
+    color: #334155;          /* slate-700 — readable on the cool gradient bg */
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -97,7 +338,7 @@
 }
 
 .stat-trend {
-    color: #64748b;
+    color: #334155;          /* slate-700 — darker than before, almost black with a hint of grey */
     font-size: 0.72rem;
     font-weight: 500;
 }
@@ -110,35 +351,80 @@
     color: #dc2626;          /* red if a card later needs a downward trend */
 }
 
-/* third card variant — links to favourites, uses an "alert" red→orange palette
-   so it visually flags "this is the one you should worry about" */
-.stat-card-alert {
-    text-decoration: none;
+/* favourites card — uses default brand colors at rest. Star in the top-right
+   twinkles + the box gets a yellow halo on hover (same shape as the fire
+   halo but warm yellow). */
+a.stat-card-fav,
+a.stat-card-fav:hover,
+a.stat-card-fav:focus,
+a.stat-card-fav:active,
+a.stat-card-fav:visited {
+    text-decoration: none !important;
     color: inherit;
-    display: block;
-    border-left: 4px solid #ef4444;     /* red stripe on the left edge */
+    outline: none;
+    cursor: pointer;
 }
 
-.stat-card-alert:hover {
-    border-color: #ef4444;
-    box-shadow: 0 8px 18px rgba(239, 68, 68, 0.18);
+/* corner star — same style/position as the fire emoji on the cities card */
+.stat-card-star {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    font-size: 2.2rem;
+    line-height: 1;
+    opacity: 0.75;
+    transition: opacity 0.18s ease, filter 0.18s ease;
+    pointer-events: none;
 }
 
-.stat-label-alert {
-    color: #dc2626 !important;
+.stat-card-fav:hover {
+    border-color: transparent;
+    animation: cardOnYellow 0.55s ease-in-out infinite alternate;
 }
 
-/* big number on the alert card uses a red→orange gradient */
-.stat-card-alert .stat-num {
-    background: linear-gradient(135deg, #dc2626 0%, #f97316 100%);
+/* on hover, the title text shifts to gold/yellow to match the halo */
+.stat-card-fav:hover .stat-num {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #facc15 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.stat-trend-alert {
-    color: #b91c1c;
-    font-weight: 600;
+.stat-card-fav:hover .stat-card-star {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.65))
+            drop-shadow(0 0 12px rgba(251, 191, 36, 0.45));
+    animation: starTwinkle 0.7s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+    0%, 100% { transform: scale(1)    rotate(0deg); }
+    25%      { transform: scale(1.18) rotate(-10deg); }
+    50%      { transform: scale(1.10) rotate(8deg); }
+    75%      { transform: scale(1.22) rotate(-5deg); }
+}
+
+@keyframes cardOnYellow {
+    0% {
+        box-shadow:
+            0 -10px 28px rgba(251, 191, 36, 0.70),     /* gold yellow, top */
+             10px 0 28px rgba(250, 204, 21, 0.65),    /* bright yellow, right */
+             0 10px 30px rgba(234, 179, 8, 0.60),     /* deep yellow, bottom */
+            -10px 0 28px rgba(250, 204, 21, 0.65),    /* bright yellow, left */
+             0 0 60px rgba(251, 191, 36, 0.50),       /* wide diffuse */
+             0 0 90px rgba(250, 204, 21, 0.30);       /* second halo */
+        transform: translateY(-1px);
+    }
+    100% {
+        box-shadow:
+            0 -22px 44px rgba(251, 191, 36, 0.95),
+             22px 0 44px rgba(250, 204, 21, 0.90),
+             0 22px 48px rgba(234, 179, 8, 0.85),
+            -22px 0 44px rgba(250, 204, 21, 0.90),
+             0 0 90px rgba(251, 191, 36, 0.70),
+             0 0 130px rgba(250, 204, 21, 0.45);
+        transform: translateY(-3px);
+    }
 }
 
 
@@ -276,7 +562,7 @@
     box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
 }
 
-/* search button — same gradient family as the brand CTAs */
+/* search button — gradient pill that zooms the map to the city */
 #searchButton {
     padding: 0.55rem 1.2rem;
     border-radius: var(--radius);
@@ -295,6 +581,31 @@
 #searchButton:focus {
     transform: translateY(-2px);
     box-shadow: 0 8px 22px rgba(79, 70, 229, 0.42);
+}
+
+/* View Reports button — outline style, fills indigo on hover.
+   Different shape from "Search" so users can tell the two actions apart. */
+#viewReportsButton {
+    padding: 0.55rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1.5px solid #4f46e5;
+    background: #fff;
+    color: #4f46e5;
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease,
+                transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+#viewReportsButton:hover,
+#viewReportsButton:focus {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(79, 70, 229, 0.30);
 }
 
 /* autocomplete suggestion list */
@@ -344,6 +655,9 @@
     overflow: hidden;
     border-radius: var(--radius);
     box-shadow: 0 4px 24px rgba(15, 23, 42, 0.12);
+    /* fill all leftover vertical space inside #mapPage */
+    flex: 1;
+    min-height: 12rem;       /* don't collapse below this on tiny viewports */
 }
 
 /* tint the OpenStreetMap tiles toward a blue-leaning palette */
@@ -353,7 +667,7 @@
 
 #map {
     width: 100%;
-    height: clamp(19rem, 52vh, 34rem);
+    height: 100%;             /* fill the .map-wrapper which fills the page */
     display: block;
     margin: 0;
     border-radius: inherit;
@@ -473,6 +787,31 @@
 .leaflet-popup-content .popup-state {
     color: #64748b;
     font-size: 0.82rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* "View reports for X →" — gradient pill button inside the popup */
+.leaflet-popup-content .popup-action {
+    display: inline-block;
+    margin-top: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff !important;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.30);
+    transition: transform 0.15s ease, box-shadow 0.18s ease;
+}
+
+.leaflet-popup-content .popup-action:hover,
+.leaflet-popup-content .popup-action:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45);
+    color: #fff !important;
+    text-decoration: none;
 }
 
 .leaflet-popup-tip {

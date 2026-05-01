@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="settings-page">
+    <header class="settings-header">
+        <h1 class="settings-title">Settings</h1>
+        <p class="settings-subtitle">Update your account details and security preferences.</p>
+    </header>
+
+    {# Account info — username + email. UI-only for now. #}
+    <form method="POST" action="{{ url_for('settings_page') }}" class="settings-card">
+        <h2 class="settings-section-title">Account</h2>
+        <div class="settings-field">
+            <label for="settings-username" class="form-label">Username</label>
+            <input id="settings-username" name="username" type="text" class="form-control"
+                   value="{{ current_user.username }}" maxlength="80" required>
+        </div>
+        <div class="settings-field">
+            <label for="settings-email" class="form-label">Email</label>
+            <input id="settings-email" name="email" type="email" class="form-control"
+                   value="{{ current_user.email }}" maxlength="120" required>
+        </div>
+        <button type="submit" class="settings-save">Save account</button>
+    </form>
+
+    {# Password — current + new + confirm. UI-only for now. #}
+    <form method="POST" action="{{ url_for('settings_page') }}" class="settings-card">
+        <h2 class="settings-section-title">Password</h2>
+        <div class="settings-field">
+            <label for="settings-current-pw" class="form-label">Current password</label>
+            <input id="settings-current-pw" name="current_password" type="password"
+                   class="form-control" autocomplete="current-password">
+        </div>
+        <div class="settings-field">
+            <label for="settings-new-pw" class="form-label">New password</label>
+            <input id="settings-new-pw" name="new_password" type="password"
+                   class="form-control" autocomplete="new-password">
+        </div>
+        <div class="settings-field">
+            <label for="settings-confirm-pw" class="form-label">Confirm new password</label>
+            <input id="settings-confirm-pw" name="confirm_password" type="password"
+                   class="form-control" autocomplete="new-password">
+        </div>
+        <button type="submit" class="settings-save">Update password</button>
+    </form>
+
+    {# Danger zone — placeholder #}
+    <div class="settings-card settings-card-danger">
+        <h2 class="settings-section-title">Danger zone</h2>
+        <p class="settings-danger-desc">
+            Permanently delete your account and all reports you've posted. This cannot be undone.
+        </p>
+        <button type="button" class="settings-danger-btn" disabled
+                title="Account deletion is not available yet">
+            Delete my account
+        </button>
+    </div>
+</section>
+{% endblock %}
