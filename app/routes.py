@@ -5,7 +5,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification
+from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification, Comment, CommentMedia, CommentVote
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -312,7 +312,7 @@ def view_report(token):
     except BadSignature:
         abort(404)
     report = Report.query.get_or_404(report_id)
-    return render_template('report_view.html', report=report)
+    return render_template('report_view.html', report=report, comment_max_length=COMMENT_MAX_LENGTH)
 
 
 # POST /api/reports/<id>/vote — verify or dispute a report.
@@ -652,9 +652,167 @@ def api_delete_report(report_id):
         except OSError:
             pass  # file already gone — fine
 
+    # also remove on-disk media attached to each comment, and clear comment votes
+    # (comments themselves cascade-delete with the report; CommentMedia rows cascade
+    # with the comment; but the disk files and CommentVote rows need manual cleanup)
+    for c in report.comments:
+        for m in c.media:
+            disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+            try:
+                os.remove(disk_path)
+            except OSError:
+                pass
+        CommentVote.query.filter_by(comment_id=c.id).delete()
+
     # Verification has no cascade on the model, so clear them by hand
     Verification.query.filter_by(report_id=report.id).delete()
 
     db.session.delete(report)
     db.session.commit()
     return jsonify({'ok': True})
+
+
+# ---------------- Comments ----------------
+# Body is stored as plain text and rendered with Jinja's default auto-escape, so
+# HTML/JS in user input becomes inert text in the page (XSS-safe). The frontend
+# also uses textContent (not innerHTML) when injecting new comments without a reload.
+
+COMMENT_MAX_LENGTH = 2000
+
+def _serialize_comment(comment, current_user_id=None):
+    """Shared comment-to-JSON shape for the create endpoint and any future list endpoint."""
+    return {
+        'id': comment.id,
+        'body': comment.body,
+        'author_username': comment.author.username,
+        'author_url': url_for('user_profile_page', username=comment.author.username),
+        'author_initial': comment.author.username[:1].upper(),
+        'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
+        'is_own': comment.user_id == current_user_id,
+        'verify_count': comment.verify_count,
+        'dispute_count': comment.dispute_count,
+        'user_vote': None,  # fresh comments — author can't vote on their own
+        'media': [
+            {
+                'type': m.media_type,
+                'url': url_for('static', filename=f'uploads/{m.filename}'),
+                'original_name': m.original_name,
+            }
+            for m in comment.media
+        ],
+    }
+
+@app.route('/api/reports/<int:report_id>/comments', methods=['POST'])
+@login_required
+def api_create_comment(report_id):
+    """Accepts either JSON ({body}) for text-only or multipart/form-data
+    (body + media[]) when the user attached images / videos."""
+    report = Report.query.get_or_404(report_id)
+
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        body = (request.form.get('body') or '').strip()
+        files = [f for f in request.files.getlist('media') if f and f.filename]
+    else:
+        payload = request.get_json(silent=True) or {}
+        body = (payload.get('body') or '').strip()
+        files = []
+
+    # at least one of (text, media) must be present
+    if not body and not files:
+        return jsonify({'error': 'Comment cannot be empty.'}), 400
+    if len(body) > COMMENT_MAX_LENGTH:
+        return jsonify({'error': f'Comment too long (max {COMMENT_MAX_LENGTH} characters).'}), 400
+    if len(files) > MAX_MEDIA_FILES:
+        return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
+    for f in files:
+        if not _media_type_for(f.filename):
+            return jsonify({'error': f'Unsupported file type: {f.filename}'}), 400
+
+    comment = Comment(report_id=report.id, user_id=current_user.id, body=body)
+    db.session.add(comment)
+    db.session.flush()  # populate comment.id so CommentMedia rows can FK to it
+
+    # save each file to disk + DB; if anything fails halfway, clean up the disk files
+    saved_paths = []
+    try:
+        for f in files:
+            ext = f.filename.rsplit('.', 1)[-1].lower()
+            stored_name = f'{uuid.uuid4().hex}.{ext}'
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
+            f.save(save_path)
+            saved_paths.append(save_path)
+            db.session.add(CommentMedia(
+                comment_id=comment.id,
+                filename=stored_name,
+                original_name=secure_filename(f.filename) or stored_name,
+                media_type=_media_type_for(f.filename),
+            ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        for p in saved_paths:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        raise
+
+    return jsonify(_serialize_comment(comment, current_user_id=current_user.id)), 201
+
+
+@app.route('/api/comments/<int:comment_id>', methods=['DELETE'])
+@login_required
+def api_delete_comment(comment_id):
+    """Comment author only — wipes the comment, its media (DB + disk), and any votes."""
+    comment = Comment.query.get_or_404(comment_id)
+    if comment.user_id != current_user.id:
+        return jsonify({'error': "You can't delete someone else's comment."}), 403
+
+    # remove disk files first; the DB rows go via cascade on the relationship
+    for m in comment.media:
+        disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+        try:
+            os.remove(disk_path)
+        except OSError:
+            pass
+
+    # CommentVote has no cascade on the model, clear them by hand
+    CommentVote.query.filter_by(comment_id=comment.id).delete()
+
+    db.session.delete(comment)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/comments/<int:comment_id>/vote', methods=['POST'])
+@login_required
+def api_vote_comment(comment_id):
+    """Verify / dispute a comment — same toggle semantics as report-vote.
+    Comment author can't vote on their own comment."""
+    comment = Comment.query.get_or_404(comment_id)
+    if comment.user_id == current_user.id:
+        return jsonify({'error': "You can't vote on your own comment."}), 400
+
+    payload = request.get_json(silent=True) or {}
+    new_status = payload.get('status') or request.form.get('status')
+    if new_status not in ('verify', 'dispute'):
+        return jsonify({'error': 'Invalid status.'}), 400
+
+    existing = CommentVote.query.filter_by(comment_id=comment.id, user_id=current_user.id).first()
+    if existing:
+        if existing.status == new_status:
+            db.session.delete(existing)  # click same button → un-vote
+            user_vote = None
+        else:
+            existing.status = new_status  # flip vote
+            user_vote = new_status
+    else:
+        db.session.add(CommentVote(comment_id=comment.id, user_id=current_user.id, status=new_status))
+        user_vote = new_status
+    db.session.commit()
+
+    return jsonify({
+        'verify_count': CommentVote.query.filter_by(comment_id=comment.id, status='verify').count(),
+        'dispute_count': CommentVote.query.filter_by(comment_id=comment.id, status='dispute').count(),
+        'user_vote': user_vote,
+    })

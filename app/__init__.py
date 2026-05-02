@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
-from .models import db, User, Category, State, Suburb, Report
+from .models import db, User, Category, State, Suburb, Report, Comment
 
 login_manager = LoginManager()
 
@@ -94,6 +94,36 @@ def seed_test_users_and_reports():
         ))
     db.session.commit()
 
+
+# A set of canned comments from the test users. Used to seed any report that
+# currently has zero comments, so the dev can see (and click) the verify /
+# dispute pills on someone else's comment without juggling logins.
+DEFAULT_TEST_COMMENTS = [
+    ('alice',   "Just walked past, can confirm — situation matches the report."),
+    ('bob',     "Looks different from where I'm standing — might be outdated?"),
+    ('charlie', "Thanks for the heads-up, useful info."),
+]
+
+def seed_test_comments():
+    """Drop a few dummy comments onto any report that has no comments yet.
+    Idempotent: reports that already have any comment are left untouched, so
+    real conversations are never overwritten on app restart."""
+    for report in Report.query.all():
+        # skip reports that already have any comments — keeps real threads intact
+        if Comment.query.filter_by(report_id=report.id).first():
+            continue
+        for username, body in DEFAULT_TEST_COMMENTS:
+            commenter = User.query.filter_by(username=username).first()
+            # don't have a user comment on their own report
+            if not commenter or commenter.id == report.user_id:
+                continue
+            db.session.add(Comment(
+                report_id=report.id,
+                user_id=commenter.id,
+                body=body,
+            ))
+    db.session.commit()
+
 def create_app():
     app = Flask(__name__)
 
@@ -116,5 +146,6 @@ def create_app():
         seed_categories()  # make sure default categories exist
         seed_locations()   # make sure states + suburbs exist
         seed_test_users_and_reports()  # arbitrary users so search has something to find
+        seed_test_comments()           # canned comments on any report missing them
 
     return app

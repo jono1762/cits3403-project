@@ -84,6 +84,8 @@ class Report(db.Model):
     verifications = db.relationship('Verification', backref='report', lazy=True)
     # cascade so deleting a report also deletes its attached images/videos
     media = db.relationship('ReportMedia', backref='report', lazy=True, cascade='all, delete-orphan')
+    # cascade so deleting a report also wipes its comment thread
+    comments = db.relationship('Comment', backref='report', lazy=True, cascade='all, delete-orphan')
 
     @property
     def verify_count(self):
@@ -92,6 +94,10 @@ class Report(db.Model):
     @property
     def dispute_count(self):
         return sum(1 for v in self.verifications if v.status == 'dispute')
+
+    @property
+    def comment_count(self):
+        return len(self.comments)
 
     def vote_by(self, user):
         """Return the given user's vote on this report — 'verify', 'dispute', or None."""
@@ -118,5 +124,61 @@ class Verification(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     # 'verify' = user confirms the report is accurate; 'dispute' = user denies it.
     # Each (user, report) pair has at most one row — flipping vote updates this.
+    status = db.Column(db.String(10), nullable=False, default='verify')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    report_id = db.Column(db.Integer, db.ForeignKey('reports.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # plain text only — Jinja auto-escapes on render so HTML/script tags become
+    # inert. body is capped at the route layer (2000 chars) to keep abuse manageable.
+    # body can be empty if the comment carries media instead — server enforces
+    # that at least one of (body, media) is present.
+    body = db.Column(db.Text, nullable=False, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    author = db.relationship('User')
+    # cascade so deleting a comment also wipes its attached images/videos
+    media = db.relationship('CommentMedia', backref='comment', lazy=True, cascade='all, delete-orphan')
+    # votes on the comment itself (separate from votes on the parent report)
+    votes = db.relationship('CommentVote', backref='comment', lazy=True)
+
+    @property
+    def verify_count(self):
+        return sum(1 for v in self.votes if v.status == 'verify')
+
+    @property
+    def dispute_count(self):
+        return sum(1 for v in self.votes if v.status == 'dispute')
+
+    def vote_by(self, user):
+        """Return the given user's vote on this comment — 'verify', 'dispute', or None."""
+        if not getattr(user, 'is_authenticated', False):
+            return None
+        for v in self.votes:
+            if v.user_id == user.id:
+                return v.status
+        return None
+
+
+class CommentMedia(db.Model):
+    __tablename__ = 'comment_media'
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=False)
+    filename = db.Column(db.String(64), nullable=False)        # uuid stored name on disk
+    original_name = db.Column(db.String(255), nullable=False)
+    media_type = db.Column(db.String(10), nullable=False)      # 'image' or 'video'
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class CommentVote(db.Model):
+    __tablename__ = 'comment_votes'
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # 'verify' = user agrees with the comment; 'dispute' = user disagrees.
+    # Same toggle semantics as Verification on Report.
     status = db.Column(db.String(10), nullable=False, default='verify')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

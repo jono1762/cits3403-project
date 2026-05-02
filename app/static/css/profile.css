@@ -566,6 +566,28 @@
     font-weight: 600;
 }
 
+/* clickable comment count — escapes the card's stretched link with z-index,
+   styled like a small pill on hover so it visibly invites a click */
+.profile-post-stat-link {
+    position: relative;
+    z-index: 2;
+    color: #475569;
+    text-decoration: none;
+    padding: 0.2rem 0.55rem;
+    margin: -0.2rem -0.55rem;          /* keeps inline alignment with sibling stats */
+    border-radius: 999px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.profile-post-stat-link:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.profile-post-stat-link:hover svg {
+    stroke: #4f46e5;
+}
+
 .profile-post-edit {
     margin-left: auto;  /* push to the far right of the stats footer */
     position: relative;

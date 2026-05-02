@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='7') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='9') }}">
 {% endblock %}
 
 {% block content %}
@@ -218,18 +218,14 @@
 
                     {# stats footer — likes/comments are stubs until those features exist #}
                     <div class="profile-post-stats">
-                        <span class="profile-post-stat profile-post-stat-stub" title="Coming soon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-                            </svg>
-                            0
-                        </span>
-                        <span class="profile-post-stat profile-post-stat-stub" title="Coming soon">
+                        <a class="profile-post-stat profile-post-stat-link"
+                           href="{{ url_for('view_report', token=r.id|report_token) }}#comments"
+                           title="View comments">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                             </svg>
-                            0
-                        </span>
+                            Comment {{ r.comment_count }}
+                        </a>
                         <span class="profile-post-stat profile-post-stat-verified">
                             ✓ {{ r.verify_count }} verified
                         </span>
