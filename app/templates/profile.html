@@ -1,76 +1,138 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='4') }}">
 {% endblock %}
 
 {% block content %}
+{# Level label derived from credibility — static thresholds for now; we can
+   tune them once likes / followers exist and feed into the formula. #}
+{% if user.trust_score is none %}
+    {% set level_label = 'New Reporter' %}
+{% elif user.trust_score >= 80 %}
+    {% set level_label = 'Level 3 Reporter' %}
+{% elif user.trust_score >= 50 %}
+    {% set level_label = 'Level 2 Reporter' %}
+{% else %}
+    {% set level_label = 'Level 1 Reporter' %}
+{% endif %}
+
 <section class="profile-page">
-    {# ============== Profile header card ============== #}
-    <div class="profile-card">
-        <div class="profile-avatar" aria-hidden="true">{{ user.username[0]|upper }}</div>
-        <div class="profile-info">
-            <h1 class="profile-name">{{ user.username }}</h1>
-            <p class="profile-handle">@{{ user.username|lower }}</p>
-            {% if is_own_profile %}
-                <p class="profile-email"><strong>Email:</strong> {{ user.email }}</p>
-            {% endif %}
+    {# ============== Hero — dark gradient header, info on left, stats on right ============== #}
+    <div class="profile-hero">
+        <div class="profile-hero-main">
+            <div class="profile-avatar" aria-hidden="true">{{ user.username[0]|upper }}</div>
+            <div class="profile-hero-text">
+                <div class="profile-name-row">
+                    <h1 class="profile-name">{{ user.username }}</h1>
+                    <span class="profile-level-badge">{{ level_label }}</span>
+                </div>
+                <p class="profile-handle">@{{ user.username|lower }}</p>
+                <div class="profile-meta">
+                    <span class="profile-meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        Australia
+                    </span>
+                    <span class="profile-meta-sep">·</span>
+                    <span class="profile-meta-item">Member of Australia Explorer</span>
+                </div>
+                <p class="profile-bio">
+                    {% if is_own_profile %}
+                        This is your public profile — what others see when they tap your name on a report.
+                    {% else %}
+                        Sharing real-time updates from across Australia.
+                    {% endif %}
+                </p>
+            </div>
         </div>
+
+        <aside class="profile-stats-panel" aria-label="Profile statistics">
+            <h2 class="profile-stats-title">Statistics</h2>
+            <ul class="profile-stats-list">
+                <li class="profile-stats-row">
+                    <span class="profile-stats-label">Posts</span>
+                    <span class="profile-stats-num">{{ user.reports | length }}</span>
+                </li>
+                <li class="profile-stats-row">
+                    <span class="profile-stats-label">Followers</span>
+                    <span class="profile-stats-num profile-stats-stub" title="Coming soon">0</span>
+                </li>
+                <li class="profile-stats-row">
+                    <span class="profile-stats-label">Following</span>
+                    <span class="profile-stats-num profile-stats-stub" title="Coming soon">0</span>
+                </li>
+            </ul>
+            <div class="profile-stats-divider" aria-hidden="true"></div>
+            <div class="profile-stats-row">
+                <span class="profile-stats-label">Credibility</span>
+                <span class="profile-stats-num profile-stats-credibility">
+                    {% if user.trust_score is none %}—{% else %}{{ user.trust_score }}%{% endif %}
+                </span>
+            </div>
+            <div class="profile-credibility-bar" aria-hidden="true">
+                <div class="profile-credibility-fill" style="width: {{ user.trust_score if user.trust_score is not none else 0 }}%;"></div>
+            </div>
+            {# breakdown of the credibility number — the two inputs that drive it #}
+            <div class="profile-stats-breakdown">
+                <span class="profile-stats-verify">✓ {{ user.verifications_received }} verified</span>
+                <span class="profile-stats-breakdown-sep">·</span>
+                <span class="profile-stats-dispute">✗ {{ user.disputes_received }} disputed</span>
+            </div>
+        </aside>
     </div>
 
-    {# ============== Stats row ============== #}
-    <div class="profile-stats">
-        <div class="profile-stat">
-            <div class="profile-stat-label">Trust score</div>
-            <div class="profile-stat-num">{{ user.trust_score }}</div>
-        </div>
-        <div class="profile-stat">
-            <div class="profile-stat-label">Reports submitted</div>
-            <div class="profile-stat-num">{{ user.reports | length }}</div>
-        </div>
-        <div class="profile-stat">
-            <div class="profile-stat-label">Verifications received</div>
-            <div class="profile-stat-num">—</div>
-        </div>
-    </div>
+    {# ============== Tabs (Posts is the only real one for now) ============== #}
+    <nav class="profile-tabs" aria-label="Profile sections">
+        <button type="button" class="profile-tab is-active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Posts ({{ user.reports | length }})
+        </button>
+        <button type="button" class="profile-tab" disabled title="Coming soon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            Credits &amp; Stats
+        </button>
+    </nav>
 
-    {# ============== Recent reports ============== #}
-    <div class="profile-section-header">
-        <h2 class="profile-section-title">Recent reports</h2>
-        <span class="profile-section-meta">{{ "Last 5 from " + user.username }}</span>
-    </div>
-
+    {# ============== Posts feed ============== #}
     {% if recent_reports %}
         <ul class="profile-feed">
             {% for r in recent_reports %}
-                <li class="profile-item" style="--cat: {{ r.category.marker_color }};">
-                    {# the text area is one big click target via the stretched link below;
-                       Edit button sits above it via z-index. #}
-                    <div class="profile-item-text">
-                        <a class="profile-item-link"
-                           href="{{ url_for('view_report', token=r.id|report_token) }}"
-                           aria-label="View report"></a>
+                <li class="profile-post-card" style="--cat: {{ r.category.marker_color }};">
+                    {# whole-card stretched link — Edit + cat-tag escape via z-index #}
+                    <a class="profile-post-link" href="{{ url_for('view_report', token=r.id|report_token) }}" aria-label="View report"></a>
 
-                        <div class="profile-item-top">
-                            <div class="profile-item-meta">
-                                <span class="profile-item-badge">
-                                    {{ CATEGORY_EMOJI.get(r.category.name, '') }} {{ r.category.name }}
-                                </span>
-                                <span class="profile-item-loc">{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
-                                <span class="profile-item-time">· {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                    <div class="profile-post-header">
+                        <span class="profile-post-icon" aria-hidden="true">{{ CATEGORY_EMOJI.get(r.category.name, '📝') }}</span>
+                        <div class="profile-post-titles">
+                            <h3 class="profile-post-title">{{ r.category.name }} in {{ r.suburb.name }}</h3>
+                            <div class="profile-post-sub">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                </svg>
+                                <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
+                                <span class="profile-post-sep">·</span>
+                                <span>{{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
                             </div>
-                            {% if is_own_profile %}
-                                <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="profile-item-edit">Edit</a>
-                            {% endif %}
                         </div>
-                        {% if r.description %}
-                            <p class="profile-item-desc">{{ r.description }}</p>
-                        {% endif %}
+                        <span class="profile-post-cat-tag">{{ r.category.name|upper }}</span>
                     </div>
+
+                    {% if r.description %}
+                        <p class="profile-post-desc">{{ r.description }}</p>
+                    {% endif %}
 
                     {# carousel for image/video attachments #}
                     {% if r.media %}
-                        <div id="carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
+                        <div id="carousel-{{ r.id }}" class="carousel slide profile-post-carousel" data-bs-ride="false">
                             {% if r.media | length > 1 %}
                                 <div class="carousel-indicators">
                                     {% for m in r.media %}
@@ -115,6 +177,34 @@
                             {% endif %}
                         </div>
                     {% endif %}
+
+                    {# stats footer — likes/comments are stubs until those features exist #}
+                    <div class="profile-post-stats">
+                        <span class="profile-post-stat profile-post-stat-stub" title="Coming soon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                            </svg>
+                            0
+                        </span>
+                        <span class="profile-post-stat profile-post-stat-stub" title="Coming soon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            0
+                        </span>
+                        <span class="profile-post-stat profile-post-stat-verified">
+                            ✓ {{ r.verify_count }} verified
+                        </span>
+                        {% if is_own_profile %}
+                            <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="profile-post-edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                                Edit
+                            </a>
+                        {% endif %}
+                    </div>
                 </li>
             {% endfor %}
         </ul>

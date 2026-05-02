@@ -1,6 +1,8 @@
-/* profile.html — carousel styling */
+/* ============================================================
+   profile.css — user profile page (hero + stats + post feed)
+   ============================================================ */
 
-/* make the carousel arrows very obvious — solid dark circles, scale up on hover */
+/* Carousel arrows + indicators (kept from old design — reused on report_view too) */
 .carousel-control-prev,
 .carousel-control-next {
     width: 60px;
@@ -24,7 +26,6 @@
     transform: scale(1.2);
 }
 
-/* indicator dots stay visible on any background */
 .carousel-indicators [data-bs-target] {
     background-color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.4);
@@ -32,164 +33,280 @@
 
 
 /* ============================================================
-   Profile page — page wrapper
+   Page wrapper
    ============================================================ */
 .profile-page {
-    max-width: 880px;
+    max-width: 1100px;
     margin: 1rem auto 3rem;
     padding: 0 1rem;
 }
 
 
 /* ============================================================
-   Header card — avatar + username + email
+   Hero — dark gradient header. Two-column on wide screens
+   (info left, stats panel right), single-column on mobile.
    ============================================================ */
-.profile-card {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    background: rgba(255, 255, 255, 0.94);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 1.5rem 1.75rem;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+.profile-hero {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+    background: linear-gradient(135deg, #2d2a4a 0%, #1e1b3a 100%);
+    border-radius: 18px;
+    padding: 2rem 2.25rem;
+    color: #fff;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.18);
     margin-bottom: 1.25rem;
 }
 
-/* big initial-letter avatar — gradient circle that doubles as a unique-ish visual ID */
+@media (max-width: 800px) {
+    .profile-hero {
+        grid-template-columns: 1fr;
+        padding: 1.5rem 1.5rem;
+    }
+}
+
+.profile-hero-main {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+/* large initial-letter avatar — translucent on the dark background */
 .profile-avatar {
     flex-shrink: 0;
-    width: 78px;
-    height: 78px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    width: 84px;
+    height: 84px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
     color: #fff;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.25rem;
+    font-size: 2.6rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.30);
     text-transform: uppercase;
 }
 
-.profile-info {
+.profile-hero-text {
     flex: 1;
     min-width: 0;
 }
 
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.15rem;
+}
+
 .profile-name {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(1.6rem, 3vw, 2rem);
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
     font-weight: 700;
-    letter-spacing: -0.03em;
+    color: #fff;
+    margin: 0;
+    letter-spacing: -0.02em;
     line-height: 1.1;
-    margin: 0 0 0.2rem;
-    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+}
+
+.profile-level-badge {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 0.28rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    white-space: nowrap;
 }
 
 .profile-handle {
-    margin: 0 0 0.4rem;
-    color: #94a3b8;
-    font-size: 0.9rem;
-    font-weight: 500;
+    margin: 0 0 0.55rem;
+    color: #cbd5e1;
+    font-size: 0.95rem;
 }
 
-.profile-email {
-    margin: 0;
-    color: #475569;
-    font-size: 0.9rem;
-}
-
-.profile-email strong {
-    color: #1e293b;
-    font-weight: 600;
-}
-
-
-/* ============================================================
-   Stats row — 3 small cards under the header
-   ============================================================ */
-.profile-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.75rem;
-}
-
-.profile-stat {
-    background: rgba(255, 255, 255, 0.94);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 0.85rem 1.1rem;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-}
-
-.profile-stat:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.07);
-    border-color: rgba(79, 70, 229, 0.25);
-}
-
-.profile-stat-label {
-    color: #64748b;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.2rem;
-}
-
-.profile-stat-num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 700;
-    line-height: 1.1;
-    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-
-/* ============================================================
-   Recent reports section
-   ============================================================ */
-.profile-section-header {
+.profile-meta {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.85rem;
-}
-
-.profile-section-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0;
-    letter-spacing: -0.02em;
-}
-
-.profile-section-meta {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
     color: #94a3b8;
     font-size: 0.85rem;
-    font-weight: 500;
+    margin: 0 0 0.85rem;
+}
+
+.profile-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.profile-meta-sep {
+    color: #64748b;
+}
+
+.profile-bio {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    max-width: 60ch;
 }
 
 
 /* ============================================================
-   Report items — same visual language as the listing page
+   Stats panel — translucent card sitting inside the hero
+   ============================================================ */
+.profile-stats-panel {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    align-self: start;
+}
+
+.profile-stats-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0 0 0.85rem;
+}
+
+.profile-stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.profile-stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.4rem 0;
+    color: #cbd5e1;
+}
+
+.profile-stats-label {
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+.profile-stats-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* placeholder values (followers / following / likes / comments) — dimmed
+   so it's visually clear the data isn't real yet */
+.profile-stats-stub {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.profile-stats-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.10);
+    margin: 0.5rem 0;
+}
+
+.profile-stats-credibility {
+    color: #fff;
+}
+
+/* Vote-count tints — green for verifies, red for disputes. Subtle so they
+   don't shout, but enough to make the numbers scannable at a glance. */
+.profile-stats-verify {
+    color: #6ee7b7;  /* light emerald — readable on the dark hero */
+}
+
+.profile-stats-dispute {
+    color: #fca5a5;  /* light red */
+}
+
+/* small caption row under the credibility bar — shows the verify/dispute
+   counts that feed into the % so users can see the math at a glance */
+.profile-stats-breakdown {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.profile-stats-breakdown-sep {
+    color: rgba(255, 255, 255, 0.28);
+}
+
+.profile-credibility-bar {
+    height: 7px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.profile-credibility-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+
+/* ============================================================
+   Tabs row — sits below the hero, simple underline indicator
+   ============================================================ */
+.profile-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1.5px solid #e2e8f0;
+    margin-bottom: 1.25rem;
+}
+
+.profile-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: none;
+    border: none;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    margin-bottom: -1.5px;  /* overlap parent's bottom border for a clean indicator */
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.profile-tab:hover:not(:disabled) {
+    color: #1e293b;
+}
+
+.profile-tab.is-active {
+    color: #1e293b;
+    border-bottom-color: #1e293b;
+}
+
+.profile-tab:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+
+/* ============================================================
+   Post cards — white with category color border-left + cat-tag
    ============================================================ */
 .profile-feed {
     list-style: none;
@@ -200,90 +317,146 @@
     gap: 0.85rem;
 }
 
-.profile-item {
-    background: rgba(255, 255, 255, 0.94);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+.profile-post-card {
+    position: relative;
+    background: #fff;
     border: 1px solid #e2e8f0;
     border-left: 4px solid var(--cat, #cbd5e1);
     border-radius: 12px;
-    padding: 1rem 1.2rem;
+    padding: 1.1rem 1.25rem;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.profile-item:hover {
+.profile-post-card:hover {
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
-/* the wrapper that the stretched-link sits inside — only the text part of
-   the card is clickable, the carousel below it stays interactive */
-.profile-item-text {
-    position: relative;
-    cursor: pointer;
-}
-
-/* invisible <a> covering the text area — clicking anywhere here navigates
-   to the single-report view */
-.profile-item-link {
+/* invisible <a> covering the card → click anywhere goes to single-report view */
+.profile-post-link {
     position: absolute;
     inset: 0;
     z-index: 1;
+    border-radius: inherit;
 }
 
-/* Edit button sits above the stretched link so it keeps its own behavior */
-.profile-item-edit {
+/* clickables that need to escape the stretched link */
+.profile-post-edit,
+.profile-post-cat-tag {
     position: relative;
     z-index: 2;
 }
 
-.profile-item-top {
+.profile-post-header {
     display: flex;
-    justify-content: space-between;
+    gap: 0.85rem;
     align-items: flex-start;
-    gap: 1rem;
-    flex-wrap: wrap;
 }
 
-.profile-item-meta {
+/* small rounded square holding the category emoji — like a badge tile */
+.profile-post-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--cat, #cbd5e1) 12%, white);
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    color: #475569;
-    font-size: 0.92rem;
-    font-weight: 500;
+    justify-content: center;
+    font-size: 1.4rem;
+    line-height: 1;
 }
 
-.profile-item-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
-    border: 1.5px solid var(--cat);
-    color: color-mix(in srgb, var(--cat) 70%, black);
-    padding: 0.3rem 0.8rem;
-    border-radius: 999px;
-    font-size: 0.78rem;
+.profile-post-titles {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-post-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
-}
-
-.profile-item-loc {
     color: #1e293b;
+    margin: 0 0 0.2rem;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
 }
 
-.profile-item-time {
-    color: #94a3b8;
+.profile-post-sub {
+    color: #64748b;
     font-size: 0.85rem;
-    font-weight: 400;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
 }
 
-.profile-item-edit {
+.profile-post-sep {
+    color: #cbd5e1;
+}
+
+/* category tag in the top-right corner of the card */
+.profile-post-cat-tag {
     flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--cat);
+    letter-spacing: 0.12em;
+    margin-top: 0.35rem;
+}
+
+.profile-post-desc {
+    margin: 0.85rem 0 0;
+    color: #1e293b;
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
+.profile-post-carousel {
+    margin-top: 0.85rem;
+}
+
+/* footer row — likes/comments stubs + verified count, with optional Edit on the right */
+.profile-post-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #f1f5f9;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 500;
+    flex-wrap: wrap;
+}
+
+.profile-post-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+}
+
+.profile-post-stat-stub {
+    color: #94a3b8;
+}
+
+.profile-post-stat-verified {
+    color: #047857;
+    font-weight: 600;
+}
+
+.profile-post-edit {
+    margin-left: auto;  /* push to the far right of the stats footer */
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
     background: #fff;
     border: 1.5px solid #e2e8f0;
     color: #475569;
-    padding: 0.3rem 0.85rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 8px;
     font-weight: 600;
     font-size: 0.82rem;
@@ -291,17 +464,14 @@
     transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
-.profile-item-edit:hover {
-    background: #eef2ff;
-    border-color: #4f46e5;
-    color: #4f46e5;
+.profile-post-edit:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
 }
 
-.profile-item-desc {
-    margin: 0.6rem 0 0;
-    color: #1e293b;
-    font-size: 0.95rem;
-    line-height: 1.5;
+.profile-post-edit svg {
+    flex-shrink: 0;
 }
 
 

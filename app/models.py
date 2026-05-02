@@ -11,7 +11,6 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    trust_score = db.Column(db.Integer, default=0)
 
     reports = db.relationship('Report', backref='author', lazy=True)
     verifications = db.relationship('Verification', backref='verifier', lazy=True)
@@ -21,6 +20,31 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    # ---- Aggregated reputation stats (computed live from related rows) ----
+    # These run sums in Python over the `reports` relationship. Fine at the
+    # current data scale; if the app grows, swap each one for a single SQL
+    # aggregate against the verifications table.
+
+    @property
+    def verifications_received(self):
+        """How many ✓ verify votes this user's reports have collected in total."""
+        return sum(r.verify_count for r in self.reports)
+
+    @property
+    def disputes_received(self):
+        """How many ✗ dispute votes this user's reports have collected in total."""
+        return sum(r.dispute_count for r in self.reports)
+
+    @property
+    def trust_score(self):
+        """Credibility percentage — share of incoming votes that are ✓ Verify.
+        Returns None when the user has received no votes yet, so the UI can
+        show "—" instead of a misleading 0%."""
+        total = self.verifications_received + self.disputes_received
+        if total == 0:
+            return None
+        return round(self.verifications_received / total * 100)
 
 class Category(db.Model):
     __tablename__ = 'categories'
