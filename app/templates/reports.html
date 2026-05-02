@@ -57,6 +57,15 @@
                 <input id="media" type="file" class="form-control" accept="image/*,video/*" multiple>
             </div>
 
+            {# Checked → stay on this page after submit (form resets so you can post another).
+               Unchecked → jump to the single-report view of the report you just created. #}
+            <div class="form-check mb-3 report-create-more">
+                <input id="create_more" type="checkbox" class="form-check-input">
+                <label for="create_more" class="form-check-label">
+                    Create another report after submit
+                </label>
+            </div>
+
             <button type="submit" class="btn btn-primary">Submit Report</button>
         </form>
     </div>
@@ -104,10 +113,19 @@ document.getElementById('report-form').addEventListener('submit', async (event) 
         body: payload,    // browser sets multipart/form-data + boundary automatically
     });
 
-    if (response.ok) {
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const createMore = document.getElementById('create_more').checked;
+
+    if (createMore) {
+        // stay on this page — clear the form so the user can post another
         event.target.reset();
         suburbSelect.innerHTML = '<option value="" disabled selected>Choose a state first...</option>';
         suburbSelect.disabled = true;
+    } else {
+        // jump to the single-report page for the report we just created
+        window.location.href = data.view_url;
     }
 });
 </script>

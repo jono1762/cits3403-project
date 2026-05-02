@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='3') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='7') }}">
 {% endblock %}
 
 {% block content %}
@@ -95,6 +95,15 @@
                         </svg>
                         Edit
                     </a>
+                    <button type="button" class="report-view-delete-btn"
+                            data-bs-toggle="modal" data-bs-target="#delete-report-modal"
+                            aria-label="Delete report">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                        </svg>
+                        Delete
+                    </button>
                 </div>
                 <div class="report-view-vote-counts">
                     <span class="report-view-vote-stat report-view-vote-stat-verify">
@@ -131,6 +140,54 @@
 
     </article>
 </section>
+
+{# Delete-confirmation modal — only rendered for the author. Uses Bootstrap's
+   modal so we don't have to ship our own focus-trap / overlay logic. #}
+{% if current_user.is_authenticated and report.user_id == current_user.id %}
+<div class="modal fade" id="delete-report-modal" tabindex="-1" aria-labelledby="delete-report-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delete-report-modal-label">Delete this report?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                This will permanently delete your report and any attached photos or videos. This can't be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-report-confirm"
+                        data-report-id="{{ report.id }}">
+                    Delete report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// On confirm: DELETE /api/reports/<id> → redirect to the listing on success.
+(function () {
+    const btn = document.getElementById('delete-report-confirm');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/reports/${btn.dataset.reportId}`, {method: 'DELETE'});
+            if (res.ok) {
+                window.location.href = "{{ url_for('listing_page') }}";
+            } else {
+                btn.disabled = false;
+                alert('Could not delete the report. Please try again.');
+            }
+        } catch (err) {
+            btn.disabled = false;
+            alert('Network error — please try again.');
+        }
+    });
+})();
+</script>
+{% endif %}
 
 {# AJAX handler — same pattern as reports_listing.html, just one bar to update. #}
 <script>

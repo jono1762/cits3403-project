@@ -610,7 +610,9 @@ def api_create_report():
                 pass
         raise
 
-    # response includes media URLs so the frontend can show thumbnails immediately
+    # response includes media URLs so the frontend can show thumbnails immediately,
+    # and view_url so the client can redirect to the single-report page when the
+    # user unchecks "create another"
     return jsonify({
         'id': report.id,
         'user_id': report.user_id,
@@ -621,6 +623,7 @@ def api_create_report():
         'address': report.address,
         'description': report.description,
         'created_at': report.created_at.isoformat(),
+        'view_url': url_for('view_report', token=_encode_report_id(report.id)),
         'media': [
             {
                 'id': m.id,
@@ -631,3 +634,27 @@ def api_create_report():
             for m in report.media
         ],
     }), 201
+
+
+@app.route('/api/reports/<int:report_id>', methods=['DELETE'])
+@login_required
+def api_delete_report(report_id):
+    """Author-only — wipes the report, its media (DB rows + disk files), and any votes."""
+    report = Report.query.get_or_404(report_id)
+    if report.user_id != current_user.id:
+        return jsonify({'error': "You can't delete someone else's report."}), 403
+
+    # remove media files from disk first; the DB rows go via cascade on the relationship
+    for m in report.media:
+        disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+        try:
+            os.remove(disk_path)
+        except OSError:
+            pass  # file already gone — fine
+
+    # Verification has no cascade on the model, so clear them by hand
+    Verification.query.filter_by(report_id=report.id).delete()
+
+    db.session.delete(report)
+    db.session.commit()
+    return jsonify({'ok': True})

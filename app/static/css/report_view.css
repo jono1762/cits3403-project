@@ -285,3 +285,59 @@
 .report-view-edit-btn svg {
     flex-shrink: 0;
 }
+
+/* "× Delete" pill — sits at the far-right end of the .own-report-actions row,
+   on the same line as "Your report" + Edit. Subtle slate by default, red-tinted
+   on hover so the destructive intent only appears when reached for. */
+.report-view-delete-btn {
+    margin-left: auto;  /* push to the far right of the cluster */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.9rem;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.report-view-delete-btn:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.report-view-delete-btn svg {
+    flex-shrink: 0;
+}
+
+/* Confirm-delete modal — slightly softer corners and a clearer header so the
+   destructive prompt feels deliberate, not noisy. */
+.delete-modal-content {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.delete-modal-content .modal-header {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.delete-modal-content .modal-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.delete-modal-content .modal-body {
+    color: #475569;
+    line-height: 1.55;
+}
+
+.delete-modal-content .modal-footer {
+    border-top: 1px solid #f1f5f9;
+}
