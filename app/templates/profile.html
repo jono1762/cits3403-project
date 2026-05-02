@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='9') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='10') }}">
 {% endblock %}
 
 {% block content %}
@@ -68,19 +68,19 @@
             {# Credibility — back inside the panel, separated by a divider.
                Compact: row + thin bar + verify/dispute caption. #}
             <div class="profile-stats-divider" aria-hidden="true"></div>
-            <div class="profile-stats-row">
+            <div class="profile-stats-row" data-profile-user-id="{{ user.id }}">
                 <span class="profile-stats-label">Credibility</span>
-                <span class="profile-stats-num">
+                <span class="profile-stats-num" id="profile-credibility-num">
                     {% if user.trust_score is none %}—{% else %}{{ user.trust_score }}%{% endif %}
                 </span>
             </div>
             <div class="profile-credibility-bar" aria-hidden="true">
-                <div class="profile-credibility-fill" style="width: {{ user.trust_score if user.trust_score is not none else 0 }}%;"></div>
+                <div class="profile-credibility-fill" id="profile-credibility-fill" style="width: {{ user.trust_score if user.trust_score is not none else 0 }}%;"></div>
             </div>
             <div class="profile-stats-breakdown">
-                <span class="profile-stats-verify">✓ {{ user.verifications_received }} verified</span>
+                <span class="profile-stats-verify" id="profile-verify-total">✓ {{ user.verifications_received }} verified</span>
                 <span class="profile-stats-breakdown-sep">·</span>
-                <span class="profile-stats-dispute">✗ {{ user.disputes_received }} disputed</span>
+                <span class="profile-stats-dispute" id="profile-dispute-total">✗ {{ user.disputes_received }} disputed</span>
             </div>
         </aside>
     </div>
@@ -240,32 +240,68 @@
     {% endif %}
 </section>
 
-{# Vote (verify/dispute) AJAX — same event-delegation pattern as the listing
-   page so any .vote-btn click on this page hits /api/reports/<id>/vote and
-   updates the counts + active state without a reload. #}
+{# Vote (verify/dispute) AJAX — updates the vote-bar AND the live credibility
+   stats in the hero (no page reload needed). Server returns author aggregates
+   so we can refresh the % + bar fill + verify/dispute breakdown in one go. #}
 <script>
-document.addEventListener('click', async (event) => {
-    const btn = event.target.closest('.profile-post-card .vote-btn');
-    if (!btn || btn.disabled) return;
-    const bar = btn.closest('.vote-bar');
-    if (!bar) return;
-    const reportId = bar.dataset.reportId;
-    const status = btn.dataset.status;
-    try {
-        const res = await fetch(`/api/reports/${reportId}/vote`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({status}),
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        bar.querySelector('.vote-verify .vote-count').textContent = data.verify_count;
-        bar.querySelector('.vote-dispute .vote-count').textContent = data.dispute_count;
-        bar.querySelector('.vote-verify').classList.toggle('is-active', data.user_vote === 'verify');
-        bar.querySelector('.vote-dispute').classList.toggle('is-active', data.user_vote === 'dispute');
-    } catch (err) {
-        /* silent fail — keep the UI as-is */
-    }
-});
+(function () {
+    // The id of the user this profile page belongs to — only update the hero
+    // credibility when a vote actually changes THIS user's stats.
+    const profileUserId = {{ user.id | tojson }};
+
+    document.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.profile-post-card .vote-btn');
+        if (!btn || btn.disabled) return;
+        const bar = btn.closest('.vote-bar');
+        if (!bar) return;
+        const card = btn.closest('.profile-post-card');
+        const reportId = bar.dataset.reportId;
+        const status = btn.dataset.status;
+
+        try {
+            const res = await fetch(`/api/reports/${reportId}/vote`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status}),
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // 1) update the vote-bar pills + active state
+            bar.querySelector('.vote-verify .vote-count').textContent = data.verify_count;
+            bar.querySelector('.vote-dispute .vote-count').textContent = data.dispute_count;
+            bar.querySelector('.vote-verify').classList.toggle('is-active', data.user_vote === 'verify');
+            bar.querySelector('.vote-dispute').classList.toggle('is-active', data.user_vote === 'dispute');
+
+            // 2) update the "✓ N verified" stat in the same card's footer
+            if (card) {
+                const verifiedStat = card.querySelector('.profile-post-stat-verified');
+                if (verifiedStat) verifiedStat.textContent = '✓ ' + data.verify_count + ' verified';
+            }
+
+            // 3) update the hero credibility section if this vote belongs to
+            //    the profile owner being viewed (otherwise it's stats for someone else)
+            if (data.author_id === profileUserId) {
+                const num = document.getElementById('profile-credibility-num');
+                const fill = document.getElementById('profile-credibility-fill');
+                const verifyTotal = document.getElementById('profile-verify-total');
+                const disputeTotal = document.getElementById('profile-dispute-total');
+
+                if (num) {
+                    num.textContent = (data.author_credibility === null
+                        ? '—'
+                        : data.author_credibility + '%');
+                }
+                if (fill) {
+                    fill.style.width = (data.author_credibility === null ? 0 : data.author_credibility) + '%';
+                }
+                if (verifyTotal) verifyTotal.textContent = '✓ ' + data.author_verify_total + ' verified';
+                if (disputeTotal) disputeTotal.textContent = '✗ ' + data.author_dispute_total + ' disputed';
+            }
+        } catch (err) {
+            /* silent fail — keep the UI as-is */
+        }
+    });
+})();
 </script>
 {% endblock %}

@@ -351,10 +351,18 @@ def api_vote_report(report_id):
         user_vote = new_status
     db.session.commit()
 
+    # Author-level aggregates so the profile UI can update credibility live
+    # without a page reload. trust_score is None when the author has no votes
+    # at all — JSON-encoded as null so the frontend can show "—".
+    author = report.author
     return jsonify({
         'verify_count': Verification.query.filter_by(report_id=report.id, status='verify').count(),
         'dispute_count': Verification.query.filter_by(report_id=report.id, status='dispute').count(),
         'user_vote': user_vote,
+        'author_id': author.id,
+        'author_verify_total': author.verifications_received,
+        'author_dispute_total': author.disputes_received,
+        'author_credibility': author.trust_score,
     })
 
 
