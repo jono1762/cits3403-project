@@ -383,14 +383,147 @@
     color: #cbd5e1;
 }
 
-/* category tag in the top-right corner of the card */
-.profile-post-cat-tag {
+/* ============================================================
+   Top-right cluster on each post card — verify/dispute (others) or
+   "Your report" + Edit pill (own). Mirrors the listing-page logic
+   so the two surfaces feel identical. Scoped to .profile-post-card
+   so we don't clash with the listing-page absolute-positioned variant.
+   ============================================================ */
+.profile-post-card .vote-bar,
+.profile-post-card .own-report-actions {
+    position: relative;  /* override listing's `absolute` */
+    z-index: 2;          /* above the stretched-link click target */
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.1rem;
+}
+
+.profile-post-card .vote-wrap {
+    display: inline-block;
+    cursor: help;
+}
+
+.profile-post-card .vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.32rem 0.75rem;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease;
+}
+
+.profile-post-card .vote-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.profile-post-card .vote-count {
+    background: #f1f5f9;
+    color: #475569;
     font-size: 0.7rem;
     font-weight: 700;
-    color: var(--cat);
-    letter-spacing: 0.12em;
-    margin-top: 0.35rem;
+    padding: 0.08rem 0.4rem;
+    border-radius: 999px;
+    min-width: 1.15rem;
+    text-align: center;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.profile-post-card .vote-verify:hover:not(:disabled) {
+    border-color: #10b981;
+    color: #047857;
+}
+
+.profile-post-card .vote-verify.is-active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.profile-post-card .vote-verify.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.profile-post-card .vote-dispute:hover:not(:disabled) {
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.profile-post-card .vote-dispute.is-active {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.profile-post-card .vote-dispute.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.profile-post-card .vote-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* "Your report" — grey clickable pill linking to single-report view */
+.profile-post-card .own-report-tag {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease;
+}
+
+.profile-post-card .own-report-tag:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+/* Edit pill (with pen icon) — same shape as the listing's listing-item-edit */
+.profile-post-card .listing-item-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    padding: 0.28rem 0.7rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.profile-post-card .listing-item-edit:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+
+.profile-post-card .listing-item-edit svg {
+    flex-shrink: 0;
 }
 
 .profile-post-desc {
