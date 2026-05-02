@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='10') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='11') }}">
 {% endblock %}
 
 {% block content %}
@@ -46,6 +46,25 @@
                         Sharing real-time updates from across Australia.
                     {% endif %}
                 </p>
+
+                {# Follow button — only on someone else's profile, only for auth users.
+                   Two visual states: indigo "Follow" → grey "Followed" (Instagram-style).
+                   Clicking "Followed" pops the unfollow confirmation modal. #}
+                {% if not is_own_profile and current_user.is_authenticated %}
+                    {% set is_following = user.is_followed_by(current_user) %}
+                    <button id="follow-btn"
+                            type="button"
+                            class="profile-follow-btn {{ 'is-following' if is_following else '' }}"
+                            data-user-id="{{ user.id }}"
+                            data-following="{{ 'true' if is_following else 'false' }}"
+                            data-username="{{ user.username }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            {# checkmark when following, plus when not — JS swaps the path on click #}
+                            <path id="follow-btn-icon" d="{{ 'M20 6L9 17l-5-5' if is_following else 'M12 5v14M5 12h14' }}"/>
+                        </svg>
+                        <span class="profile-follow-label">{{ 'Followed' if is_following else 'Follow' }}</span>
+                    </button>
+                {% endif %}
             </div>
         </div>
 
@@ -57,11 +76,11 @@
                 </li>
                 <li class="profile-stats-row">
                     <span class="profile-stats-label">Followers</span>
-                    <span class="profile-stats-num profile-stats-stub" title="Coming soon">0</span>
+                    <span class="profile-stats-num" id="profile-follower-count">{{ user.follower_count }}</span>
                 </li>
                 <li class="profile-stats-row">
                     <span class="profile-stats-label">Following</span>
-                    <span class="profile-stats-num profile-stats-stub" title="Coming soon">0</span>
+                    <span class="profile-stats-num" id="profile-following-count">{{ user.following_count }}</span>
                 </li>
             </ul>
 
@@ -239,6 +258,100 @@
         </div>
     {% endif %}
 </section>
+
+{# Unfollow confirmation modal — same Bootstrap pattern as the report / comment
+   delete modals. Only rendered on someone else's profile when the viewer is
+   logged in (the only case where the Follow button exists). #}
+{% if not is_own_profile and current_user.is_authenticated %}
+<div class="modal fade" id="unfollow-modal" tabindex="-1" aria-labelledby="unfollow-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="unfollow-modal-label">Unfollow {{ user.username }}?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                You'll stop seeing their reports in your feed. You can follow them again at any time.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="unfollow-confirm">Unfollow</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Follow / Unfollow AJAX — Instagram-style:
+   • Click "Follow" (when not following) → POST /api/follow/<id> → button flips to "Followed"
+   • Click "Followed" → opens unfollow modal → confirm → DELETE /api/follow/<id> → flips back
+   The modal pattern matches the existing delete modals so the UX is consistent. #}
+<script>
+(function () {
+    const followBtn = document.getElementById('follow-btn');
+    if (!followBtn) return;
+
+    const userId = followBtn.dataset.userId;
+    const labelEl = followBtn.querySelector('.profile-follow-label');
+    const iconEl = document.getElementById('follow-btn-icon');
+    const followerCountEl = document.getElementById('profile-follower-count');
+    const followingCountEl = document.getElementById('profile-following-count');
+    const modalEl = document.getElementById('unfollow-modal');
+    const confirmBtn = document.getElementById('unfollow-confirm');
+
+    const ICON_PLUS = 'M12 5v14M5 12h14';      // when not following
+    const ICON_CHECK = 'M20 6L9 17l-5-5';      // when followed
+
+    function setState(isFollowing, followerCount, followingCount) {
+        followBtn.dataset.following = isFollowing ? 'true' : 'false';
+        followBtn.classList.toggle('is-following', isFollowing);
+        if (labelEl) labelEl.textContent = isFollowing ? 'Followed' : 'Follow';
+        if (iconEl) iconEl.setAttribute('d', isFollowing ? ICON_CHECK : ICON_PLUS);
+        if (followerCountEl && typeof followerCount === 'number') {
+            followerCountEl.textContent = followerCount;
+        }
+        if (followingCountEl && typeof followingCount === 'number') {
+            followingCountEl.textContent = followingCount;
+        }
+    }
+
+    followBtn.addEventListener('click', async () => {
+        const currentlyFollowing = followBtn.dataset.following === 'true';
+        if (currentlyFollowing) {
+            // open the unfollow confirmation modal — don't unfollow until user confirms
+            if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            return;
+        }
+        // not following yet — follow immediately (Instagram-style, no confirm needed)
+        followBtn.disabled = true;
+        try {
+            const res = await fetch(`/api/follow/${userId}`, {method: 'POST'});
+            if (res.ok) {
+                const data = await res.json();
+                setState(data.is_following, data.follower_count, data.following_count);
+            }
+        } finally {
+            followBtn.disabled = false;
+        }
+    });
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', async () => {
+            confirmBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/follow/${userId}`, {method: 'DELETE'});
+                if (res.ok) {
+                    const data = await res.json();
+                    setState(data.is_following, data.follower_count, data.following_count);
+                }
+            } finally {
+                confirmBtn.disabled = false;
+                if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+            }
+        });
+    }
+})();
+</script>
 
 {# Vote (verify/dispute) AJAX — updates the vote-bar AND the live credibility
    stats in the hero (no page reload needed). Server returns author aggregates

@@ -46,6 +46,24 @@ class User(UserMixin, db.Model):
             return None
         return round(self.verifications_received / total * 100)
 
+    # ---- Follow graph ----
+    # Counts run a single SQL aggregate (count) — cheap even at scale.
+    @property
+    def follower_count(self):
+        return Follow.query.filter_by(followed_id=self.id).count()
+
+    @property
+    def following_count(self):
+        return Follow.query.filter_by(follower_id=self.id).count()
+
+    def is_followed_by(self, user):
+        """True if `user` already follows this user. False for guests / self / unknown."""
+        if not getattr(user, 'is_authenticated', False):
+            return False
+        return Follow.query.filter_by(
+            follower_id=user.id, followed_id=self.id
+        ).first() is not None
+
 class Category(db.Model):
     __tablename__ = 'categories'
     id = db.Column(db.Integer, primary_key=True)
@@ -182,3 +200,17 @@ class CommentVote(db.Model):
     # Same toggle semantics as Verification on Report.
     status = db.Column(db.String(10), nullable=False, default='verify')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Follow(db.Model):
+    """Directed follow edge — follower_id is following followed_id.
+    The unique constraint stops a user from following the same person twice."""
+    __tablename__ = 'follows'
+    id = db.Column(db.Integer, primary_key=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('follower_id', 'followed_id', name='uq_follow_pair'),
+    )

@@ -5,7 +5,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification, Comment, CommentMedia, CommentVote
+from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -301,6 +301,47 @@ def api_search_users():
         }
         for u in users
     ])
+
+
+# ---------------- Follow / Unfollow ----------------
+# POST creates the edge (idempotent — re-following is a no-op).
+# DELETE removes it. Self-follow is rejected at the API; the UI hides the
+# button on own profiles, but defence-in-depth never hurts.
+
+@app.route('/api/follow/<int:user_id>', methods=['POST'])
+@login_required
+def api_follow_user(user_id):
+    if user_id == current_user.id:
+        return jsonify({'error': "You can't follow yourself."}), 400
+    target = User.query.get_or_404(user_id)
+    existing = Follow.query.filter_by(
+        follower_id=current_user.id, followed_id=target.id
+    ).first()
+    if not existing:
+        db.session.add(Follow(follower_id=current_user.id, followed_id=target.id))
+        db.session.commit()
+    return jsonify({
+        'is_following': True,
+        'follower_count': target.follower_count,
+        'following_count': target.following_count,
+    })
+
+@app.route('/api/follow/<int:user_id>', methods=['DELETE'])
+@login_required
+def api_unfollow_user(user_id):
+    target = User.query.get_or_404(user_id)
+    existing = Follow.query.filter_by(
+        follower_id=current_user.id, followed_id=target.id
+    ).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+    return jsonify({
+        'is_following': False,
+        'follower_count': target.follower_count,
+        'following_count': target.following_count,
+    })
+
 
 # /reports/<token> — public read-only view of a single report.
 # `<token>` is the signed URLSafeSerializer-encoded id, not the raw integer,
