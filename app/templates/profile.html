@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='4') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='6') }}">
 {% endblock %}
 
 {% block content %}
@@ -30,7 +30,7 @@
                 <p class="profile-handle">@{{ user.username|lower }}</p>
                 <div class="profile-meta">
                     <span class="profile-meta-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                             <circle cx="12" cy="10" r="3"/>
                         </svg>
@@ -50,7 +50,6 @@
         </div>
 
         <aside class="profile-stats-panel" aria-label="Profile statistics">
-            <h2 class="profile-stats-title">Statistics</h2>
             <ul class="profile-stats-list">
                 <li class="profile-stats-row">
                     <span class="profile-stats-label">Posts</span>
@@ -65,17 +64,19 @@
                     <span class="profile-stats-num profile-stats-stub" title="Coming soon">0</span>
                 </li>
             </ul>
+
+            {# Credibility — back inside the panel, separated by a divider.
+               Compact: row + thin bar + verify/dispute caption. #}
             <div class="profile-stats-divider" aria-hidden="true"></div>
             <div class="profile-stats-row">
                 <span class="profile-stats-label">Credibility</span>
-                <span class="profile-stats-num profile-stats-credibility">
+                <span class="profile-stats-num">
                     {% if user.trust_score is none %}—{% else %}{{ user.trust_score }}%{% endif %}
                 </span>
             </div>
             <div class="profile-credibility-bar" aria-hidden="true">
                 <div class="profile-credibility-fill" style="width: {{ user.trust_score if user.trust_score is not none else 0 }}%;"></div>
             </div>
-            {# breakdown of the credibility number — the two inputs that drive it #}
             <div class="profile-stats-breakdown">
                 <span class="profile-stats-verify">✓ {{ user.verifications_received }} verified</span>
                 <span class="profile-stats-breakdown-sep">·</span>

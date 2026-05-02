@@ -48,41 +48,41 @@
    ============================================================ */
 .profile-hero {
     display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 2rem;
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
     background: linear-gradient(135deg, #2d2a4a 0%, #1e1b3a 100%);
-    border-radius: 18px;
-    padding: 2rem 2.25rem;
+    border-radius: 16px;
+    padding: 1.35rem 1.6rem;
     color: #fff;
-    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.18);
-    margin-bottom: 1.25rem;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+    margin-bottom: 1rem;
 }
 
 @media (max-width: 800px) {
     .profile-hero {
         grid-template-columns: 1fr;
-        padding: 1.5rem 1.5rem;
+        padding: 1.15rem 1.15rem;
     }
 }
 
 .profile-hero-main {
     display: flex;
-    gap: 1.25rem;
+    gap: 1rem;
     align-items: flex-start;
     min-width: 0;
 }
 
-/* large initial-letter avatar — translucent on the dark background */
+/* compact initial-letter avatar — translucent on the dark background */
 .profile-avatar {
     flex-shrink: 0;
-    width: 84px;
-    height: 84px;
-    border-radius: 16px;
+    width: 64px;
+    height: 64px;
+    border-radius: 13px;
     background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%);
     border: 1.5px solid rgba(255, 255, 255, 0.16);
     color: #fff;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.6rem;
+    font-size: 2rem;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -105,7 +105,7 @@
 
 .profile-name {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    font-size: clamp(1.35rem, 2.5vw, 1.75rem);
     font-weight: 700;
     color: #fff;
     margin: 0;
@@ -125,19 +125,19 @@
 }
 
 .profile-handle {
-    margin: 0 0 0.55rem;
+    margin: 0 0 0.4rem;
     color: #cbd5e1;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
 }
 
 .profile-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.35rem;
     align-items: center;
     color: #94a3b8;
-    font-size: 0.85rem;
-    margin: 0 0 0.85rem;
+    font-size: 0.8rem;
+    margin: 0 0 0.55rem;
 }
 
 .profile-meta-item {
@@ -153,8 +153,8 @@
 .profile-bio {
     margin: 0;
     color: #e2e8f0;
-    font-size: 0.95rem;
-    line-height: 1.55;
+    font-size: 0.88rem;
+    line-height: 1.45;
     max-width: 60ch;
 }
 
@@ -165,20 +165,11 @@
 .profile-stats-panel {
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 14px;
-    padding: 1.15rem 1.25rem;
+    border-radius: 12px;
+    padding: 0.7rem 0.95rem;
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     align-self: start;
-}
-
-.profile-stats-title {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin: 0 0 0.85rem;
 }
 
 .profile-stats-list {
@@ -191,20 +182,27 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 0.4rem 0;
+    padding: 0.22rem 0;
     color: #cbd5e1;
 }
 
 .profile-stats-label {
-    font-size: 0.92rem;
+    font-size: 0.82rem;
     font-weight: 500;
 }
 
 .profile-stats-num {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: #fff;
+}
+
+/* divider between the basic stats and the credibility section in the panel */
+.profile-stats-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.10);
+    margin: 0.45rem 0;
 }
 
 /* placeholder values (followers / following / likes / comments) — dimmed
@@ -213,34 +211,23 @@
     color: rgba(255, 255, 255, 0.4);
 }
 
-.profile-stats-divider {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.10);
-    margin: 0.5rem 0;
-}
-
-.profile-stats-credibility {
-    color: #fff;
-}
-
-/* Vote-count tints — green for verifies, red for disputes. Subtle so they
-   don't shout, but enough to make the numbers scannable at a glance. */
+/* Vote-count tints in the credibility breakdown — green for verifies, red for disputes. */
 .profile-stats-verify {
-    color: #6ee7b7;  /* light emerald — readable on the dark hero */
+    color: #6ee7b7;
 }
 
 .profile-stats-dispute {
-    color: #fca5a5;  /* light red */
+    color: #fca5a5;
 }
 
-/* small caption row under the credibility bar — shows the verify/dispute
+/* compact caption under the credibility bar — shows the verify/dispute
    counts that feed into the % so users can see the math at a glance */
 .profile-stats-breakdown {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.55rem;
-    font-size: 0.78rem;
+    gap: 0.45rem;
+    margin-top: 0.4rem;
+    font-size: 0.74rem;
     font-weight: 600;
 }
 
@@ -249,11 +236,11 @@
 }
 
 .profile-credibility-bar {
-    height: 7px;
+    height: 5px;
     background: rgba(255, 255, 255, 0.12);
     border-radius: 999px;
     overflow: hidden;
-    margin-top: 0.5rem;
+    margin-top: 0.3rem;
 }
 
 .profile-credibility-fill {
