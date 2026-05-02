@@ -38,10 +38,11 @@ def _media_type_for(filename):
 
 @app.route('/')
 def index():
-    # logged-out users see the landing page; logged-in users see the map
+    # logged-out users see the landing page; logged-in users go to the map
+    # (redirect rather than render so map_page() supplies the data context)
     if not current_user.is_authenticated:
         return render_template('landing.html')
-    return render_template('index.html')
+    return redirect(url_for('map_page'))
 
 # single source of truth for the category-name → emoji map.
 # Injected into every template via the context processor below so the same
@@ -312,6 +313,49 @@ def view_report(token):
         abort(404)
     report = Report.query.get_or_404(report_id)
     return render_template('report_view.html', report=report)
+
+
+# POST /api/reports/<id>/vote — verify or dispute a report.
+# Only logged-in users; clicking the same status again removes the vote (toggle).
+# Authors cannot vote on their own report. Returns updated counts as JSON.
+@app.route('/api/reports/<int:report_id>/vote', methods=['POST'])
+@login_required
+def api_vote_report(report_id):
+    report = Report.query.get_or_404(report_id)
+
+    if report.user_id == current_user.id:
+        return jsonify({'error': "You can't vote on your own report."}), 400
+
+    payload = request.get_json(silent=True) or {}
+    new_status = payload.get('status') or request.form.get('status')
+    if new_status not in ('verify', 'dispute'):
+        return jsonify({'error': 'Invalid status.'}), 400
+
+    existing = Verification.query.filter_by(
+        report_id=report.id, user_id=current_user.id
+    ).first()
+    if existing:
+        if existing.status == new_status:
+            # clicked the same button again — toggle off
+            db.session.delete(existing)
+            user_vote = None
+        else:
+            existing.status = new_status
+            user_vote = new_status
+    else:
+        db.session.add(Verification(
+            report_id=report.id,
+            user_id=current_user.id,
+            status=new_status,
+        ))
+        user_vote = new_status
+    db.session.commit()
+
+    return jsonify({
+        'verify_count': Verification.query.filter_by(report_id=report.id, status='verify').count(),
+        'dispute_count': Verification.query.filter_by(report_id=report.id, status='dispute').count(),
+        'user_vote': user_vote,
+    })
 
 
 # /reports/<id>/edit — GET renders the edit form, POST saves changes

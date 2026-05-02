@@ -210,6 +210,7 @@
 }
 
 .listing-item {
+    position: relative;
     background: rgba(255, 255, 255, 0.94);
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
@@ -241,9 +242,10 @@
     z-index: 1;
 }
 
-/* sub-clickables sit above the stretched link so they keep their own behavior */
-.listing-item-author a,
-.listing-item-edit {
+/* author link inside the meta sits above the stretched link.
+   The Edit button now lives inside .own-report-actions which already has
+   z-index: 2, so it doesn't need its own here. */
+.listing-item-author a {
     position: relative;
     z-index: 2;
 }
@@ -254,6 +256,18 @@
     align-items: flex-start;
     gap: 1rem;
     flex-wrap: wrap;
+    /* leave room on the right for the absolutely-positioned vote-bar */
+    padding-right: 14rem;
+}
+
+@media (max-width: 600px) {
+    /* on narrow screens the corner cluster wraps below the meta row */
+    .listing-item-top { padding-right: 0; }
+    .vote-bar,
+    .own-report-actions {
+        position: static;
+        margin-top: 0.6rem;
+    }
 }
 
 .listing-item-meta {
@@ -299,10 +313,13 @@
 
 .listing-item-edit {
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
     background: #fff;
     border: 1.5px solid #e2e8f0;
     color: #475569;
-    padding: 0.3rem 0.85rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 8px;
     font-weight: 600;
     font-size: 0.82rem;
@@ -310,10 +327,15 @@
     transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
+/* hover — slate/near-black so the icon + text darken together via currentColor */
 .listing-item-edit:hover {
-    background: #eef2ff;
-    border-color: #4f46e5;
-    color: #4f46e5;
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+
+.listing-item-edit svg {
+    flex-shrink: 0;
 }
 
 .listing-item-address {
@@ -389,4 +411,139 @@
 
 .listing-empty a:hover {
     text-decoration: underline;
+}
+
+
+/* ============================================================
+   Verify / Dispute vote bar — pinned to the top-right of each card.
+   Absolute + z-index so it sits above the stretched-link click target
+   on .listing-item-text (otherwise the link swallows the click).
+   ============================================================ */
+.vote-bar {
+    position: absolute;
+    top: 0.85rem;
+    right: 1rem;
+    z-index: 2;
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* Own-report top-right cluster — replaces the vote-bar for the report's author.
+   Holds the "Your report" tag and the Edit button side-by-side. */
+.own-report-actions {
+    position: absolute;
+    top: 0.85rem;
+    right: 1rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+/* "Your report" tag — grey pill that links to the single-report view.
+   Styled like a button so it visually reads as clickable. */
+.own-report-tag {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease;
+}
+
+.own-report-tag:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+/* wrapping span carries the title-tooltip even when the button is disabled
+   (some browsers don't show <button title> when disabled, but a <span> does).
+   `cursor: help` is the small "?" pointer so guests can see the wrap is hover-aware. */
+.vote-wrap {
+    display: inline-block;
+    cursor: help;
+}
+
+.vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease;
+}
+
+.vote-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+/* small filled count chip on the right side of each button */
+.vote-count {
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    min-width: 1.2rem;
+    text-align: center;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+/* ----- Verify (green) ----- */
+.vote-verify:hover:not(:disabled) {
+    border-color: #10b981;
+    color: #047857;
+}
+
+.vote-verify.is-active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.vote-verify.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+/* ----- Dispute (red) ----- */
+.vote-dispute:hover:not(:disabled) {
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.vote-dispute.is-active {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.vote-dispute.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+/* ----- Disabled (guest or own-report) ----- */
+.vote-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

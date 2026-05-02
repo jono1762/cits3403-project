@@ -74,10 +74,10 @@
                 <nav class="app-sidebar-nav mobile-sidebar-nav" aria-label="Mobile Sidebar Navigation">
                     <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
-                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}" data-bs-dismiss="offcanvas">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
+                    <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Top Reports</a>
 
                     <div class="app-sidebar-group-header">Account</div>
@@ -89,6 +89,7 @@
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
                     <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}" data-bs-dismiss="offcanvas">Favourites</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}" data-bs-dismiss="offcanvas">Help</a>
@@ -134,10 +135,10 @@
                 <nav class="app-sidebar-nav">
                     <div class="app-sidebar-group-header">Locations</div>
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
-                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}">Favourites</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
+                    <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}">Top Reports</a>
 
                     <div class="app-sidebar-group-header">Account</div>
@@ -149,6 +150,7 @@
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
                     <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}">Favourites</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>

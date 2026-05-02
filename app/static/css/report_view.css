@@ -115,28 +115,173 @@
 }
 
 
-/* edit button (author only) */
-.report-view-actions {
+/* ============================================================
+   Verify / Dispute section — sits below the description/media.
+   Own reports show a "Your report" tag plus tally instead.
+   ============================================================ */
+.report-view-vote-section {
     margin-top: 1.5rem;
     padding-top: 1.25rem;
     border-top: 1px solid #e2e8f0;
 }
 
-.report-view-edit-btn {
+.report-view-vote-prompt {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.75rem;
+}
+
+.report-view-vote-bar {
+    /* not absolute on this page — sit in the normal flow */
+    position: static !important;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Cluster: "Your report" label + Edit button, side-by-side. Mirrors the
+   listing-page top-right cluster so the two pages feel consistent. */
+.own-report-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.report-view-vote-counts {
+    display: inline-flex;
+    gap: 0.85rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.report-view-vote-stat {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.report-view-vote-stat-verify { color: #047857; }
+.report-view-vote-stat-dispute { color: #b91c1c; }
+
+/* ----- vote button styles (shared visual language with listing) ----- */
+.report-view-vote-section .vote-wrap {
     display: inline-block;
+    cursor: help;
+}
+
+.report-view-vote-section .vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease;
+}
+
+.report-view-vote-section .vote-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.report-view-vote-section .vote-count {
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    min-width: 1.3rem;
+    text-align: center;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.report-view-vote-section .vote-verify:hover:not(:disabled) {
+    border-color: #10b981;
+    color: #047857;
+}
+
+.report-view-vote-section .vote-verify.is-active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.report-view-vote-section .vote-verify.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.report-view-vote-section .vote-dispute:hover:not(:disabled) {
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.report-view-vote-section .vote-dispute.is-active {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.report-view-vote-section .vote-dispute.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.report-view-vote-section .vote-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* "Your report" pill — grey label, matches the listing's tag. Static label
+   here (you're already on the report's view page, so no link needed). */
+.own-report-tag {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* Edit button — grey-on-grey with pen icon. Mirrors the listing's Edit
+   button styling so the two pages stay consistent. */
+.report-view-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     background: #fff;
     border: 1.5px solid #e2e8f0;
     color: #475569;
-    padding: 0.5rem 1.15rem;
+    padding: 0.35rem 0.9rem;
     border-radius: 9px;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-decoration: none;
     transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 .report-view-edit-btn:hover {
-    background: #eef2ff;
-    border-color: #4f46e5;
-    color: #4f46e5;
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+
+.report-view-edit-btn svg {
+    flex-shrink: 0;
 }

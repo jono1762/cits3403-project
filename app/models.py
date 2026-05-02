@@ -61,6 +61,23 @@ class Report(db.Model):
     # cascade so deleting a report also deletes its attached images/videos
     media = db.relationship('ReportMedia', backref='report', lazy=True, cascade='all, delete-orphan')
 
+    @property
+    def verify_count(self):
+        return sum(1 for v in self.verifications if v.status == 'verify')
+
+    @property
+    def dispute_count(self):
+        return sum(1 for v in self.verifications if v.status == 'dispute')
+
+    def vote_by(self, user):
+        """Return the given user's vote on this report — 'verify', 'dispute', or None."""
+        if not getattr(user, 'is_authenticated', False):
+            return None
+        for v in self.verifications:
+            if v.user_id == user.id:
+                return v.status
+        return None
+
 class ReportMedia(db.Model):
     __tablename__ = 'report_media'
     id = db.Column(db.Integer, primary_key=True)
@@ -75,4 +92,7 @@ class Verification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     report_id = db.Column(db.Integer, db.ForeignKey('reports.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # 'verify' = user confirms the report is accurate; 'dispute' = user denies it.
+    # Each (user, report) pair has at most one row — flipping vote updates this.
+    status = db.Column(db.String(10), nullable=False, default='verify')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
