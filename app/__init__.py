@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
+from sqlalchemy import inspect, text
 from .models import db, User, Category, State, Suburb, Report
 
 login_manager = LoginManager()
@@ -32,7 +33,7 @@ DEFAULT_LOCATIONS = {
     ('NSW', 'New South Wales'):       ['Sydney', 'Newcastle', 'Wollongong', 'Central Coast'],
     ('VIC', 'Victoria'):              ['Melbourne', 'Geelong', 'Ballarat'],
     ('QLD', 'Queensland'):            ['Brisbane', 'Gold Coast', 'Sunshine Coast', 'Cairns', 'Townsville'],
-    ('WA',  'Western Australia'):     ['Perth', 'Fremantle', 'Mandurah', 'Bunbury'],
+    ('WA',  'Western Australia'):     ['Perth', 'Mandurah', 'Bunbury'],
     ('SA',  'South Australia'):       ['Adelaide', 'Mount Gambier'],
     ('TAS', 'Tasmania'):              ['Hobart', 'Launceston'],
     ('ACT', 'Australian Capital Territory'): ['Canberra'],
@@ -77,6 +78,13 @@ def seed_test_users_and_reports():
         db.session.add(u)
     db.session.commit()
 
+def ensure_report_suburb_name_column():
+    columns = {column['name'] for column in inspect(db.engine).get_columns('reports')}
+    if 'suburb_name' in columns:
+        return
+    db.session.execute(text('ALTER TABLE reports ADD COLUMN suburb_name VARCHAR(100)'))
+    db.session.commit()
+
     # add sample reports — only if the user has none, to stay idempotent
     for username, suburb_name, category_name, description in DEFAULT_TEST_REPORTS:
         user = User.query.filter_by(username=username).first()
@@ -116,5 +124,6 @@ def create_app():
         seed_categories()  # make sure default categories exist
         seed_locations()   # make sure states + suburbs exist
         seed_test_users_and_reports()  # arbitrary users so search has something to find
+        ensure_report_suburb_name_column()
 
     return app

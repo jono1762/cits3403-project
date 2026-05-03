@@ -24,10 +24,16 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Suburb <span class="text-danger">*</span></label>
-                <select id="suburb_id" class="form-select" required disabled>
+                <label class="form-label">City <span class="text-danger">*</span></label>
+                <select id="city_id" class="form-select" required disabled>
                     <option value="" disabled selected>Choose a state first...</option>
                 </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Suburb <span class="text-muted">(optional)</span></label>
+                <input id="suburb_name" type="text" class="form-control" maxlength="100"
+                       placeholder="e.g. Northbridge, Carlton, Bondi Junction">
             </div>
 
             <div class="mb-3">
@@ -63,25 +69,21 @@
 </section>
 
 <script>
-// pre-loaded lookup: { stateId: [{id, name}, ...] } — populated from the server on page load
-const SUBURBS_BY_STATE = {{ suburbs_by_state | tojson }};
-
+const CITIES_BY_STATE = {{ cities_by_state | tojson }};
 const stateSelect = document.getElementById('state_id');
-const suburbSelect = document.getElementById('suburb_id');
+const citySelect = document.getElementById('city_id');
 
-// when the user picks a state, repopulate the suburb dropdown with matching suburbs
 stateSelect.addEventListener('change', () => {
-    const stateId = stateSelect.value;
-    const suburbs = SUBURBS_BY_STATE[stateId] || [];
+    const cities = CITIES_BY_STATE[stateSelect.value] || [];
 
-    suburbSelect.innerHTML = '<option value="" disabled selected>Select a suburb...</option>';
-    for (const sub of suburbs) {
+    citySelect.innerHTML = '<option value="" disabled selected>Select a city...</option>';
+    for (const city of cities) {
         const opt = document.createElement('option');
-        opt.value = sub.id;
-        opt.textContent = sub.name;
-        suburbSelect.appendChild(opt);
+        opt.value = city.id;
+        opt.textContent = city.name;
+        citySelect.appendChild(opt);
     }
-    suburbSelect.disabled = suburbs.length === 0;
+    citySelect.disabled = cities.length === 0;
 });
 
 document.getElementById('report-form').addEventListener('submit', async (event) => {
@@ -89,7 +91,8 @@ document.getElementById('report-form').addEventListener('submit', async (event) 
 
     // use FormData so we can send both text fields and uploaded files in one request
     const payload = new FormData();
-    payload.append('suburb_id', suburbSelect.value);
+    payload.append('suburb_id', citySelect.value);
+    payload.append('suburb_name', document.getElementById('suburb_name').value);
     payload.append('category_id', document.getElementById('category_id').value);
     payload.append('address', document.getElementById('address').value);
     payload.append('description', document.getElementById('description').value);
@@ -106,8 +109,7 @@ document.getElementById('report-form').addEventListener('submit', async (event) 
 
     if (response.ok) {
         event.target.reset();
-        suburbSelect.innerHTML = '<option value="" disabled selected>Choose a state first...</option>';
-        suburbSelect.disabled = true;
+        citySelect.selectedIndex = 0;
     }
 });
 </script>

@@ -331,6 +331,7 @@ def edit_report_page(report_id):
     if request.method == 'POST':
         category_id = request.form.get('category_id', type=int)
         suburb_id = request.form.get('suburb_id', type=int)
+        suburb_name = (request.form.get('suburb_name') or '').strip() or None
         description = (request.form.get('description') or '').strip()
         address = (request.form.get('address') or '').strip() or None
 
@@ -350,6 +351,8 @@ def edit_report_page(report_id):
             errors['category_id'] = 'Invalid or missing category.'
         if not suburb_id or not Suburb.query.get(suburb_id):
             errors['suburb_id'] = 'Invalid or missing location.'
+        if suburb_name and len(suburb_name) > 100:
+            errors['suburb_name'] = 'Suburb must be 100 characters or fewer.'
         if address and len(address) > 200:
             errors['address'] = 'Address must be 200 characters or fewer.'
         if remaining_after_delete + len(new_files) > MAX_MEDIA_FILES:
@@ -363,6 +366,7 @@ def edit_report_page(report_id):
         if not errors:
             report.category_id = category_id
             report.suburb_id = suburb_id
+            report.suburb_name = suburb_name
             report.address = address
             report.description = description
 
@@ -408,17 +412,18 @@ def edit_report_page(report_id):
             flash(msg, 'error')
 
     categories = Category.query.order_by(Category.id).all()
-    states = State.query.order_by(State.name).all()
-    suburbs_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs]
-        for s in states
-    }
+    cities = (
+        Suburb.query
+        .join(State)
+        .filter(Suburb.name != 'Fremantle')
+        .order_by(State.name, Suburb.name)
+        .all()
+    )
     return render_template(
         'report_edit.html',
         report=report,
         categories=categories,
-        states=states,
-        suburbs_by_state=suburbs_by_state,
+        cities=cities,
     )
 
 # /listing — list all reports.
@@ -430,6 +435,7 @@ def listing_page():
     state_id = request.args.get('state_id', type=int)
     suburb_id = request.args.get('suburb_id', type=int)
     category_id = request.args.get('category_id', type=int)
+    suburb_name = (request.args.get('suburb_name') or '').strip()
     sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
     query = Report.query
@@ -438,6 +444,8 @@ def listing_page():
         query = query.join(Suburb, Suburb.id == Report.suburb_id).filter(Suburb.state_id == state_id)
     if suburb_id:
         query = query.filter(Report.suburb_id == suburb_id)
+    if suburb_name:
+        query = query.filter(Report.suburb_name.ilike(f'%{suburb_name}%'))
     if category_id:
         query = query.filter(Report.category_id == category_id)
 
@@ -452,10 +460,9 @@ def listing_page():
         query = query.order_by(Report.created_at.desc())
     pagination = query.paginate(page=page, per_page=20, error_out=False)
 
-    # dropdown data — same shape the create form uses, so the cascade JS is identical
     states = State.query.order_by(State.name).all()
-    suburbs_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs]
+    cities_by_state = {
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs if sub.name != 'Fremantle']
         for s in states
     }
     categories = Category.query.order_by(Category.id).all()
@@ -464,10 +471,11 @@ def listing_page():
         'reports_listing.html',
         pagination=pagination,
         states=states,
-        suburbs_by_state=suburbs_by_state,
+        cities_by_state=cities_by_state,
         categories=categories,
         selected_state_id=state_id,
         selected_suburb_id=suburb_id,
+        selected_suburb_name=suburb_name,
         selected_category_id=category_id,
         sort=sort,
     )
@@ -478,16 +486,15 @@ def listing_page():
 def reports_page():
     categories = Category.query.order_by(Category.id).all()
     states = State.query.order_by(State.name).all()
-    # build a plain dict the template can dump as JSON for the suburb cascade
-    suburbs_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs]
+    cities_by_state = {
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs if sub.name != 'Fremantle']
         for s in states
     }
     return render_template(
         'reports.html',
         categories=categories,
         states=states,
-        suburbs_by_state=suburbs_by_state,
+        cities_by_state=cities_by_state,
     )
 
 # POST /api/reports — logged-in user submits a report via AJAX
@@ -513,6 +520,7 @@ def api_create_report():
     category_id = _to_int(data.get('category_id'))
     suburb_id = _to_int(data.get('suburb_id'))
     description = (data.get('description') or '').strip()
+    suburb_name = (data.get('suburb_name') or '').strip() or None
     address = (data.get('address') or '').strip() or None   # store None instead of empty string
 
     # server-side validation — description, address, media are optional; category and suburb are required
@@ -521,6 +529,8 @@ def api_create_report():
         errors['category_id'] = 'Invalid or missing category.'
     if not suburb_id or not Suburb.query.get(suburb_id):
         errors['suburb_id'] = 'Invalid or missing location.'
+    if suburb_name and len(suburb_name) > 100:
+        errors['suburb_name'] = 'Suburb must be 100 characters or fewer.'
     if address and len(address) > 200:
         errors['address'] = 'Address must be 200 characters or fewer.'
     if len(files) > MAX_MEDIA_FILES:
@@ -538,6 +548,7 @@ def api_create_report():
         user_id=current_user.id,
         category_id=category_id,
         suburb_id=suburb_id,
+        suburb_name=suburb_name,
         address=address,
         description=description,
     )
@@ -579,6 +590,7 @@ def api_create_report():
         'suburb_id': report.suburb_id,
         'suburb_name': report.suburb.name,
         'state_code': report.suburb.state.code,
+        'suburb_detail': report.suburb_name,
         'address': report.address,
         'description': report.description,
         'created_at': report.created_at.isoformat(),
