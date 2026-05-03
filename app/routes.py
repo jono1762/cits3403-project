@@ -438,6 +438,11 @@ def listing_page():
     suburb_name = (request.args.get('suburb_name') or '').strip()
     sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
+    if suburb_id and not state_id:
+        selected_suburb = Suburb.query.get(suburb_id)
+        if selected_suburb:
+            state_id = selected_suburb.state_id
+
     query = Report.query
     # state filter has to go through Suburb because Report only stores suburb_id, not state_id
     if state_id:
