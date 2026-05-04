@@ -17,8 +17,8 @@
         {% endif %}
     </header>
 
-    {# Location filter (form) — suburb dropdown only lights up once a state is picked.
-       Carries the current category through hidden input so applying state/suburb keeps it. #}
+    {# Location filter (form) — city selector matches the report form, and the suburb field
+       narrows results within that city. Carries the current category through hidden input. #}
     <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
@@ -31,18 +31,24 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Suburb</label>
-                <select name="suburb_id" id="filter-suburb" class="form-select form-select-sm"
+                <label class="form-label">City</label>
+                <select name="suburb_id" id="filter-city" class="form-select form-select-sm"
                         {% if not selected_state_id %}disabled{% endif %}>
-                    <option value="">All suburbs</option>
+                    <option value="">All cities</option>
                     {% if selected_state_id %}
-                        {% for sub in suburbs_by_state.get(selected_state_id, []) %}
-                            <option value="{{ sub.id }}" {% if selected_suburb_id == sub.id %}selected{% endif %}>{{ sub.name }}</option>
+                        {% for city in cities_by_state.get(selected_state_id, []) %}
+                            <option value="{{ city.id }}" {% if selected_suburb_id == city.id %}selected{% endif %}>{{ city.name }}</option>
                         {% endfor %}
                     {% endif %}
                 </select>
             </div>
-            <div class="col-md-4 listing-filter-actions">
+            <div class="col-md-4">
+                <label class="form-label">Within suburb</label>
+                <input type="text" name="suburb_name" class="form-control form-control-sm"
+                       value="{{ selected_suburb_name or '' }}"
+                       placeholder="e.g. Northbridge">
+            </div>
+            <div class="col-md-4 listing-filter-actions mt-2">
                 <button type="submit" class="listing-filter-apply">Apply</button>
                 <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
             </div>
@@ -61,12 +67,12 @@
        state/suburb so users don't lose those filters when changing category. #}
     {% set keep_sort = sort if sort != 'recent' else None %}
     <div class="listing-categories">
-        <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, sort=keep_sort) }}"
+        <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, suburb_name=selected_suburb_name, sort=keep_sort) }}"
            class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
             🌏 All categories
         </a>
         {% for cat in categories %}
-            <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=cat.id, sort=keep_sort) }}"
+            <a href="{{ url_for('listing_page', state_id=selected_state_id, suburb_id=selected_suburb_id, suburb_name=selected_suburb_name, category_id=cat.id, sort=keep_sort) }}"
                class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
                style="--cat: {{ cat.marker_color }};">
                 {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
@@ -74,23 +80,20 @@
         {% endfor %}
     </div>
 
-    {# Server data injected as JSON in a non-executable script tag.
-       Keeps Jinja out of the JavaScript so the IDE stops flagging false errors. #}
-    <script type="application/json" id="suburbs-by-state-data">{{ suburbs_by_state | tojson }}</script>
     <script>
-    const SUBURBS_BY_STATE = JSON.parse(document.getElementById('suburbs-by-state-data').textContent);
+    const CITIES_BY_STATE = {{ cities_by_state | tojson }};
     const filterState = document.getElementById('filter-state');
-    const filterSuburb = document.getElementById('filter-suburb');
+    const filterCity = document.getElementById('filter-city');
     filterState.addEventListener('change', () => {
-        const list = SUBURBS_BY_STATE[filterState.value] || [];
-        filterSuburb.innerHTML = '<option value="">All suburbs</option>';
-        for (const sub of list) {
+        const list = CITIES_BY_STATE[filterState.value] || [];
+        filterCity.innerHTML = '<option value="">All cities</option>';
+        for (const city of list) {
             const opt = document.createElement('option');
-            opt.value = sub.id;
-            opt.textContent = sub.name;
-            filterSuburb.appendChild(opt);
+            opt.value = city.id;
+            opt.textContent = city.name;
+            filterCity.appendChild(opt);
         }
-        filterSuburb.disabled = !filterState.value;
+        filterCity.disabled = !filterState.value;
     });
     </script>
 
@@ -139,6 +142,9 @@
                             <div class="listing-item-meta">
                                 <span class="listing-item-badge">{{ r.category.name }}</span>
                                 <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
+                                {% if r.suburb_name %}
+                                    <span class="listing-item-suburb">· {{ r.suburb_name }}</span>
+                                {% endif %}
                                 <span class="listing-item-author">— by
                                     <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
                                     on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
@@ -245,19 +251,19 @@
                 <ul class="pagination justify-content-center">
                     {# carry filter ids through pagination — url_for omits None values #}
                     <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
-                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_prev else '#' }}">Previous</a>
+                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, suburb_id=selected_suburb_id, suburb_name=selected_suburb_name, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_prev else '#' }}">Previous</a>
                     </li>
                     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                         {% if p %}
                             <li class="page-item {{ 'active' if p == pagination.page else '' }}">
-                                <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) }}">{{ p }}</a>
+                                <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, suburb_id=selected_suburb_id, suburb_name=selected_suburb_name, category_id=selected_category_id, sort=sort if sort != 'recent' else None) }}">{{ p }}</a>
                             </li>
                         {% else %}
                             <li class="page-item disabled"><span class="page-link">…</span></li>
                         {% endif %}
                     {% endfor %}
                     <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
-                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, suburb_id=selected_suburb_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_next else '#' }}">Next</a>
+                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, suburb_id=selected_suburb_id, suburb_name=selected_suburb_name, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_next else '#' }}">Next</a>
                     </li>
                 </ul>
             </nav>
