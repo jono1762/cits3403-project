@@ -132,13 +132,13 @@
                     <div class="profile-post-header">
                         <span class="profile-post-icon" aria-hidden="true">{{ CATEGORY_EMOJI.get(r.category.name, '📝') }}</span>
                         <div class="profile-post-titles">
-                            <h3 class="profile-post-title">{{ r.category.name }} in {{ r.suburb.name }}</h3>
+                            <h3 class="profile-post-title">{{ r.category.name }} in {{ r.city.name }}</h3>
                             <div class="profile-post-sub">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                                     <circle cx="12" cy="10" r="3"/>
                                 </svg>
-                                <span>{{ r.suburb.name }}, {{ r.suburb.state.code }}</span>
+                                <span>{{ r.city.name }}, {{ r.city.state.code }}</span>
                                 <span class="profile-post-sep">·</span>
                                 <span>{{ r.created_at.strftime('%d %b %Y, %H:%M') }}</span>
                             </div>

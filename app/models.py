@@ -78,23 +78,22 @@ class State(db.Model):
     code = db.Column(db.String(3), unique=True, nullable=False)   # e.g. NSW, VIC, WA
     name = db.Column(db.String(50), nullable=False)               # e.g. New South Wales
 
-    suburbs = db.relationship('Suburb', backref='state', lazy=True)
+    cities = db.relationship('City', backref='state', lazy=True)
 
-class Suburb(db.Model):
-    __tablename__ = 'suburbs'
+class City(db.Model):
+    __tablename__ = 'cities'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     state_id = db.Column(db.Integer, db.ForeignKey('states.id'), nullable=False)
 
-    reports = db.relationship('Report', backref='suburb', lazy=True)
+    reports = db.relationship('Report', backref='city', lazy=True)
 
 class Report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
-    suburb_id = db.Column(db.Integer, db.ForeignKey('suburbs.id'), nullable=False)
-    suburb_name = db.Column(db.String(100), nullable=True)
+    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
     # optional free-text for extra detail like street name or landmark
     address = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=False)

@@ -13,20 +13,13 @@
         <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label class="form-label">City <span class="text-danger">*</span></label>
-                <select id="suburb_id" name="suburb_id" class="form-select" required>
+                <select id="city_id" name="city_id" class="form-select" required>
                     {% for city in cities %}
-                        <option value="{{ city.id }}" {{ 'selected' if city.id == report.suburb_id else '' }}>
+                        <option value="{{ city.id }}" {{ 'selected' if city.id == report.city_id else '' }}>
                             {{ city.name }} ({{ city.state.code }})
                         </option>
                     {% endfor %}
                 </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Suburb <span class="text-muted">(optional)</span></label>
-                <input id="suburb_name" name="suburb_name" type="text" class="form-control" maxlength="100"
-                       value="{{ report.suburb_name or '' }}"
-                       placeholder="e.g. Northbridge, Carlton, Bondi Junction">
             </div>
 
             <div class="mb-3">

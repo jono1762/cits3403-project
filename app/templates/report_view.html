@@ -17,11 +17,7 @@
             <span class="report-view-time">{{ report.created_at.strftime('%d %b %Y · %H:%M') }}</span>
         </header>
 
-        <h1 class="report-view-title">{{ report.suburb.name }}, {{ report.suburb.state.name }}</h1>
-
-        {% if report.suburb_name %}
-            <p class="report-view-address">Suburb: {{ report.suburb_name }}</p>
-        {% endif %}
+        <h1 class="report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
 
         {% if report.address %}
             <p class="report-view-address">{{ report.address }}</p>

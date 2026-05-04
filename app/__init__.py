@@ -1,8 +1,7 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
-from sqlalchemy import inspect, text
-from .models import db, User, Category, State, Suburb, Report, Comment
+from .models import db, User, Category, State, City, Report, Comment
 
 login_manager = LoginManager()
 
@@ -27,8 +26,8 @@ def seed_categories():
         db.session.add(Category(name=name, marker_color=color))
     db.session.commit()
 
-# 8 AU states/territories + a handful of major suburbs per state
-# team can add more suburbs later — this is enough to demo the dropdown
+# 8 AU states/territories + a handful of major cities per state
+# team can add more cities later — this is enough to demo the dropdown
 DEFAULT_LOCATIONS = {
     ('NSW', 'New South Wales'):       ['Sydney', 'Newcastle', 'Wollongong', 'Central Coast'],
     ('VIC', 'Victoria'):              ['Melbourne', 'Geelong', 'Ballarat'],
@@ -40,16 +39,16 @@ DEFAULT_LOCATIONS = {
     ('NT',  'Northern Territory'):    ['Darwin', 'Alice Springs'],
 }
 
-# fill states + suburbs tables so the Location dropdowns have options
+# fill states + cities tables so the Location dropdowns have options
 def seed_locations():
     if State.query.first() is not None:
         return  # already seeded, skip
-    for (code, name), suburb_names in DEFAULT_LOCATIONS.items():
+    for (code, name), city_names in DEFAULT_LOCATIONS.items():
         state = State(code=code, name=name)
         db.session.add(state)
-        db.session.flush()  # get state.id before adding suburbs
-        for suburb_name in suburb_names:
-            db.session.add(Suburb(name=suburb_name, state_id=state.id))
+        db.session.flush()  # get state.id before adding cities
+        for city_name in city_names:
+            db.session.add(City(name=city_name, state_id=state.id))
     db.session.commit()
 
 # a few arbitrary test users so the search feature has something to find
@@ -61,7 +60,7 @@ DEFAULT_TEST_USERS = [
 ]
 
 # one sample report per test user so viewing their profile actually shows content
-# (suburb_name, category_name, description)
+# (city_name, category_name, description)
 DEFAULT_TEST_REPORTS = [
     ('alice',   'Sydney',   'Weather', 'Heavy rain at George St, watch out for puddles.'),
     ('bob',     'Melbourne','Traffic', 'Tram line blocked near Flinders Station.'),
@@ -78,25 +77,18 @@ def seed_test_users_and_reports():
         db.session.add(u)
     db.session.commit()
 
-def ensure_report_suburb_name_column():
-    columns = {column['name'] for column in inspect(db.engine).get_columns('reports')}
-    if 'suburb_name' in columns:
-        return
-    db.session.execute(text('ALTER TABLE reports ADD COLUMN suburb_name VARCHAR(100)'))
-    db.session.commit()
-
     # add sample reports — only if the user has none, to stay idempotent
-    for username, suburb_name, category_name, description in DEFAULT_TEST_REPORTS:
+    for username, city_name, category_name, description in DEFAULT_TEST_REPORTS:
         user = User.query.filter_by(username=username).first()
         if not user or user.reports:
             continue
-        suburb = Suburb.query.filter_by(name=suburb_name).first()
+        city = City.query.filter_by(name=city_name).first()
         category = Category.query.filter_by(name=category_name).first()
-        if not (suburb and category):
+        if not (city and category):
             continue
         db.session.add(Report(
             user_id=user.id,
-            suburb_id=suburb.id,
+            city_id=city.id,
             category_id=category.id,
             description=description,
         ))
@@ -152,9 +144,8 @@ def create_app():
         from . import routes
         db.create_all()
         seed_categories()  # make sure default categories exist
-        seed_locations()   # make sure states + suburbs exist
+        seed_locations()   # make sure states + cities exist
         seed_test_users_and_reports()  # arbitrary users so search has something to find
-        ensure_report_suburb_name_column()
         seed_test_comments()           # canned comments on any report missing them
 
     return app

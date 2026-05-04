@@ -31,12 +31,6 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Suburb <span class="text-muted">(optional)</span></label>
-                <input id="suburb_name" type="text" class="form-control" maxlength="100"
-                       placeholder="e.g. Northbridge, Carlton, Bondi Junction">
-            </div>
-
-            <div class="mb-3">
                 <label class="form-label">Specific Address <span class="text-muted">(optional)</span></label>
                 <input id="address" type="text" class="form-control" maxlength="200"
                        placeholder="e.g. corner of Hay St and William St, near bus stop">
@@ -119,8 +113,7 @@ document.getElementById('report-form').addEventListener('submit', async (event) 
 
     // use FormData so we can send both text fields and uploaded files in one request
     const payload = new FormData();
-    payload.append('suburb_id', citySelect.value);
-    payload.append('suburb_name', document.getElementById('suburb_name').value);
+    payload.append('city_id', citySelect.value);
     payload.append('category_id', document.getElementById('category_id').value);
     payload.append('address', document.getElementById('address').value);
     payload.append('description', document.getElementById('description').value);

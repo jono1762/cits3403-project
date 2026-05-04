@@ -5,7 +5,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -87,16 +87,16 @@ STATE_FLAG_URL = {
 }
 
 
-# /favourites — saved suburbs + saved reports for the logged-in user.
+# /favourites — saved cities + saved reports for the logged-in user.
 # Backend doesn't actually persist favourites yet — page renders placeholder
 # items so the UI exists. Wire to a real Favourite model later.
 @app.route('/favourites')
 @login_required
 def favourites_page():
-    fake_suburbs = [
-        {'name': 'Bondi', 'state_code': 'NSW', 'reports_today': 8},
-        {'name': 'Stirling', 'state_code': 'WA', 'reports_today': 3},
-        {'name': 'Yarra Trail', 'state_code': 'VIC', 'reports_today': 5},
+    fake_cities = [
+        {'name': 'Sydney', 'state_code': 'NSW', 'reports_today': 8},
+        {'name': 'Perth', 'state_code': 'WA', 'reports_today': 3},
+        {'name': 'Melbourne', 'state_code': 'VIC', 'reports_today': 5},
     ]
     fake_reports = [
         {'category': 'Weather',  'color': '#3498db', 'title': 'Storm warning issued',  'where': 'Bondi · NSW',     'when': '24 min ago'},
@@ -105,7 +105,7 @@ def favourites_page():
     ]
     return render_template(
         'favourites.html',
-        fake_suburbs=fake_suburbs,
+        fake_cities=fake_cities,
         fake_reports=fake_reports,
     )
 
@@ -140,14 +140,14 @@ def map_page():
 
 
 def _map_page_context():
-    suburb_ids = {s.name: s.id for s in Suburb.query.all()}
+    city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
 
-    # real top-trending city = suburb with the most reports overall
+    # real top-trending city = city with the most reports overall
     top_city_row = (
-        db.session.query(Suburb.name, db.func.count(Report.id))
-        .join(Report, Report.suburb_id == Suburb.id)
-        .group_by(Suburb.id)
+        db.session.query(City.name, db.func.count(Report.id))
+        .join(Report, Report.city_id == City.id)
+        .group_by(City.id)
         .order_by(db.func.count(Report.id).desc())
         .first()
     )
@@ -164,7 +164,7 @@ def _map_page_context():
     top_category = {'name': top_cat_row[0], 'count': top_cat_row[1]} if top_cat_row else None
 
     return {
-        'suburb_ids_by_name': suburb_ids,
+        'city_ids_by_name': city_ids,
         'category_ids_by_name': category_ids,
         'city_to_state': CITY_TO_STATE,
         'state_flag_url': STATE_FLAG_URL,
@@ -422,8 +422,7 @@ def edit_report_page(report_id):
 
     if request.method == 'POST':
         category_id = request.form.get('category_id', type=int)
-        suburb_id = request.form.get('suburb_id', type=int)
-        suburb_name = (request.form.get('suburb_name') or '').strip() or None
+        city_id = request.form.get('city_id', type=int)
         description = (request.form.get('description') or '').strip()
         address = (request.form.get('address') or '').strip() or None
 
@@ -437,14 +436,12 @@ def edit_report_page(report_id):
         # total files after delete + upload must stay under the limit
         remaining_after_delete = len(report.media) - len(media_to_delete)
 
-        # same validation rules as create — category + suburb required, address optional
+        # same validation rules as create — category + city required, address optional
         errors = {}
         if not category_id or not Category.query.get(category_id):
             errors['category_id'] = 'Invalid or missing category.'
-        if not suburb_id or not Suburb.query.get(suburb_id):
-            errors['suburb_id'] = 'Invalid or missing location.'
-        if suburb_name and len(suburb_name) > 100:
-            errors['suburb_name'] = 'Suburb must be 100 characters or fewer.'
+        if not city_id or not City.query.get(city_id):
+            errors['city_id'] = 'Invalid or missing location.'
         if address and len(address) > 200:
             errors['address'] = 'Address must be 200 characters or fewer.'
         if remaining_after_delete + len(new_files) > MAX_MEDIA_FILES:
@@ -457,8 +454,7 @@ def edit_report_page(report_id):
 
         if not errors:
             report.category_id = category_id
-            report.suburb_id = suburb_id
-            report.suburb_name = suburb_name
+            report.city_id = city_id
             report.address = address
             report.description = description
 
@@ -505,10 +501,10 @@ def edit_report_page(report_id):
 
     categories = Category.query.order_by(Category.id).all()
     cities = (
-        Suburb.query
+        City.query
         .join(State)
-        .filter(Suburb.name != 'Fremantle')
-        .order_by(State.name, Suburb.name)
+        .filter(City.name != 'Fremantle')
+        .order_by(State.name, City.name)
         .all()
     )
     return render_template(
@@ -525,24 +521,21 @@ def edit_report_page(report_id):
 def listing_page():
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
-    suburb_id = request.args.get('suburb_id', type=int)
+    city_id = request.args.get('city_id', type=int)
     category_id = request.args.get('category_id', type=int)
-    suburb_name = (request.args.get('suburb_name') or '').strip()
     sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
-    if suburb_id and not state_id:
-        selected_suburb = Suburb.query.get(suburb_id)
-        if selected_suburb:
-            state_id = selected_suburb.state_id
+    if city_id and not state_id:
+        selected_city = City.query.get(city_id)
+        if selected_city:
+            state_id = selected_city.state_id
 
     query = Report.query
-    # state filter has to go through Suburb because Report only stores suburb_id, not state_id
+    # state filter has to go through City because Report only stores city_id, not state_id
     if state_id:
-        query = query.join(Suburb, Suburb.id == Report.suburb_id).filter(Suburb.state_id == state_id)
-    if suburb_id:
-        query = query.filter(Report.suburb_id == suburb_id)
-    if suburb_name:
-        query = query.filter(Report.suburb_name.ilike(f'%{suburb_name}%'))
+        query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
+    if city_id:
+        query = query.filter(Report.city_id == city_id)
     if category_id:
         query = query.filter(Report.category_id == category_id)
 
@@ -559,7 +552,7 @@ def listing_page():
 
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs if sub.name != 'Fremantle']
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
         for s in states
     }
     categories = Category.query.order_by(Category.id).all()
@@ -571,8 +564,7 @@ def listing_page():
         cities_by_state=cities_by_state,
         categories=categories,
         selected_state_id=state_id,
-        selected_suburb_id=suburb_id,
-        selected_suburb_name=suburb_name,
+        selected_city_id=city_id,
         selected_category_id=category_id,
         sort=sort,
     )
@@ -584,7 +576,7 @@ def reports_page():
     categories = Category.query.order_by(Category.id).all()
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs if sub.name != 'Fremantle']
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
         for s in states
     }
     return render_template(
@@ -615,19 +607,16 @@ def api_create_report():
             return None
 
     category_id = _to_int(data.get('category_id'))
-    suburb_id = _to_int(data.get('suburb_id'))
+    city_id = _to_int(data.get('city_id'))
     description = (data.get('description') or '').strip()
-    suburb_name = (data.get('suburb_name') or '').strip() or None
     address = (data.get('address') or '').strip() or None   # store None instead of empty string
 
-    # server-side validation — description, address, media are optional; category and suburb are required
+    # server-side validation — description, address, media are optional; category and city are required
     errors = {}
     if not category_id or not Category.query.get(category_id):
         errors['category_id'] = 'Invalid or missing category.'
-    if not suburb_id or not Suburb.query.get(suburb_id):
-        errors['suburb_id'] = 'Invalid or missing location.'
-    if suburb_name and len(suburb_name) > 100:
-        errors['suburb_name'] = 'Suburb must be 100 characters or fewer.'
+    if not city_id or not City.query.get(city_id):
+        errors['city_id'] = 'Invalid or missing location.'
     if address and len(address) > 200:
         errors['address'] = 'Address must be 200 characters or fewer.'
     if len(files) > MAX_MEDIA_FILES:
@@ -644,8 +633,7 @@ def api_create_report():
     report = Report(
         user_id=current_user.id,
         category_id=category_id,
-        suburb_id=suburb_id,
-        suburb_name=suburb_name,
+        city_id=city_id,
         address=address,
         description=description,
     )
@@ -686,10 +674,9 @@ def api_create_report():
         'id': report.id,
         'user_id': report.user_id,
         'category_id': report.category_id,
-        'suburb_id': report.suburb_id,
-        'suburb_name': report.suburb.name,
-        'state_code': report.suburb.state.code,
-        'suburb_detail': report.suburb_name,
+        'city_id': report.city_id,
+        'city_name': report.city.name,
+        'state_code': report.city.state.code,
         'address': report.address,
         'description': report.description,
         'created_at': report.created_at.isoformat(),

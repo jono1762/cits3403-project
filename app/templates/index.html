@@ -18,7 +18,7 @@
 			{% set trending_state = city_to_state.get(top_city.name) %}
 			{% set trending_flag = state_flag_url.get(trending_state) %}
 			<a class="stat-card stat-card-trending"
-			   href="{{ url_for('listing_page', suburb_id=suburb_ids_by_name.get(top_city.name)) }}"
+			   href="{{ url_for('listing_page', city_id=city_ids_by_name.get(top_city.name)) }}"
 			   aria-label="View reports for {{ top_city.name }}">
 				<div class="stat-label">Top trending cities</div>
 				<div class="stat-num">
@@ -105,12 +105,12 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-{# server-rendered { suburb_name: suburb_id } lookup, read by the map JS below
-   so each marker can build a /listing?suburb_id=... link in its popup #}
-<script type="application/json" id="suburb-ids-data">{{ suburb_ids_by_name|tojson }}</script>
+{# server-rendered { city_name: city_id } lookup, read by the map JS below
+   so each marker can build a /listing?city_id=... link in its popup #}
+<script type="application/json" id="city-ids-data">{{ city_ids_by_name|tojson }}</script>
 
 <script>
-	const SUBURB_IDS_BY_NAME = JSON.parse(document.getElementById("suburb-ids-data").textContent);
+	const CITY_IDS_BY_NAME = JSON.parse(document.getElementById("city-ids-data").textContent);
 	const searchBar = document.getElementById("searchBar");
 	const searchButton = document.getElementById("searchButton");
 	const suggestions = document.getElementById("suggestions");
@@ -168,11 +168,11 @@
 
 			// city.name is "Sydney, New South Wales" — short name is just "Sydney"
 			const shortName = city.name.split(",")[0].trim();
-			const suburbId = SUBURB_IDS_BY_NAME[shortName];
-			// build the listing URL with the suburb filter if we know the id,
+			const cityId = CITY_IDS_BY_NAME[shortName];
+			// build the listing URL with the city filter if we know the id,
 			// otherwise fall back to the unfiltered listing
-			const listingHref = suburbId
-				? `{{ url_for('listing_page') }}?suburb_id=${suburbId}`
+			const listingHref = cityId
+				? `{{ url_for('listing_page') }}?city_id=${cityId}`
 				: `{{ url_for('listing_page') }}`;
 
 			marker.bindPopup(`
@@ -301,15 +301,15 @@
 		if (selectedCity.marker) selectedCity.marker.openPopup();
 	}
 
-	// "View Reports" — navigate to the listing filtered by this city's suburb
+	// "View Reports" — navigate to the listing filtered by this city
 	function onViewReportsSubmit(event) {
 		event.stopPropagation();
 		const selectedCity = findCityFromQuery();
 		if (!selectedCity) return;
 		const shortName = selectedCity.name.split(",")[0].trim();
-		const suburbId = SUBURB_IDS_BY_NAME[shortName];
-		const url = suburbId
-			? `{{ url_for('listing_page') }}?suburb_id=${suburbId}`
+		const cityId = CITY_IDS_BY_NAME[shortName];
+		const url = cityId
+			? `{{ url_for('listing_page') }}?city_id=${cityId}`
 			: `{{ url_for('listing_page') }}`;
 		window.location = url;
 	}
