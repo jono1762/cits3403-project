@@ -1,9 +1,15 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
+from flask_migrate import Migrate
+from sqlalchemy import inspect
 from .models import db, User, Category, State, City, Report, Comment
 
 login_manager = LoginManager()
+# Schema-versioning helper. Tracks every model change as a script in
+# migrations/versions/. Teammates run `flask db upgrade` after pulling
+# instead of deleting their local DB.
+migrate = Migrate()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -137,15 +143,25 @@ def create_app():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
 
     with app.app_context():
         from . import routes
-        db.create_all()
-        seed_categories()  # make sure default categories exist
-        seed_locations()   # make sure states + cities exist
-        seed_test_users_and_reports()  # arbitrary users so search has something to find
-        seed_test_comments()           # canned comments on any report missing them
+        # Schema is owned by Flask-Migrate — fresh checkouts must run
+        # `flask db upgrade` once before booting. The seeders below skip
+        # silently if (a) the tables don't exist yet, or (b) the schema
+        # has drifted ahead of the model (which happens during
+        # `flask db migrate` after a model change but before upgrade).
+        if inspect(db.engine).has_table('categories'):
+            try:
+                seed_categories()              # default categories
+                seed_locations()               # states + cities
+                seed_test_users_and_reports()  # arbitrary users so search has something to find
+                seed_test_comments()           # canned comments on any report missing them
+            except Exception:
+                # schema not in sync — user needs to run `flask db upgrade`
+                db.session.rollback()
 
     return app
