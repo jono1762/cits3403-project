@@ -5,7 +5,8 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from .models import db, User, Category, Report, State, Suburb, ReportMedia, Verification
+from datetime import datetime
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -61,6 +62,15 @@ CATEGORY_EMOJI = {
 def inject_category_emoji():
     return {'CATEGORY_EMOJI': CATEGORY_EMOJI}
 
+@app.context_processor
+def inject_unread_messages():
+    """Make the chat unread count available to every template (used by the
+    sidebar 'Messages' link to render the small red notification badge).
+    Returns 0 for guests so the badge cleanly hides itself."""
+    if current_user.is_authenticated:
+        return {'unread_message_count': current_user.unread_message_count}
+    return {'unread_message_count': 0}
+
 
 # mapping each city to its state code (lowercase, used as the flag dictionary key)
 CITY_TO_STATE = {
@@ -87,16 +97,16 @@ STATE_FLAG_URL = {
 }
 
 
-# /favourites — saved suburbs + saved reports for the logged-in user.
+# /favourites — saved cities + saved reports for the logged-in user.
 # Backend doesn't actually persist favourites yet — page renders placeholder
 # items so the UI exists. Wire to a real Favourite model later.
 @app.route('/favourites')
 @login_required
 def favourites_page():
-    fake_suburbs = [
-        {'name': 'Bondi', 'state_code': 'NSW', 'reports_today': 8},
-        {'name': 'Stirling', 'state_code': 'WA', 'reports_today': 3},
-        {'name': 'Yarra Trail', 'state_code': 'VIC', 'reports_today': 5},
+    fake_cities = [
+        {'name': 'Sydney', 'state_code': 'NSW', 'reports_today': 8},
+        {'name': 'Perth', 'state_code': 'WA', 'reports_today': 3},
+        {'name': 'Melbourne', 'state_code': 'VIC', 'reports_today': 5},
     ]
     fake_reports = [
         {'category': 'Weather',  'color': '#3498db', 'title': 'Storm warning issued',  'where': 'Bondi · NSW',     'when': '24 min ago'},
@@ -105,7 +115,7 @@ def favourites_page():
     ]
     return render_template(
         'favourites.html',
-        fake_suburbs=fake_suburbs,
+        fake_cities=fake_cities,
         fake_reports=fake_reports,
     )
 
@@ -140,14 +150,14 @@ def map_page():
 
 
 def _map_page_context():
-    suburb_ids = {s.name: s.id for s in Suburb.query.all()}
+    city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
 
-    # real top-trending city = suburb with the most reports overall
+    # real top-trending city = city with the most reports overall
     top_city_row = (
-        db.session.query(Suburb.name, db.func.count(Report.id))
-        .join(Report, Report.suburb_id == Suburb.id)
-        .group_by(Suburb.id)
+        db.session.query(City.name, db.func.count(Report.id))
+        .join(Report, Report.city_id == City.id)
+        .group_by(City.id)
         .order_by(db.func.count(Report.id).desc())
         .first()
     )
@@ -164,7 +174,7 @@ def _map_page_context():
     top_category = {'name': top_cat_row[0], 'count': top_cat_row[1]} if top_cat_row else None
 
     return {
-        'suburb_ids_by_name': suburb_ids,
+        'city_ids_by_name': city_ids,
         'category_ids_by_name': category_ids,
         'city_to_state': CITY_TO_STATE,
         'state_flag_url': STATE_FLAG_URL,
@@ -306,6 +316,303 @@ def api_search_users():
         for u in users
     ])
 
+
+# ---------------- Follow / Unfollow ----------------
+# POST creates the edge (idempotent — re-following is a no-op).
+# DELETE removes it. Self-follow is rejected at the API; the UI hides the
+# button on own profiles, but defence-in-depth never hurts.
+
+@app.route('/api/follow/<int:user_id>', methods=['POST'])
+@login_required
+def api_follow_user(user_id):
+    if user_id == current_user.id:
+        return jsonify({'error': "You can't follow yourself."}), 400
+    target = User.query.get_or_404(user_id)
+    existing = Follow.query.filter_by(
+        follower_id=current_user.id, followed_id=target.id
+    ).first()
+    if not existing:
+        db.session.add(Follow(follower_id=current_user.id, followed_id=target.id))
+        db.session.commit()
+    return jsonify({
+        'is_following': True,
+        'follower_count': target.follower_count,
+        'following_count': target.following_count,
+    })
+
+@app.route('/api/follow/<int:user_id>', methods=['DELETE'])
+@login_required
+def api_unfollow_user(user_id):
+    target = User.query.get_or_404(user_id)
+    existing = Follow.query.filter_by(
+        follower_id=current_user.id, followed_id=target.id
+    ).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+    return jsonify({
+        'is_following': False,
+        'follower_count': target.follower_count,
+        'following_count': target.following_count,
+    })
+
+
+# ---------------- Chat ----------------
+# 1-on-1 messaging. Conversation rows store the per-pair state (accepted vs
+# request); ChatMessage rows store the actual messages.
+# Body is plain text — same XSS-safe pattern as comments (Jinja auto-escape +
+# textContent on the JS side).
+
+CHAT_MESSAGE_MAX_LENGTH = 2000
+
+def _find_or_create_conversation(sender, recipient):
+    """Look up the canonical (smaller-id-first) Conversation row between
+    sender + recipient, creating it on demand. New conversations auto-accept
+    when the two users are mutual followers; otherwise they start as a
+    pending message-request."""
+    me, them = sorted([sender.id, recipient.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
+    if conv is None:
+        conv = Conversation(
+            user_a_id=me,
+            user_b_id=them,
+            initiator_id=sender.id,
+            accepted=sender.is_mutual_with(recipient),
+        )
+        db.session.add(conv)
+        db.session.flush()
+    elif (not conv.accepted) and conv.initiator_id != sender.id:
+        # the recipient is replying → that auto-accepts the pending request
+        conv.accepted = True
+    return conv
+
+def _serialize_conversation_summary(conv, viewer):
+    """Compact JSON shape for the inbox list — last message preview + counts."""
+    other = conv.other(viewer)
+    last = ChatMessage.query.filter_by(conversation_id=conv.id) \
+        .order_by(ChatMessage.created_at.desc()).first()
+    unread = ChatMessage.query.filter(
+        ChatMessage.conversation_id == conv.id,
+        ChatMessage.sender_id != viewer.id,
+        ChatMessage.read_at.is_(None),
+    ).count()
+    return {
+        'user_id': other.id,
+        'username': other.username,
+        'avatar_initial': other.username[:1].upper(),
+        'profile_url': url_for('user_profile_page', username=other.username),
+        'last_body': last.body if last else '',
+        'last_at': conv.last_message_at.isoformat() if conv.last_message_at else None,
+        'last_sender_is_me': bool(last and last.sender_id == viewer.id),
+        'unread': unread,
+        'is_request': conv.is_request_for(viewer),
+        'accepted': conv.accepted,
+    }
+
+
+@app.route('/messages')
+@login_required
+def messages_page():
+    # ?user=<id> → JS auto-opens that conversation on page load
+    return render_template('messages.html')
+
+
+@app.route('/api/users/<int:user_id>')
+@login_required
+def api_user_brief(user_id):
+    """Minimal user-info endpoint used by the chat page when the inbox doesn't
+    yet contain this user (fresh conversation started from a profile page)."""
+    if user_id == current_user.id:
+        return jsonify({'error': "That's you."}), 400
+    u = User.query.get_or_404(user_id)
+    return jsonify({
+        'user_id': u.id,
+        'username': u.username,
+        'avatar_initial': u.username[:1].upper(),
+        'profile_url': url_for('user_profile_page', username=u.username),
+    })
+
+
+@app.route('/api/conversations')
+@login_required
+def api_list_conversations():
+    """Return chats and requests as two separate lists, both newest-first."""
+    convs = Conversation.query.filter(
+        db.or_(Conversation.user_a_id == current_user.id,
+               Conversation.user_b_id == current_user.id)
+    ).order_by(Conversation.last_message_at.desc()).all()
+
+    chats = []
+    requests_list = []
+    for conv in convs:
+        item = _serialize_conversation_summary(conv, current_user)
+        if conv.is_request_for(current_user):
+            requests_list.append(item)
+        else:
+            chats.append(item)
+    return jsonify({
+        'chats': chats,
+        'requests': requests_list,
+        'unread_total': current_user.unread_message_count,
+    })
+
+
+@app.route('/api/conversations/<int:user_id>/messages', methods=['GET'])
+@login_required
+def api_get_messages(user_id):
+    """Fetch the message history with a specific user. Optional ?since=<iso> to
+    only get messages newer than the given timestamp (used by the polling loop)."""
+    other = User.query.get_or_404(user_id)
+    me, them = sorted([current_user.id, other.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
+    if conv is None:
+        return jsonify({'messages': [], 'accepted': False, 'is_request': False})
+
+    since = request.args.get('since')
+    q = ChatMessage.query.filter_by(conversation_id=conv.id)
+    if since:
+        try:
+            cutoff = datetime.fromisoformat(since)
+            q = q.filter(ChatMessage.created_at > cutoff)
+        except ValueError:
+            pass
+    msgs = q.order_by(ChatMessage.created_at.asc()).all()
+
+    return jsonify({
+        'accepted': conv.accepted,
+        'is_request': conv.is_request_for(current_user),
+        'messages': [{
+            'id': m.id,
+            'body': m.body,
+            'sender_id': m.sender_id,
+            'sender_is_me': m.sender_id == current_user.id,
+            'created_at': m.created_at.isoformat(),
+            'media': [
+                {
+                    'type': mm.media_type,
+                    'url': url_for('static', filename=f'uploads/{mm.filename}'),
+                    'original_name': mm.original_name,
+                }
+                for mm in m.media
+            ],
+        } for m in msgs],
+    })
+
+
+@app.route('/api/conversations/<int:user_id>/messages', methods=['POST'])
+@login_required
+def api_send_message(user_id):
+    """Send a message. Accepts JSON ({body}) for text-only OR multipart/form-data
+    (body + media[]) when files are attached. First message creates the
+    conversation; recipient replying auto-accepts a pending request."""
+    if user_id == current_user.id:
+        return jsonify({'error': "You can't message yourself."}), 400
+    recipient = User.query.get_or_404(user_id)
+
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        body = (request.form.get('body') or '').strip()
+        files = [f for f in request.files.getlist('media') if f and f.filename]
+    else:
+        payload = request.get_json(silent=True) or {}
+        body = (payload.get('body') or '').strip()
+        files = []
+
+    if not body and not files:
+        return jsonify({'error': 'Message cannot be empty.'}), 400
+    if len(body) > CHAT_MESSAGE_MAX_LENGTH:
+        return jsonify({'error': f'Message too long (max {CHAT_MESSAGE_MAX_LENGTH} characters).'}), 400
+    if len(files) > MAX_MEDIA_FILES:
+        return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
+    for f in files:
+        if not _media_type_for(f.filename):
+            return jsonify({'error': f'Unsupported file type: {f.filename}'}), 400
+
+    conv = _find_or_create_conversation(current_user, recipient)
+    msg = ChatMessage(conversation_id=conv.id, sender_id=current_user.id, body=body)
+    db.session.add(msg)
+    db.session.flush()  # need msg.id for ChatMessageMedia FK
+
+    # save uploaded files to disk + DB; clean up disk on error
+    saved_paths = []
+    try:
+        for f in files:
+            ext = f.filename.rsplit('.', 1)[-1].lower()
+            stored_name = f'{uuid.uuid4().hex}.{ext}'
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
+            f.save(save_path)
+            saved_paths.append(save_path)
+            db.session.add(ChatMessageMedia(
+                message_id=msg.id,
+                filename=stored_name,
+                original_name=secure_filename(f.filename) or stored_name,
+                media_type=_media_type_for(f.filename),
+            ))
+        conv.last_message_at = datetime.utcnow()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        for p in saved_paths:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        raise
+
+    return jsonify({
+        'id': msg.id,
+        'body': msg.body,
+        'sender_id': msg.sender_id,
+        'sender_is_me': True,
+        'created_at': msg.created_at.isoformat(),
+        'accepted': conv.accepted,
+        'media': [
+            {
+                'type': m.media_type,
+                'url': url_for('static', filename=f'uploads/{m.filename}'),
+                'original_name': m.original_name,
+            }
+            for m in msg.media
+        ],
+    }), 201
+
+
+@app.route('/api/conversations/<int:user_id>/accept', methods=['POST'])
+@login_required
+def api_accept_conversation(user_id):
+    """Move a pending message-request into the main Chats inbox."""
+    other = User.query.get_or_404(user_id)
+    me, them = sorted([current_user.id, other.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first_or_404()
+    # only the recipient can accept (the initiator already had it in their Chats)
+    if conv.initiator_id == current_user.id:
+        return jsonify({'error': "You started this conversation, nothing to accept."}), 400
+    conv.accepted = True
+    db.session.commit()
+    return jsonify({'accepted': True})
+
+
+@app.route('/api/conversations/<int:user_id>/read', methods=['POST'])
+@login_required
+def api_mark_read(user_id):
+    """Mark every unread message addressed to me in this conversation as read.
+    Called when the recipient opens the thread."""
+    other = User.query.get_or_404(user_id)
+    me, them = sorted([current_user.id, other.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
+    if conv is None:
+        return jsonify({'ok': True, 'marked': 0})
+    now = datetime.utcnow()
+    rows = ChatMessage.query.filter(
+        ChatMessage.conversation_id == conv.id,
+        ChatMessage.sender_id != current_user.id,
+        ChatMessage.read_at.is_(None),
+    ).all()
+    for m in rows:
+        m.read_at = now
+    db.session.commit()
+    return jsonify({'ok': True, 'marked': len(rows)})
+
+
 # /reports/<token> — public read-only view of a single report.
 # `<token>` is the signed URLSafeSerializer-encoded id, not the raw integer,
 # so guests can't iterate /reports/1, /reports/2, ... to scrape the database.
@@ -316,7 +623,58 @@ def view_report(token):
     except BadSignature:
         abort(404)
     report = Report.query.get_or_404(report_id)
-    return render_template('report_view.html', report=report)
+    return render_template('report_view.html', report=report, comment_max_length=COMMENT_MAX_LENGTH)
+
+
+# POST /api/reports/<id>/vote — verify or dispute a report.
+# Only logged-in users; clicking the same status again removes the vote (toggle).
+# Authors cannot vote on their own report. Returns updated counts as JSON.
+@app.route('/api/reports/<int:report_id>/vote', methods=['POST'])
+@login_required
+def api_vote_report(report_id):
+    report = Report.query.get_or_404(report_id)
+
+    if report.user_id == current_user.id:
+        return jsonify({'error': "You can't vote on your own report."}), 400
+
+    payload = request.get_json(silent=True) or {}
+    new_status = payload.get('status') or request.form.get('status')
+    if new_status not in ('verify', 'dispute'):
+        return jsonify({'error': 'Invalid status.'}), 400
+
+    existing = Verification.query.filter_by(
+        report_id=report.id, user_id=current_user.id
+    ).first()
+    if existing:
+        if existing.status == new_status:
+            # clicked the same button again — toggle off
+            db.session.delete(existing)
+            user_vote = None
+        else:
+            existing.status = new_status
+            user_vote = new_status
+    else:
+        db.session.add(Verification(
+            report_id=report.id,
+            user_id=current_user.id,
+            status=new_status,
+        ))
+        user_vote = new_status
+    db.session.commit()
+
+    # Author-level aggregates so the profile UI can update credibility live
+    # without a page reload. trust_score is None when the author has no votes
+    # at all — JSON-encoded as null so the frontend can show "—".
+    author = report.author
+    return jsonify({
+        'verify_count': Verification.query.filter_by(report_id=report.id, status='verify').count(),
+        'dispute_count': Verification.query.filter_by(report_id=report.id, status='dispute').count(),
+        'user_vote': user_vote,
+        'author_id': author.id,
+        'author_verify_total': author.verifications_received,
+        'author_dispute_total': author.disputes_received,
+        'author_credibility': author.trust_score,
+    })
 
 
 # /reports/<id>/edit — GET renders the edit form, POST saves changes
@@ -330,8 +688,7 @@ def edit_report_page(report_id):
 
     if request.method == 'POST':
         category_id = request.form.get('category_id', type=int)
-        suburb_id = request.form.get('suburb_id', type=int)
-        suburb_name = (request.form.get('suburb_name') or '').strip() or None
+        city_id = request.form.get('city_id', type=int)
         description = (request.form.get('description') or '').strip()
         address = (request.form.get('address') or '').strip() or None
 
@@ -345,14 +702,12 @@ def edit_report_page(report_id):
         # total files after delete + upload must stay under the limit
         remaining_after_delete = len(report.media) - len(media_to_delete)
 
-        # same validation rules as create — category + suburb required, address optional
+        # same validation rules as create — category + city required, address optional
         errors = {}
         if not category_id or not Category.query.get(category_id):
             errors['category_id'] = 'Invalid or missing category.'
-        if not suburb_id or not Suburb.query.get(suburb_id):
-            errors['suburb_id'] = 'Invalid or missing location.'
-        if suburb_name and len(suburb_name) > 100:
-            errors['suburb_name'] = 'Suburb must be 100 characters or fewer.'
+        if not city_id or not City.query.get(city_id):
+            errors['city_id'] = 'Invalid or missing location.'
         if address and len(address) > 200:
             errors['address'] = 'Address must be 200 characters or fewer.'
         if remaining_after_delete + len(new_files) > MAX_MEDIA_FILES:
@@ -365,8 +720,7 @@ def edit_report_page(report_id):
 
         if not errors:
             report.category_id = category_id
-            report.suburb_id = suburb_id
-            report.suburb_name = suburb_name
+            report.city_id = city_id
             report.address = address
             report.description = description
 
@@ -412,18 +766,19 @@ def edit_report_page(report_id):
             flash(msg, 'error')
 
     categories = Category.query.order_by(Category.id).all()
-    cities = (
-        Suburb.query
-        .join(State)
-        .filter(Suburb.name != 'Fremantle')
-        .order_by(State.name, Suburb.name)
-        .all()
-    )
+    states = State.query.order_by(State.name).all()
+    # JS-side lookup: { state_id: [{id, name}, ...] } so the city dropdown
+    # can repopulate when the user changes state without a server round-trip
+    cities_by_state = {
+        s.id: [{'id': c.id, 'name': c.name} for c in s.cities if c.name != 'Fremantle']
+        for s in states
+    }
     return render_template(
         'report_edit.html',
         report=report,
         categories=categories,
-        cities=cities,
+        states=states,
+        cities_by_state=cities_by_state,
     )
 
 # /listing — list all reports.
@@ -433,24 +788,21 @@ def edit_report_page(report_id):
 def listing_page():
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
-    suburb_id = request.args.get('suburb_id', type=int)
+    city_id = request.args.get('city_id', type=int)
     category_id = request.args.get('category_id', type=int)
-    suburb_name = (request.args.get('suburb_name') or '').strip()
     sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
-    if suburb_id and not state_id:
-        selected_suburb = Suburb.query.get(suburb_id)
-        if selected_suburb:
-            state_id = selected_suburb.state_id
+    if city_id and not state_id:
+        selected_city = City.query.get(city_id)
+        if selected_city:
+            state_id = selected_city.state_id
 
     query = Report.query
-    # state filter has to go through Suburb because Report only stores suburb_id, not state_id
+    # state filter has to go through City because Report only stores city_id, not state_id
     if state_id:
-        query = query.join(Suburb, Suburb.id == Report.suburb_id).filter(Suburb.state_id == state_id)
-    if suburb_id:
-        query = query.filter(Report.suburb_id == suburb_id)
-    if suburb_name:
-        query = query.filter(Report.suburb_name.ilike(f'%{suburb_name}%'))
+        query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
+    if city_id:
+        query = query.filter(Report.city_id == city_id)
     if category_id:
         query = query.filter(Report.category_id == category_id)
 
@@ -467,7 +819,7 @@ def listing_page():
 
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs if sub.name != 'Fremantle']
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
         for s in states
     }
     categories = Category.query.order_by(Category.id).all()
@@ -479,8 +831,7 @@ def listing_page():
         cities_by_state=cities_by_state,
         categories=categories,
         selected_state_id=state_id,
-        selected_suburb_id=suburb_id,
-        selected_suburb_name=suburb_name,
+        selected_city_id=city_id,
         selected_category_id=category_id,
         sort=sort,
     )
@@ -492,7 +843,7 @@ def reports_page():
     categories = Category.query.order_by(Category.id).all()
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.suburbs if sub.name != 'Fremantle']
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
         for s in states
     }
     return render_template(
@@ -523,19 +874,16 @@ def api_create_report():
             return None
 
     category_id = _to_int(data.get('category_id'))
-    suburb_id = _to_int(data.get('suburb_id'))
+    city_id = _to_int(data.get('city_id'))
     description = (data.get('description') or '').strip()
-    suburb_name = (data.get('suburb_name') or '').strip() or None
     address = (data.get('address') or '').strip() or None   # store None instead of empty string
 
-    # server-side validation — description, address, media are optional; category and suburb are required
+    # server-side validation — description, address, media are optional; category and city are required
     errors = {}
     if not category_id or not Category.query.get(category_id):
         errors['category_id'] = 'Invalid or missing category.'
-    if not suburb_id or not Suburb.query.get(suburb_id):
-        errors['suburb_id'] = 'Invalid or missing location.'
-    if suburb_name and len(suburb_name) > 100:
-        errors['suburb_name'] = 'Suburb must be 100 characters or fewer.'
+    if not city_id or not City.query.get(city_id):
+        errors['city_id'] = 'Invalid or missing location.'
     if address and len(address) > 200:
         errors['address'] = 'Address must be 200 characters or fewer.'
     if len(files) > MAX_MEDIA_FILES:
@@ -552,8 +900,7 @@ def api_create_report():
     report = Report(
         user_id=current_user.id,
         category_id=category_id,
-        suburb_id=suburb_id,
-        suburb_name=suburb_name,
+        city_id=city_id,
         address=address,
         description=description,
     )
@@ -587,18 +934,20 @@ def api_create_report():
                 pass
         raise
 
-    # response includes media URLs so the frontend can show thumbnails immediately
+    # response includes media URLs so the frontend can show thumbnails immediately,
+    # and view_url so the client can redirect to the single-report page when the
+    # user unchecks "create another"
     return jsonify({
         'id': report.id,
         'user_id': report.user_id,
         'category_id': report.category_id,
-        'suburb_id': report.suburb_id,
-        'suburb_name': report.suburb.name,
-        'state_code': report.suburb.state.code,
-        'suburb_detail': report.suburb_name,
+        'city_id': report.city_id,
+        'city_name': report.city.name,
+        'state_code': report.city.state.code,
         'address': report.address,
         'description': report.description,
         'created_at': report.created_at.isoformat(),
+        'view_url': url_for('view_report', token=_encode_report_id(report.id)),
         'media': [
             {
                 'id': m.id,
@@ -609,3 +958,185 @@ def api_create_report():
             for m in report.media
         ],
     }), 201
+
+
+@app.route('/api/reports/<int:report_id>', methods=['DELETE'])
+@login_required
+def api_delete_report(report_id):
+    """Author-only — wipes the report, its media (DB rows + disk files), and any votes."""
+    report = Report.query.get_or_404(report_id)
+    if report.user_id != current_user.id:
+        return jsonify({'error': "You can't delete someone else's report."}), 403
+
+    # remove media files from disk first; the DB rows go via cascade on the relationship
+    for m in report.media:
+        disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+        try:
+            os.remove(disk_path)
+        except OSError:
+            pass  # file already gone — fine
+
+    # also remove on-disk media attached to each comment, and clear comment votes
+    # (comments themselves cascade-delete with the report; CommentMedia rows cascade
+    # with the comment; but the disk files and CommentVote rows need manual cleanup)
+    for c in report.comments:
+        for m in c.media:
+            disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+            try:
+                os.remove(disk_path)
+            except OSError:
+                pass
+        CommentVote.query.filter_by(comment_id=c.id).delete()
+
+    # Verification has no cascade on the model, so clear them by hand
+    Verification.query.filter_by(report_id=report.id).delete()
+
+    db.session.delete(report)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+# ---------------- Comments ----------------
+# Body is stored as plain text and rendered with Jinja's default auto-escape, so
+# HTML/JS in user input becomes inert text in the page (XSS-safe). The frontend
+# also uses textContent (not innerHTML) when injecting new comments without a reload.
+
+COMMENT_MAX_LENGTH = 2000
+
+def _serialize_comment(comment, current_user_id=None):
+    """Shared comment-to-JSON shape for the create endpoint and any future list endpoint."""
+    return {
+        'id': comment.id,
+        'body': comment.body,
+        'author_username': comment.author.username,
+        'author_url': url_for('user_profile_page', username=comment.author.username),
+        'author_initial': comment.author.username[:1].upper(),
+        'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
+        'is_own': comment.user_id == current_user_id,
+        'verify_count': comment.verify_count,
+        'dispute_count': comment.dispute_count,
+        'user_vote': None,  # fresh comments — author can't vote on their own
+        'media': [
+            {
+                'type': m.media_type,
+                'url': url_for('static', filename=f'uploads/{m.filename}'),
+                'original_name': m.original_name,
+            }
+            for m in comment.media
+        ],
+    }
+
+@app.route('/api/reports/<int:report_id>/comments', methods=['POST'])
+@login_required
+def api_create_comment(report_id):
+    """Accepts either JSON ({body}) for text-only or multipart/form-data
+    (body + media[]) when the user attached images / videos."""
+    report = Report.query.get_or_404(report_id)
+
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        body = (request.form.get('body') or '').strip()
+        files = [f for f in request.files.getlist('media') if f and f.filename]
+    else:
+        payload = request.get_json(silent=True) or {}
+        body = (payload.get('body') or '').strip()
+        files = []
+
+    # at least one of (text, media) must be present
+    if not body and not files:
+        return jsonify({'error': 'Comment cannot be empty.'}), 400
+    if len(body) > COMMENT_MAX_LENGTH:
+        return jsonify({'error': f'Comment too long (max {COMMENT_MAX_LENGTH} characters).'}), 400
+    if len(files) > MAX_MEDIA_FILES:
+        return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
+    for f in files:
+        if not _media_type_for(f.filename):
+            return jsonify({'error': f'Unsupported file type: {f.filename}'}), 400
+
+    comment = Comment(report_id=report.id, user_id=current_user.id, body=body)
+    db.session.add(comment)
+    db.session.flush()  # populate comment.id so CommentMedia rows can FK to it
+
+    # save each file to disk + DB; if anything fails halfway, clean up the disk files
+    saved_paths = []
+    try:
+        for f in files:
+            ext = f.filename.rsplit('.', 1)[-1].lower()
+            stored_name = f'{uuid.uuid4().hex}.{ext}'
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
+            f.save(save_path)
+            saved_paths.append(save_path)
+            db.session.add(CommentMedia(
+                comment_id=comment.id,
+                filename=stored_name,
+                original_name=secure_filename(f.filename) or stored_name,
+                media_type=_media_type_for(f.filename),
+            ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        for p in saved_paths:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        raise
+
+    return jsonify(_serialize_comment(comment, current_user_id=current_user.id)), 201
+
+
+@app.route('/api/comments/<int:comment_id>', methods=['DELETE'])
+@login_required
+def api_delete_comment(comment_id):
+    """Comment author only — wipes the comment, its media (DB + disk), and any votes."""
+    comment = Comment.query.get_or_404(comment_id)
+    if comment.user_id != current_user.id:
+        return jsonify({'error': "You can't delete someone else's comment."}), 403
+
+    # remove disk files first; the DB rows go via cascade on the relationship
+    for m in comment.media:
+        disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+        try:
+            os.remove(disk_path)
+        except OSError:
+            pass
+
+    # CommentVote has no cascade on the model, clear them by hand
+    CommentVote.query.filter_by(comment_id=comment.id).delete()
+
+    db.session.delete(comment)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/comments/<int:comment_id>/vote', methods=['POST'])
+@login_required
+def api_vote_comment(comment_id):
+    """Verify / dispute a comment — same toggle semantics as report-vote.
+    Comment author can't vote on their own comment."""
+    comment = Comment.query.get_or_404(comment_id)
+    if comment.user_id == current_user.id:
+        return jsonify({'error': "You can't vote on your own comment."}), 400
+
+    payload = request.get_json(silent=True) or {}
+    new_status = payload.get('status') or request.form.get('status')
+    if new_status not in ('verify', 'dispute'):
+        return jsonify({'error': 'Invalid status.'}), 400
+
+    existing = CommentVote.query.filter_by(comment_id=comment.id, user_id=current_user.id).first()
+    if existing:
+        if existing.status == new_status:
+            db.session.delete(existing)  # click same button → un-vote
+            user_vote = None
+        else:
+            existing.status = new_status  # flip vote
+            user_vote = new_status
+    else:
+        db.session.add(CommentVote(comment_id=comment.id, user_id=current_user.id, status=new_status))
+        user_vote = new_status
+    db.session.commit()
+
+    return jsonify({
+        'verify_count': CommentVote.query.filter_by(comment_id=comment.id, status='verify').count(),
+        'dispute_count': CommentVote.query.filter_by(comment_id=comment.id, status='dispute').count(),
+        'user_vote': user_vote,
+    })

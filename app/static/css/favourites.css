@@ -1,5 +1,5 @@
 /* ============================================================
-   favourites.css — saved suburbs + saved reports page
+   favourites.css — saved cities + saved reports page
    ============================================================ */
 
 .fav-page {
@@ -52,9 +52,9 @@
 
 
 /* ============================================================
-   Saved suburbs — horizontal list of compact cards
+   Saved cities — horizontal list of compact cards
    ============================================================ */
-.fav-suburb-list {
+.fav-city-list {
     list-style: none;
     padding: 0;
     margin: 0 0 1rem;
@@ -63,7 +63,7 @@
     gap: 0.75rem;
 }
 
-.fav-suburb-card {
+.fav-city-card {
     background: rgba(255, 255, 255, 0.94);
     border: 1px solid #e2e8f0;
     border-left: 4px solid #f59e0b;     /* gold accent on the left */
@@ -77,12 +77,12 @@
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.fav-suburb-card:hover {
+.fav-city-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(245, 158, 11, 0.18);
 }
 
-.fav-suburb-info {
+.fav-city-info {
     display: flex;
     align-items: center;
     gap: 0.6rem;
@@ -93,7 +93,7 @@
     line-height: 1;
 }
 
-.fav-suburb-name {
+.fav-city-name {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
@@ -101,7 +101,7 @@
     line-height: 1.1;
 }
 
-.fav-suburb-state {
+.fav-city-state {
     font-size: 0.78rem;
     color: #64748b;
     text-transform: uppercase;
@@ -109,7 +109,7 @@
     font-weight: 600;
 }
 
-.fav-suburb-meta {
+.fav-city-meta {
     color: #475569;
     font-size: 0.85rem;
     font-weight: 500;

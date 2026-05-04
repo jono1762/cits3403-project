@@ -8,29 +8,29 @@
 <section class="fav-page">
     <header class="fav-header">
         <h1 class="fav-title">⭐ Your favourites</h1>
-        <p class="fav-subtitle">Suburbs you watch and reports you've starred.</p>
+        <p class="fav-subtitle">Cities you watch and reports you've starred.</p>
     </header>
 
-    {# ============== Saved suburbs ============== #}
-    <h2 class="fav-section-title">Saved suburbs</h2>
-    {% if fake_suburbs %}
-        <ul class="fav-suburb-list">
-            {% for s in fake_suburbs %}
-                <li class="fav-suburb-card">
-                    <div class="fav-suburb-info">
+    {# ============== Saved cities ============== #}
+    <h2 class="fav-section-title">Saved cities</h2>
+    {% if fake_cities %}
+        <ul class="fav-city-list">
+            {% for s in fake_cities %}
+                <li class="fav-city-card">
+                    <div class="fav-city-info">
                         <span class="fav-star" aria-hidden="true">⭐</span>
                         <div>
-                            <div class="fav-suburb-name">{{ s.name }}</div>
-                            <div class="fav-suburb-state">{{ s.state_code }}</div>
+                            <div class="fav-city-name">{{ s.name }}</div>
+                            <div class="fav-city-state">{{ s.state_code }}</div>
                         </div>
                     </div>
-                    <div class="fav-suburb-meta">{{ s.reports_today }} reports today</div>
+                    <div class="fav-city-meta">{{ s.reports_today }} reports today</div>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
         <div class="fav-empty">
-            No saved suburbs yet. Star a suburb on the map to track it here.
+            No saved cities yet. Star a city on the map to track it here.
         </div>
     {% endif %}
 

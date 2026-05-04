@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='11') }}">
 {% endblock %}
 
 {% block content %}
@@ -17,11 +17,7 @@
             <span class="report-view-time">{{ report.created_at.strftime('%d %b %Y · %H:%M') }}</span>
         </header>
 
-        <h1 class="report-view-title">{{ report.suburb.name }}, {{ report.suburb.state.name }}</h1>
-
-        {% if report.suburb_name %}
-            <p class="report-view-address">Suburb: {{ report.suburb_name }}</p>
-        {% endif %}
+        <h1 class="report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
 
         {% if report.address %}
             <p class="report-view-address">{{ report.address }}</p>
@@ -84,14 +80,503 @@
             </div>
         {% endif %}
 
-        {# author can edit straight from the view #}
-        {% if current_user.is_authenticated and report.user_id == current_user.id %}
-            <div class="report-view-actions">
-                <a href="{{ url_for('edit_report_page', report_id=report.id) }}" class="report-view-edit-btn">
-                    Edit this report
-                </a>
-            </div>
-        {% endif %}
+        {# verify / dispute section — own reports show a "Your report" tag instead.
+           Buttons disabled for guests with a tooltip prompt to log in. #}
+        {% set my_vote = report.vote_by(current_user) %}
+        {% set is_own = current_user.is_authenticated and report.user_id == current_user.id %}
+        <div class="report-view-vote-section">
+            {% if is_own %}
+                <div class="own-report-actions">
+                    <span class="own-report-tag">Your report</span>
+                    <a href="{{ url_for('edit_report_page', report_id=report.id) }}" class="report-view-edit-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit
+                    </a>
+                    <button type="button" class="report-view-delete-btn"
+                            data-bs-toggle="modal" data-bs-target="#delete-report-modal"
+                            aria-label="Delete report">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+                <div class="report-view-vote-counts">
+                    <span class="report-view-vote-stat report-view-vote-stat-verify">
+                        ✓ {{ report.verify_count }} verified
+                    </span>
+                    <span class="report-view-vote-stat report-view-vote-stat-dispute">
+                        ✗ {{ report.dispute_count }} disputed
+                    </span>
+                </div>
+            {% else %}
+                {% set vote_disabled = not current_user.is_authenticated %}
+                {% set vote_tip = 'Please log in to verify or dispute reports' if vote_disabled else '' %}
+                <h2 class="report-view-vote-prompt">Is this report accurate?</h2>
+                <div class="vote-bar report-view-vote-bar" data-report-id="{{ report.id }}">
+                    <span class="vote-wrap" title="{{ vote_tip }}">
+                        <button type="button"
+                                class="vote-btn vote-verify {{ 'is-active' if my_vote == 'verify' else '' }}"
+                                data-status="verify"
+                                {% if vote_disabled %}disabled{% endif %}>
+                            ✓ Verify <span class="vote-count">{{ report.verify_count }}</span>
+                        </button>
+                    </span>
+                    <span class="vote-wrap" title="{{ vote_tip }}">
+                        <button type="button"
+                                class="vote-btn vote-dispute {{ 'is-active' if my_vote == 'dispute' else '' }}"
+                                data-status="dispute"
+                                {% if vote_disabled %}disabled{% endif %}>
+                            ✗ Dispute <span class="vote-count">{{ report.dispute_count }}</span>
+                        </button>
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+
+        {# ============================================================
+           Comments thread — body text rendered via {{ … }} which is
+           Jinja's default auto-escaped output, so any HTML/JS the user
+           types becomes inert plain text (XSS-safe).
+           ============================================================ #}
+        <section class="report-view-comments" id="comments" aria-label="Comments">
+            <h2 class="report-view-comments-title">
+                Comments <span class="report-view-comments-count" id="comment-count">{{ report.comment_count }}</span>
+            </h2>
+
+            <ul class="comment-list" id="comment-list">
+                {% for c in report.comments %}
+                    {% set my_cv = c.vote_by(current_user) %}
+                    {% set is_own_c = current_user.is_authenticated and c.user_id == current_user.id %}
+                    <li class="comment-item" data-comment-id="{{ c.id }}">
+                        <a class="comment-avatar" href="{{ url_for('user_profile_page', username=c.author.username) }}" aria-hidden="true">
+                            {{ c.author.username[0]|upper }}
+                        </a>
+                        <div class="comment-body">
+                            <div class="comment-meta">
+                                <a class="comment-author" href="{{ url_for('user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
+                                <span class="comment-time">· {{ c.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                            </div>
+                            {% if c.body %}
+                                <p class="comment-text">{{ c.body }}</p>
+                            {% endif %}
+
+                            {% if c.media %}
+                                <div class="comment-media-list">
+                                    {% for m in c.media %}
+                                        {% if m.media_type == 'image' %}
+                                            <img class="comment-media-item"
+                                                 src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                                 alt="{{ m.original_name }}">
+                                        {% else %}
+                                            <video class="comment-media-item" controls
+                                                   src="{{ url_for('static', filename='uploads/' + m.filename) }}"></video>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {# vote bar — own comments don't get vote buttons (you can't vote yourself) #}
+                            {% if not is_own_c %}
+                                {% set cv_disabled = not current_user.is_authenticated %}
+                                {% set cv_tip = 'Please log in to verify or dispute' if cv_disabled else '' %}
+                                <div class="comment-vote-bar" data-comment-id="{{ c.id }}">
+                                    <span title="{{ cv_tip }}">
+                                        <button type="button"
+                                                class="comment-vote-btn comment-vote-verify {{ 'is-active' if my_cv == 'verify' else '' }}"
+                                                data-status="verify"
+                                                {% if cv_disabled %}disabled{% endif %}>
+                                            ✓ <span class="comment-vote-count">{{ c.verify_count }}</span>
+                                        </button>
+                                    </span>
+                                    <span title="{{ cv_tip }}">
+                                        <button type="button"
+                                                class="comment-vote-btn comment-vote-dispute {{ 'is-active' if my_cv == 'dispute' else '' }}"
+                                                data-status="dispute"
+                                                {% if cv_disabled %}disabled{% endif %}>
+                                            ✗ <span class="comment-vote-count">{{ c.dispute_count }}</span>
+                                        </button>
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if is_own_c %}
+                            <button type="button" class="comment-delete-btn" data-comment-id="{{ c.id }}" aria-label="Delete your comment">×</button>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% if not report.comments %}
+                <p class="comment-empty" id="comment-empty">No comments yet — be the first to weigh in.</p>
+            {% endif %}
+
+            {% if current_user.is_authenticated %}
+                <form id="comment-form" class="comment-form" enctype="multipart/form-data" novalidate>
+                    <label for="comment-body" class="comment-form-label">Add a comment</label>
+                    <textarea id="comment-body" class="comment-input"
+                              placeholder="Share your thoughts..."
+                              maxlength="{{ comment_max_length }}"
+                              rows="3"></textarea>
+                    <div class="comment-attach-row">
+                        <label for="comment-media" class="comment-attach-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                            </svg>
+                            Attach images / videos
+                        </label>
+                        {# native file input — visually hidden so we don't show the
+                           browser's locale-specific "choose file" chrome. The label
+                           above triggers it via for=, and the status span shows what
+                           was picked. #}
+                        <input id="comment-media" name="media" type="file"
+                               accept="image/*,video/*" multiple class="comment-media-input visually-hidden-input">
+                        <span class="comment-attach-status" id="comment-attach-status"></span>
+                    </div>
+                    <div class="comment-form-row">
+                        <span class="comment-form-hint" id="comment-form-hint">Plain text up to {{ comment_max_length }} chars. At least text or one attachment required.</span>
+                        <button type="submit" class="comment-submit">Add comment</button>
+                    </div>
+                </form>
+            {% else %}
+                <p class="comment-login-prompt">
+                    <a href="{{ url_for('login') }}">Log in</a> to add a comment.
+                </p>
+            {% endif %}
+        </section>
+
     </article>
 </section>
+
+{# Delete-confirmation modal — only rendered for the author. Uses Bootstrap's
+   modal so we don't have to ship our own focus-trap / overlay logic. #}
+{% if current_user.is_authenticated and report.user_id == current_user.id %}
+<div class="modal fade" id="delete-report-modal" tabindex="-1" aria-labelledby="delete-report-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delete-report-modal-label">Delete this report?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                This will permanently delete your report and any attached photos or videos. This can't be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-report-confirm"
+                        data-report-id="{{ report.id }}">
+                    Delete report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// On confirm: DELETE /api/reports/<id> → redirect to the listing on success.
+(function () {
+    const btn = document.getElementById('delete-report-confirm');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/reports/${btn.dataset.reportId}`, {method: 'DELETE'});
+            if (res.ok) {
+                window.location.href = "{{ url_for('listing_page') }}";
+            } else {
+                btn.disabled = false;
+                alert('Could not delete the report. Please try again.');
+            }
+        } catch (err) {
+            btn.disabled = false;
+            alert('Network error — please try again.');
+        }
+    });
+})();
+</script>
+{% endif %}
+
+{# Delete-comment confirmation modal — same Bootstrap pattern as the report
+   delete modal so the two destructive actions feel consistent. Only rendered
+   when there's at least one comment the current user can delete (cheap to
+   render unconditionally for auth users — JS handler is what wires it up). #}
+{% if current_user.is_authenticated %}
+<div class="modal fade" id="delete-comment-modal" tabindex="-1" aria-labelledby="delete-comment-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delete-comment-modal-label">Delete this comment?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                This will permanently delete your comment and any photos or videos attached to it. This can't be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-comment-confirm">
+                    Delete comment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Comments JS — covers post, delete (modal), and per-comment vote.
+   CRITICAL: any user-submitted text we insert into the DOM uses textContent
+   (NOT innerHTML), so HTML / <script> in comment bodies stays inert. #}
+<script>
+(function () {
+    const form = document.getElementById('comment-form');
+    const list = document.getElementById('comment-list');
+    const empty = document.getElementById('comment-empty');
+    const countEl = document.getElementById('comment-count');
+    const reportId = {{ report.id | tojson }};
+
+    function updateCount(delta) {
+        if (!countEl) return;
+        const n = parseInt(countEl.textContent, 10) || 0;
+        countEl.textContent = String(n + delta);
+    }
+
+    // ---- safe DOM-builder for a freshly-posted comment ----
+    function renderComment(c) {
+        const li = document.createElement('li');
+        li.className = 'comment-item';
+        li.dataset.commentId = c.id;
+
+        const avatar = document.createElement('a');
+        avatar.className = 'comment-avatar';
+        avatar.href = c.author_url;
+        avatar.textContent = c.author_initial;
+        avatar.setAttribute('aria-hidden', 'true');
+
+        const body = document.createElement('div');
+        body.className = 'comment-body';
+
+        const meta = document.createElement('div');
+        meta.className = 'comment-meta';
+        const author = document.createElement('a');
+        author.className = 'comment-author';
+        author.href = c.author_url;
+        author.textContent = c.author_username;
+        const time = document.createElement('span');
+        time.className = 'comment-time';
+        time.textContent = '· ' + c.created_at;
+        meta.appendChild(author);
+        meta.appendChild(time);
+        body.appendChild(meta);
+
+        if (c.body) {
+            const text = document.createElement('p');
+            text.className = 'comment-text';
+            text.textContent = c.body;  // textContent → XSS-safe
+            body.appendChild(text);
+        }
+
+        if (c.media && c.media.length) {
+            const mediaList = document.createElement('div');
+            mediaList.className = 'comment-media-list';
+            for (const m of c.media) {
+                const el = m.type === 'image' ? document.createElement('img') : document.createElement('video');
+                el.className = 'comment-media-item';
+                el.src = m.url;
+                if (m.type === 'image') {
+                    el.alt = m.original_name;
+                } else {
+                    el.controls = true;
+                }
+                mediaList.appendChild(el);
+            }
+            body.appendChild(mediaList);
+        }
+
+        // own comments don't get vote buttons (can't vote on yourself)
+        if (!c.is_own) {
+            const bar = document.createElement('div');
+            bar.className = 'comment-vote-bar';
+            bar.dataset.commentId = c.id;
+            for (const status of ['verify', 'dispute']) {
+                const wrap = document.createElement('span');
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'comment-vote-btn comment-vote-' + status;
+                btn.dataset.status = status;
+                btn.textContent = (status === 'verify' ? '✓ ' : '✗ ');
+                const count = document.createElement('span');
+                count.className = 'comment-vote-count';
+                count.textContent = String(status === 'verify' ? c.verify_count : c.dispute_count);
+                btn.appendChild(count);
+                wrap.appendChild(btn);
+                bar.appendChild(wrap);
+            }
+            body.appendChild(bar);
+        }
+
+        li.appendChild(avatar);
+        li.appendChild(body);
+
+        if (c.is_own) {
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'comment-delete-btn';
+            del.dataset.commentId = c.id;
+            del.setAttribute('aria-label', 'Delete your comment');
+            del.textContent = '×';
+            li.appendChild(del);
+        }
+        return li;
+    }
+
+    // ---- form submit (multipart so we can ship files) ----
+    if (form) {
+        const input = document.getElementById('comment-body');
+        const mediaInput = document.getElementById('comment-media');
+        const hint = document.getElementById('comment-form-hint');
+        const attachStatus = document.getElementById('comment-attach-status');
+        const defaultHint = hint ? hint.textContent : '';
+
+        // mirror the native file-input's selection in our own visible label
+        if (mediaInput && attachStatus) {
+            mediaInput.addEventListener('change', () => {
+                const n = mediaInput.files ? mediaInput.files.length : 0;
+                if (n === 0) attachStatus.textContent = '';
+                else if (n === 1) attachStatus.textContent = '1 file selected';
+                else attachStatus.textContent = n + ' files selected';
+            });
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const bodyVal = input.value.trim();
+            const files = mediaInput ? mediaInput.files : [];
+            if (!bodyVal && (!files || files.length === 0)) {
+                if (hint) hint.textContent = 'Please write something or attach a file.';
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('body', bodyVal);
+            if (files) {
+                for (const f of files) fd.append('media', f);
+            }
+
+            try {
+                const res = await fetch(`/api/reports/${reportId}/comments`, {
+                    method: 'POST',
+                    body: fd,
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (hint) hint.textContent = data.error || 'Could not post comment.';
+                    return;
+                }
+                const c = await res.json();
+                list.appendChild(renderComment(c));
+                if (empty) empty.style.display = 'none';
+                updateCount(+1);
+                input.value = '';
+                if (mediaInput) mediaInput.value = '';
+                if (attachStatus) attachStatus.textContent = '';
+                if (hint) hint.textContent = defaultHint;
+            } catch (err) {
+                if (hint) hint.textContent = 'Network error — try again.';
+            }
+        });
+    }
+
+    // ---- delete-comment via Bootstrap modal (no native confirm()) ----
+    const deleteModalEl = document.getElementById('delete-comment-modal');
+    const deleteConfirmBtn = document.getElementById('delete-comment-confirm');
+    let pendingCommentId = null;
+
+    document.addEventListener('click', (event) => {
+        const btn = event.target.closest('.comment-delete-btn');
+        if (!btn) return;
+        pendingCommentId = btn.dataset.commentId;
+        if (deleteModalEl) {
+            bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+        }
+    });
+
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', async () => {
+            const id = pendingCommentId;
+            if (!id) return;
+            deleteConfirmBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/comments/${id}`, {method: 'DELETE'});
+                if (res.ok) {
+                    const li = list && list.querySelector(`.comment-item[data-comment-id="${id}"]`);
+                    if (li) li.remove();
+                    updateCount(-1);
+                    if (list && list.children.length === 0 && empty) empty.style.display = '';
+                }
+            } catch (err) {
+                /* silent fail — leave the modal up so the user can try again */
+            } finally {
+                deleteConfirmBtn.disabled = false;
+                pendingCommentId = null;
+                if (deleteModalEl) bootstrap.Modal.getInstance(deleteModalEl)?.hide();
+            }
+        });
+    }
+
+    // ---- per-comment verify / dispute vote (event delegation) ----
+    document.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.comment-vote-btn');
+        if (!btn || btn.disabled) return;
+        const bar = btn.closest('.comment-vote-bar');
+        if (!bar) return;
+        const commentId = bar.dataset.commentId;
+        const status = btn.dataset.status;
+        try {
+            const res = await fetch(`/api/comments/${commentId}/vote`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status}),
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            bar.querySelector('.comment-vote-verify .comment-vote-count').textContent = data.verify_count;
+            bar.querySelector('.comment-vote-dispute .comment-vote-count').textContent = data.dispute_count;
+            bar.querySelector('.comment-vote-verify').classList.toggle('is-active', data.user_vote === 'verify');
+            bar.querySelector('.comment-vote-dispute').classList.toggle('is-active', data.user_vote === 'dispute');
+        } catch (err) {
+            /* silent fail */
+        }
+    });
+})();
+</script>
+
+{# AJAX handler — same pattern as reports_listing.html, just one bar to update. #}
+<script>
+document.querySelectorAll('.report-view-vote-bar .vote-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+        if (btn.disabled) return;
+        const bar = btn.closest('.vote-bar');
+        const reportId = bar.dataset.reportId;
+        const status = btn.dataset.status;
+        try {
+            const res = await fetch(`/api/reports/${reportId}/vote`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status}),
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            bar.querySelector('.vote-verify .vote-count').textContent = data.verify_count;
+            bar.querySelector('.vote-dispute .vote-count').textContent = data.dispute_count;
+            bar.querySelector('.vote-verify').classList.toggle('is-active', data.user_vote === 'verify');
+            bar.querySelector('.vote-dispute').classList.toggle('is-active', data.user_vote === 'dispute');
+        } catch (err) {
+            /* silent fail */
+        }
+    });
+});
+</script>
 {% endblock %}
