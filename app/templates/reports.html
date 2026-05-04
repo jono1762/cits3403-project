@@ -41,7 +41,7 @@
                 <select id="category_id" class="form-select" required>
                     {% for cat in categories %}
                         <option value="{{ cat.id }}" style="color: {{ cat.marker_color }}">
-                            {{ cat.id }} — {{ cat.name }}
+                            {{ cat.name }}
                         </option>
                     {% endfor %}
                 </select>
