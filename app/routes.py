@@ -500,18 +500,19 @@ def edit_report_page(report_id):
             flash(msg, 'error')
 
     categories = Category.query.order_by(Category.id).all()
-    cities = (
-        City.query
-        .join(State)
-        .filter(City.name != 'Fremantle')
-        .order_by(State.name, City.name)
-        .all()
-    )
+    states = State.query.order_by(State.name).all()
+    # JS-side lookup: { state_id: [{id, name}, ...] } so the city dropdown
+    # can repopulate when the user changes state without a server round-trip
+    cities_by_state = {
+        s.id: [{'id': c.id, 'name': c.name} for c in s.cities if c.name != 'Fremantle']
+        for s in states
+    }
     return render_template(
         'report_edit.html',
         report=report,
         categories=categories,
-        cities=cities,
+        states=states,
+        cities_by_state=cities_by_state,
     )
 
 # /listing — list all reports.
