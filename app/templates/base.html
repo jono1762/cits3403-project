@@ -87,6 +87,11 @@
                     {% else %}
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
+                        <a href="{{ url_for('messages_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('messages_page') else '' }}" data-bs-dismiss="offcanvas">
+                            <span>Messages</span>
+                            <span class="app-sidebar-badge sidebar-unread-badge"
+                                  {% if not unread_message_count %}hidden{% endif %}>{{ unread_message_count if unread_message_count and unread_message_count < 10 else ('9+' if unread_message_count else '') }}</span>
+                        </a>
                     {% endif %}
                     <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}" data-bs-dismiss="offcanvas">Favourites</a>
@@ -148,6 +153,11 @@
                     {% else %}
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
+                        <a href="{{ url_for('messages_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('messages_page') else '' }}">
+                            <span>Messages</span>
+                            <span class="app-sidebar-badge sidebar-unread-badge"
+                                  {% if not unread_message_count %}hidden{% endif %}>{{ unread_message_count if unread_message_count and unread_message_count < 10 else ('9+' if unread_message_count else '') }}</span>
+                        </a>
                     {% endif %}
                     <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}">Favourites</a>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='11') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='12') }}">
 {% endblock %}
 
 {% block content %}
@@ -47,23 +47,32 @@
                     {% endif %}
                 </p>
 
-                {# Follow button — only on someone else's profile, only for auth users.
-                   Two visual states: indigo "Follow" → grey "Followed" (Instagram-style).
-                   Clicking "Followed" pops the unfollow confirmation modal. #}
+                {# Follow + Message buttons — only on someone else's profile, only for auth users.
+                   Follow has two visual states: indigo "Follow" → grey "Followed" (Instagram-style).
+                   Clicking "Followed" pops the unfollow confirmation modal.
+                   Message takes you straight into a chat with this user. #}
                 {% if not is_own_profile and current_user.is_authenticated %}
                     {% set is_following = user.is_followed_by(current_user) %}
-                    <button id="follow-btn"
-                            type="button"
-                            class="profile-follow-btn {{ 'is-following' if is_following else '' }}"
-                            data-user-id="{{ user.id }}"
-                            data-following="{{ 'true' if is_following else 'false' }}"
-                            data-username="{{ user.username }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            {# checkmark when following, plus when not — JS swaps the path on click #}
-                            <path id="follow-btn-icon" d="{{ 'M20 6L9 17l-5-5' if is_following else 'M12 5v14M5 12h14' }}"/>
-                        </svg>
-                        <span class="profile-follow-label">{{ 'Followed' if is_following else 'Follow' }}</span>
-                    </button>
+                    <div class="profile-action-row">
+                        <button id="follow-btn"
+                                type="button"
+                                class="profile-follow-btn {{ 'is-following' if is_following else '' }}"
+                                data-user-id="{{ user.id }}"
+                                data-following="{{ 'true' if is_following else 'false' }}"
+                                data-username="{{ user.username }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                {# checkmark when following, plus when not — JS swaps the path on click #}
+                                <path id="follow-btn-icon" d="{{ 'M20 6L9 17l-5-5' if is_following else 'M12 5v14M5 12h14' }}"/>
+                            </svg>
+                            <span class="profile-follow-label">{{ 'Followed' if is_following else 'Follow' }}</span>
+                        </button>
+                        <a href="{{ url_for('messages_page', user=user.id) }}" class="profile-message-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Message
+                        </a>
+                    </div>
                 {% endif %}
             </div>
         </div>

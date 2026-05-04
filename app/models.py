@@ -64,6 +64,27 @@ class User(UserMixin, db.Model):
             follower_id=user.id, followed_id=self.id
         ).first() is not None
 
+    def is_mutual_with(self, other):
+        """True if both users follow each other — the chat-system 'friend' check.
+        Mutual followers' first messages auto-accept into the main Chats inbox;
+        non-mutual messages start in the recipient's Requests tab."""
+        if not other or other.id == self.id:
+            return False
+        a_to_b = Follow.query.filter_by(follower_id=self.id, followed_id=other.id).first()
+        b_to_a = Follow.query.filter_by(follower_id=other.id, followed_id=self.id).first()
+        return (a_to_b is not None) and (b_to_a is not None)
+
+    @property
+    def unread_message_count(self):
+        """Total unread messages addressed to this user across every conversation —
+        powers the small red badge on the sidebar 'Messages' link."""
+        return ChatMessage.query.join(Conversation).filter(
+            db.or_(Conversation.user_a_id == self.id,
+                   Conversation.user_b_id == self.id),
+            ChatMessage.sender_id != self.id,
+            ChatMessage.read_at.is_(None),
+        ).count()
+
 class Category(db.Model):
     __tablename__ = 'categories'
     id = db.Column(db.Integer, primary_key=True)
@@ -214,3 +235,53 @@ class Follow(db.Model):
     __table_args__ = (
         db.UniqueConstraint('follower_id', 'followed_id', name='uq_follow_pair'),
     )
+
+
+class Conversation(db.Model):
+    """One row per (canonical) pair of users who have ever exchanged a message.
+    user_a_id is always the smaller id so we never store the same pair twice
+    in either direction. accepted=False means it's a 'message request' —
+    visible in the recipient's Requests tab, not the main Chats."""
+    __tablename__ = 'conversations'
+    id = db.Column(db.Integer, primary_key=True)
+    user_a_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_b_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    initiator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # auto-True when the two users are mutual followers (FB-style "friends");
+    # otherwise flips to True the moment the recipient replies or accepts
+    accepted = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_message_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user_a = db.relationship('User', foreign_keys=[user_a_id])
+    user_b = db.relationship('User', foreign_keys=[user_b_id])
+    messages = db.relationship('ChatMessage', backref='conversation', lazy=True,
+                               cascade='all, delete-orphan',
+                               order_by='ChatMessage.created_at')
+
+    __table_args__ = (
+        db.UniqueConstraint('user_a_id', 'user_b_id', name='uq_conv_pair'),
+    )
+
+    def other(self, user):
+        """Return the User on the other side of the conversation from `user`."""
+        return self.user_b if user.id == self.user_a_id else self.user_a
+
+    def is_request_for(self, user):
+        """True if this conversation should sit in `user`'s Requests tab —
+        i.e. it's pending and they didn't initiate it."""
+        return (not self.accepted) and self.initiator_id != user.id
+
+
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # plain text — Jinja auto-escape + JS textContent guards XSS the same way
+    # we do for comments. Server caps length at the route layer.
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    read_at = db.Column(db.DateTime, nullable=True)
+
+    sender = db.relationship('User', foreign_keys=[sender_id])

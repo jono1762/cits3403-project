@@ -5,7 +5,8 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow
+from datetime import datetime
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -60,6 +61,15 @@ CATEGORY_EMOJI = {
 @app.context_processor
 def inject_category_emoji():
     return {'CATEGORY_EMOJI': CATEGORY_EMOJI}
+
+@app.context_processor
+def inject_unread_messages():
+    """Make the chat unread count available to every template (used by the
+    sidebar 'Messages' link to render the small red notification badge).
+    Returns 0 for guests so the badge cleanly hides itself."""
+    if current_user.is_authenticated:
+        return {'unread_message_count': current_user.unread_message_count}
+    return {'unread_message_count': 0}
 
 
 # mapping each city to its state code (lowercase, used as the flag dictionary key)
@@ -345,6 +355,209 @@ def api_unfollow_user(user_id):
         'follower_count': target.follower_count,
         'following_count': target.following_count,
     })
+
+
+# ---------------- Chat ----------------
+# 1-on-1 messaging. Conversation rows store the per-pair state (accepted vs
+# request); ChatMessage rows store the actual messages.
+# Body is plain text — same XSS-safe pattern as comments (Jinja auto-escape +
+# textContent on the JS side).
+
+CHAT_MESSAGE_MAX_LENGTH = 2000
+
+def _find_or_create_conversation(sender, recipient):
+    """Look up the canonical (smaller-id-first) Conversation row between
+    sender + recipient, creating it on demand. New conversations auto-accept
+    when the two users are mutual followers; otherwise they start as a
+    pending message-request."""
+    me, them = sorted([sender.id, recipient.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
+    if conv is None:
+        conv = Conversation(
+            user_a_id=me,
+            user_b_id=them,
+            initiator_id=sender.id,
+            accepted=sender.is_mutual_with(recipient),
+        )
+        db.session.add(conv)
+        db.session.flush()
+    elif (not conv.accepted) and conv.initiator_id != sender.id:
+        # the recipient is replying → that auto-accepts the pending request
+        conv.accepted = True
+    return conv
+
+def _serialize_conversation_summary(conv, viewer):
+    """Compact JSON shape for the inbox list — last message preview + counts."""
+    other = conv.other(viewer)
+    last = ChatMessage.query.filter_by(conversation_id=conv.id) \
+        .order_by(ChatMessage.created_at.desc()).first()
+    unread = ChatMessage.query.filter(
+        ChatMessage.conversation_id == conv.id,
+        ChatMessage.sender_id != viewer.id,
+        ChatMessage.read_at.is_(None),
+    ).count()
+    return {
+        'user_id': other.id,
+        'username': other.username,
+        'avatar_initial': other.username[:1].upper(),
+        'profile_url': url_for('user_profile_page', username=other.username),
+        'last_body': last.body if last else '',
+        'last_at': conv.last_message_at.isoformat() if conv.last_message_at else None,
+        'last_sender_is_me': bool(last and last.sender_id == viewer.id),
+        'unread': unread,
+        'is_request': conv.is_request_for(viewer),
+        'accepted': conv.accepted,
+    }
+
+
+@app.route('/messages')
+@login_required
+def messages_page():
+    # ?user=<id> → JS auto-opens that conversation on page load
+    return render_template('messages.html')
+
+
+@app.route('/api/users/<int:user_id>')
+@login_required
+def api_user_brief(user_id):
+    """Minimal user-info endpoint used by the chat page when the inbox doesn't
+    yet contain this user (fresh conversation started from a profile page)."""
+    if user_id == current_user.id:
+        return jsonify({'error': "That's you."}), 400
+    u = User.query.get_or_404(user_id)
+    return jsonify({
+        'user_id': u.id,
+        'username': u.username,
+        'avatar_initial': u.username[:1].upper(),
+        'profile_url': url_for('user_profile_page', username=u.username),
+    })
+
+
+@app.route('/api/conversations')
+@login_required
+def api_list_conversations():
+    """Return chats and requests as two separate lists, both newest-first."""
+    convs = Conversation.query.filter(
+        db.or_(Conversation.user_a_id == current_user.id,
+               Conversation.user_b_id == current_user.id)
+    ).order_by(Conversation.last_message_at.desc()).all()
+
+    chats = []
+    requests_list = []
+    for conv in convs:
+        item = _serialize_conversation_summary(conv, current_user)
+        if conv.is_request_for(current_user):
+            requests_list.append(item)
+        else:
+            chats.append(item)
+    return jsonify({
+        'chats': chats,
+        'requests': requests_list,
+        'unread_total': current_user.unread_message_count,
+    })
+
+
+@app.route('/api/conversations/<int:user_id>/messages', methods=['GET'])
+@login_required
+def api_get_messages(user_id):
+    """Fetch the message history with a specific user. Optional ?since=<iso> to
+    only get messages newer than the given timestamp (used by the polling loop)."""
+    other = User.query.get_or_404(user_id)
+    me, them = sorted([current_user.id, other.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
+    if conv is None:
+        return jsonify({'messages': [], 'accepted': False, 'is_request': False})
+
+    since = request.args.get('since')
+    q = ChatMessage.query.filter_by(conversation_id=conv.id)
+    if since:
+        try:
+            cutoff = datetime.fromisoformat(since)
+            q = q.filter(ChatMessage.created_at > cutoff)
+        except ValueError:
+            pass
+    msgs = q.order_by(ChatMessage.created_at.asc()).all()
+
+    return jsonify({
+        'accepted': conv.accepted,
+        'is_request': conv.is_request_for(current_user),
+        'messages': [{
+            'id': m.id,
+            'body': m.body,
+            'sender_id': m.sender_id,
+            'sender_is_me': m.sender_id == current_user.id,
+            'created_at': m.created_at.isoformat(),
+        } for m in msgs],
+    })
+
+
+@app.route('/api/conversations/<int:user_id>/messages', methods=['POST'])
+@login_required
+def api_send_message(user_id):
+    """Send a message. First message creates the conversation; recipient
+    replying auto-accepts a pending request."""
+    if user_id == current_user.id:
+        return jsonify({'error': "You can't message yourself."}), 400
+    recipient = User.query.get_or_404(user_id)
+
+    payload = request.get_json(silent=True) or {}
+    body = (payload.get('body') or '').strip()
+    if not body:
+        return jsonify({'error': 'Message cannot be empty.'}), 400
+    if len(body) > CHAT_MESSAGE_MAX_LENGTH:
+        return jsonify({'error': f'Message too long (max {CHAT_MESSAGE_MAX_LENGTH} characters).'}), 400
+
+    conv = _find_or_create_conversation(current_user, recipient)
+    msg = ChatMessage(conversation_id=conv.id, sender_id=current_user.id, body=body)
+    db.session.add(msg)
+    conv.last_message_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'id': msg.id,
+        'body': msg.body,
+        'sender_id': msg.sender_id,
+        'sender_is_me': True,
+        'created_at': msg.created_at.isoformat(),
+        'accepted': conv.accepted,
+    }), 201
+
+
+@app.route('/api/conversations/<int:user_id>/accept', methods=['POST'])
+@login_required
+def api_accept_conversation(user_id):
+    """Move a pending message-request into the main Chats inbox."""
+    other = User.query.get_or_404(user_id)
+    me, them = sorted([current_user.id, other.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first_or_404()
+    # only the recipient can accept (the initiator already had it in their Chats)
+    if conv.initiator_id == current_user.id:
+        return jsonify({'error': "You started this conversation, nothing to accept."}), 400
+    conv.accepted = True
+    db.session.commit()
+    return jsonify({'accepted': True})
+
+
+@app.route('/api/conversations/<int:user_id>/read', methods=['POST'])
+@login_required
+def api_mark_read(user_id):
+    """Mark every unread message addressed to me in this conversation as read.
+    Called when the recipient opens the thread."""
+    other = User.query.get_or_404(user_id)
+    me, them = sorted([current_user.id, other.id])
+    conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
+    if conv is None:
+        return jsonify({'ok': True, 'marked': 0})
+    now = datetime.utcnow()
+    rows = ChatMessage.query.filter(
+        ChatMessage.conversation_id == conv.id,
+        ChatMessage.sender_id != current_user.id,
+        ChatMessage.read_at.is_(None),
+    ).all()
+    for m in rows:
+        m.read_at = now
+    db.session.commit()
+    return jsonify({'ok': True, 'marked': len(rows)})
 
 
 # /reports/<token> — public read-only view of a single report.
