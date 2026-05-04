@@ -279,9 +279,23 @@ class ChatMessage(db.Model):
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     # plain text — Jinja auto-escape + JS textContent guards XSS the same way
-    # we do for comments. Server caps length at the route layer.
-    body = db.Column(db.Text, nullable=False)
+    # we do for comments. Server caps length at the route layer. Body can be
+    # empty if the message carries media instead.
+    body = db.Column(db.Text, nullable=False, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     read_at = db.Column(db.DateTime, nullable=True)
 
     sender = db.relationship('User', foreign_keys=[sender_id])
+    # cascade so deleting a message also wipes any attached images / videos
+    media = db.relationship('ChatMessageMedia', backref='message', lazy=True,
+                            cascade='all, delete-orphan')
+
+
+class ChatMessageMedia(db.Model):
+    __tablename__ = 'chat_message_media'
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('chat_messages.id'), nullable=False)
+    filename = db.Column(db.String(64), nullable=False)        # uuid stored name on disk
+    original_name = db.Column(db.String(255), nullable=False)
+    media_type = db.Column(db.String(10), nullable=False)      # 'image' or 'video'
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)

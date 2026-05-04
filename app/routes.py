@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -487,6 +487,14 @@ def api_get_messages(user_id):
             'sender_id': m.sender_id,
             'sender_is_me': m.sender_id == current_user.id,
             'created_at': m.created_at.isoformat(),
+            'media': [
+                {
+                    'type': mm.media_type,
+                    'url': url_for('static', filename=f'uploads/{mm.filename}'),
+                    'original_name': mm.original_name,
+                }
+                for mm in m.media
+            ],
         } for m in msgs],
     })
 
@@ -494,24 +502,61 @@ def api_get_messages(user_id):
 @app.route('/api/conversations/<int:user_id>/messages', methods=['POST'])
 @login_required
 def api_send_message(user_id):
-    """Send a message. First message creates the conversation; recipient
-    replying auto-accepts a pending request."""
+    """Send a message. Accepts JSON ({body}) for text-only OR multipart/form-data
+    (body + media[]) when files are attached. First message creates the
+    conversation; recipient replying auto-accepts a pending request."""
     if user_id == current_user.id:
         return jsonify({'error': "You can't message yourself."}), 400
     recipient = User.query.get_or_404(user_id)
 
-    payload = request.get_json(silent=True) or {}
-    body = (payload.get('body') or '').strip()
-    if not body:
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        body = (request.form.get('body') or '').strip()
+        files = [f for f in request.files.getlist('media') if f and f.filename]
+    else:
+        payload = request.get_json(silent=True) or {}
+        body = (payload.get('body') or '').strip()
+        files = []
+
+    if not body and not files:
         return jsonify({'error': 'Message cannot be empty.'}), 400
     if len(body) > CHAT_MESSAGE_MAX_LENGTH:
         return jsonify({'error': f'Message too long (max {CHAT_MESSAGE_MAX_LENGTH} characters).'}), 400
+    if len(files) > MAX_MEDIA_FILES:
+        return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
+    for f in files:
+        if not _media_type_for(f.filename):
+            return jsonify({'error': f'Unsupported file type: {f.filename}'}), 400
 
     conv = _find_or_create_conversation(current_user, recipient)
     msg = ChatMessage(conversation_id=conv.id, sender_id=current_user.id, body=body)
     db.session.add(msg)
-    conv.last_message_at = datetime.utcnow()
-    db.session.commit()
+    db.session.flush()  # need msg.id for ChatMessageMedia FK
+
+    # save uploaded files to disk + DB; clean up disk on error
+    saved_paths = []
+    try:
+        for f in files:
+            ext = f.filename.rsplit('.', 1)[-1].lower()
+            stored_name = f'{uuid.uuid4().hex}.{ext}'
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
+            f.save(save_path)
+            saved_paths.append(save_path)
+            db.session.add(ChatMessageMedia(
+                message_id=msg.id,
+                filename=stored_name,
+                original_name=secure_filename(f.filename) or stored_name,
+                media_type=_media_type_for(f.filename),
+            ))
+        conv.last_message_at = datetime.utcnow()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        for p in saved_paths:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        raise
 
     return jsonify({
         'id': msg.id,
@@ -520,6 +565,14 @@ def api_send_message(user_id):
         'sender_is_me': True,
         'created_at': msg.created_at.isoformat(),
         'accepted': conv.accepted,
+        'media': [
+            {
+                'type': m.media_type,
+                'url': url_for('static', filename=f'uploads/{m.filename}'),
+                'original_name': m.original_name,
+            }
+            for m in msg.media
+        ],
     }), 201
 
 

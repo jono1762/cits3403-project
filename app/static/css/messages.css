@@ -440,17 +440,81 @@
 }
 
 
+/* media grid inside a bubble — small thumbnails laid out under the text */
+.messages-bubble-media {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    max-width: 100%;
+}
+
+.messages-bubble-media-item {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #000;
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.messages-bubble.is-mine .messages-bubble-media-item {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
 /* composer at the bottom */
 .messages-composer {
     display: flex;
     align-items: flex-end;
-    gap: 0.5rem;
+    gap: 0.45rem;
     padding: 0.7rem 0.9rem;
     border-top: 1px solid #f1f5f9;
 }
 
-.messages-composer-input {
+/* circular paperclip attach button — same size as the send button */
+.messages-composer-attach {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.messages-composer-attach:hover {
+    background: #eef2ff;
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+
+/* wrapper holding the optional attach-status caption + the textarea, stacked */
+.messages-composer-fields {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.messages-composer-attach-status {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    align-self: flex-start;
+}
+
+.messages-composer-input {
+    width: 100%;
     border: 1.5px solid #e2e8f0;
     border-radius: 12px;
     padding: 0.55rem 0.85rem;
