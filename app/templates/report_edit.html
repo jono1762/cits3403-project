@@ -12,28 +12,21 @@
     <div class="card-body">
         <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
-                <label class="form-label">State <span class="text-danger">*</span></label>
-                <select id="state_id" class="form-select" required>
-                    <option value="" disabled>Select a state...</option>
-                    {% for state in states %}
-                        {# pre-select the state that contains the report's current suburb #}
-                        <option value="{{ state.id }}" {{ 'selected' if state.id == report.suburb.state_id else '' }}>
-                            {{ state.name }}
+                <label class="form-label">City <span class="text-danger">*</span></label>
+                <select id="suburb_id" name="suburb_id" class="form-select" required>
+                    {% for city in cities %}
+                        <option value="{{ city.id }}" {{ 'selected' if city.id == report.suburb_id else '' }}>
+                            {{ city.name }} ({{ city.state.code }})
                         </option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Suburb <span class="text-danger">*</span></label>
-                <select id="suburb_id" name="suburb_id" class="form-select" required>
-                    {# pre-populate with the suburbs from the report's current state so the dropdown isn't empty on load #}
-                    {% for sub in report.suburb.state.suburbs %}
-                        <option value="{{ sub.id }}" {{ 'selected' if sub.id == report.suburb_id else '' }}>
-                            {{ sub.name }}
-                        </option>
-                    {% endfor %}
-                </select>
+                <label class="form-label">Suburb <span class="text-muted">(optional)</span></label>
+                <input id="suburb_name" name="suburb_name" type="text" class="form-control" maxlength="100"
+                       value="{{ report.suburb_name or '' }}"
+                       placeholder="e.g. Northbridge, Carlton, Bondi Junction">
             </div>
 
             <div class="mb-3">
@@ -107,22 +100,6 @@
 </div>
 
 <script>
-    // cascade: when user changes state, swap the suburb dropdown contents to match
-    const SUBURBS_BY_STATE = {{ suburbs_by_state | tojson }};
-    const stateSelect = document.getElementById('state_id');
-    const suburbSelect = document.getElementById('suburb_id');
-
-    stateSelect.addEventListener('change', () => {
-        const suburbs = SUBURBS_BY_STATE[stateSelect.value] || [];
-        suburbSelect.innerHTML = '';
-        for (const sub of suburbs) {
-            const opt = document.createElement('option');
-            opt.value = sub.id;
-            opt.textContent = sub.name;
-            suburbSelect.appendChild(opt);
-        }
-    });
-
     // clicking the X on a current attachment: tick its hidden checkbox and hide the thumbnail
     // the checkbox stays in the form so the server still receives the delete id on submit
     document.querySelectorAll('.attachment-thumb .remove-btn').forEach(btn => {

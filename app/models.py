@@ -52,6 +52,7 @@ class Report(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     suburb_id = db.Column(db.Integer, db.ForeignKey('suburbs.id'), nullable=False)
+    suburb_name = db.Column(db.String(100), nullable=True)
     # optional free-text for extra detail like street name or landmark
     address = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=False)
