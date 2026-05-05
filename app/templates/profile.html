@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='12') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='14') }}">
 {% endblock %}
 
 {% block content %}
@@ -113,24 +113,27 @@
         </aside>
     </div>
 
-    {# ============== Tabs (Posts is the only real one for now) ============== #}
+    {# ============== Tabs ============== #}
     <nav class="profile-tabs" aria-label="Profile sections">
-        <button type="button" class="profile-tab is-active">
+        <button type="button" class="profile-tab is-active" data-tab="posts">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
             </svg>
             Posts ({{ user.reports | length }})
         </button>
-        <button type="button" class="profile-tab" disabled title="Coming soon">
+        <button type="button" class="profile-tab" data-tab="following">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <polyline points="17 11 19 13 23 9"/>
             </svg>
-            Credits &amp; Stats
+            Following ({{ user.following_count }})
         </button>
     </nav>
 
     {# ============== Posts feed ============== #}
+    <div class="profile-tab-pane" data-pane="posts">
     {% if recent_reports %}
         <ul class="profile-feed">
             {% for r in recent_reports %}
@@ -266,6 +269,102 @@
             {{ "You haven't submitted any reports yet." if is_own_profile else user.username + " hasn't submitted any reports yet." }}
         </div>
     {% endif %}
+    </div>{# /posts pane #}
+
+    {# ============== Following pane ============== #}
+    <div class="profile-tab-pane" data-pane="following" hidden>
+        {# Privacy gate — owner always sees the list; others only when public. #}
+        {% set can_view_following = is_own_profile or user.following_list_public %}
+
+        {% if is_own_profile %}
+            {# small toggle so the owner can flip privacy on/off without leaving
+               the page. Strip is green when public, amber when private; the icon
+               flips between an open eye and a struck-through eye. #}
+            <form method="POST" action="{{ url_for('profile_toggle_following_privacy') }}"
+                  class="profile-following-privacy {{ 'is-public' if user.following_list_public else 'is-private' }}">
+                <span class="profile-following-status">
+                    {% if user.following_list_public %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span>Visibility: <strong>Public</strong></span>
+                        <span class="profile-following-status-hint">— other users can see who you follow</span>
+                    {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                        <span>Visibility: <strong>Private</strong></span>
+                        <span class="profile-following-status-hint">— only you can see who you follow</span>
+                    {% endif %}
+                </span>
+                <button type="submit" class="profile-following-toggle-btn">
+                    {{ 'Make private' if user.following_list_public else 'Make public' }}
+                </button>
+            </form>
+        {% endif %}
+
+        {% if not can_view_following %}
+            <div class="profile-empty">
+                <strong>{{ user.username }}</strong> keeps their Following list private.
+            </div>
+        {% elif following_users %}
+            <ul class="profile-following-list">
+                {% for f in following_users %}
+                    <li class="profile-following-item">
+                        <a class="profile-following-avatar" href="{{ url_for('user_profile_page', username=f.username) }}" aria-hidden="true">
+                            {{ f.username[0]|upper }}
+                        </a>
+                        <div class="profile-following-info">
+                            <a class="profile-following-name" href="{{ url_for('user_profile_page', username=f.username) }}">{{ f.username }}</a>
+                            <span class="profile-following-handle">@{{ f.username|lower }}</span>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="profile-empty">
+                {{ "You're not following anyone yet." if is_own_profile else user.username + " isn't following anyone yet." }}
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Tab switcher — toggles .is-active + shows/hides panes. Also syncs
+        // with the URL hash so:
+        //   - landing on /profile#following activates the Following tab
+        //     (used after the privacy-toggle form POST redirects with #following)
+        //   - clicking a tab updates the hash so reload stays on the same tab
+        (function () {
+            const tabs = document.querySelectorAll('.profile-tab');
+            const panes = document.querySelectorAll('.profile-tab-pane');
+
+            function activate(tabName) {
+                let matched = false;
+                tabs.forEach((btn) => {
+                    const isMatch = btn.dataset.tab === tabName;
+                    btn.classList.toggle('is-active', isMatch);
+                    if (isMatch) matched = true;
+                });
+                panes.forEach((p) => { p.hidden = p.dataset.pane !== tabName; });
+                return matched;
+            }
+
+            tabs.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const target = btn.dataset.tab;
+                    activate(target);
+                    // update the hash without scrolling, so refresh stays on this tab
+                    history.replaceState(null, '', '#' + target);
+                });
+            });
+
+            // on initial load, honour the hash if it points to a known tab
+            const initial = (window.location.hash || '').replace('#', '');
+            if (initial) activate(initial);
+        })();
+    </script>
 </section>
 
 {# Unfollow confirmation modal — same Bootstrap pattern as the report / comment

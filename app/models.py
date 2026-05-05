@@ -11,6 +11,11 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    # Whether the user's "Following" list is visible to other users.
+    # The owner always sees their own list regardless of this flag.
+    # server_default='1' so existing rows get backfilled when the column
+    # is added — SQLite requires a SQL-level DEFAULT for NOT NULL adds.
+    following_list_public = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
 
     reports = db.relationship('Report', backref='author', lazy=True)
     verifications = db.relationship('Verification', backref='verifier', lazy=True)

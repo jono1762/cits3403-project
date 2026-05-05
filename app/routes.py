@@ -365,6 +365,18 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+def _following_users_for(user):
+    """Return the User rows this profile-user follows (newest follow first)."""
+    rows = (
+        Follow.query
+        .filter_by(follower_id=user.id)
+        .order_by(Follow.created_at.desc())
+        .all()
+    )
+    # Resolve each Follow row to the actual followed-User object
+    return [User.query.get(r.followed_id) for r in rows if User.query.get(r.followed_id)]
+
+
 # /profile — show the logged-in user's own basic info
 @app.route('/profile')
 @login_required
@@ -381,6 +393,7 @@ def profile_page():
         user=current_user,
         recent_reports=recent_reports,
         is_own_profile=True,
+        following_users=_following_users_for(current_user),
     )
 
 # /users/<username> — view someone else's profile (read-only, no edit buttons)
@@ -400,7 +413,19 @@ def user_profile_page(username):
         user=user,
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
+        following_users=_following_users_for(user),
     )
+
+
+@app.route('/profile/following-privacy', methods=['POST'])
+@login_required
+def profile_toggle_following_privacy():
+    """Flip the visibility of the current user's Following list. Only the
+    profile owner can toggle their own setting (enforced by current_user).
+    Redirects with #following so the JS keeps the user on the Following tab."""
+    current_user.following_list_public = not current_user.following_list_public
+    db.session.commit()
+    return redirect(url_for('profile_page') + '#following')
 
 # /search — find users by username substring (case-insensitive)
 @app.route('/search')
