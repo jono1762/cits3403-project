@@ -69,6 +69,49 @@
     font-weight: 500;
 }
 
+.report-view-header-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.report-fav-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 0.38rem 0.9rem;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #1f2937;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: transform 0.14s ease, box-shadow 0.18s ease;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+}
+
+.report-fav-btn:hover,
+.report-fav-btn:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+}
+
+.report-fav-btn.is-saved {
+    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.report-fav-login-link {
+    color: #4f46e5;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.report-fav-login-link:hover {
+    text-decoration: underline;
+}
+
 
 /* title — the location, big and bold */
 .report-view-title {
