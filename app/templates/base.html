@@ -90,6 +90,10 @@
                     <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Top Reports</a>
 
+                    <div class="app-sidebar-group-header">Favourites</div>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}" data-bs-dismiss="offcanvas">Locations</a>
+                    <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}" data-bs-dismiss="offcanvas">Reports</a>
+
                     <div class="app-sidebar-group-header">Account</div>
                     {% if is_guest %}
                         <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile." data-bs-dismiss="offcanvas">Profile</a>
@@ -104,7 +108,6 @@
                         </a>
                     {% endif %}
                     <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
-                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}" data-bs-dismiss="offcanvas">Favourites</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}" data-bs-dismiss="offcanvas">Help</a>
@@ -156,6 +159,10 @@
                     <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}">Top Reports</a>
 
+                    <div class="app-sidebar-group-header">Favourites</div>
+                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
+                    <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}">Reports</a>
+
                     <div class="app-sidebar-group-header">Account</div>
                     {% if is_guest %}
                         <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile.">Profile</a>
@@ -170,7 +177,6 @@
                         </a>
                     {% endif %}
                     <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
-                    <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourites_page') else '' }}">Favourites</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>

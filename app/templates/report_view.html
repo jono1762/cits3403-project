@@ -14,7 +14,19 @@
             <span class="report-view-badge">
                 {{ CATEGORY_EMOJI.get(report.category.name, '') }} {{ report.category.name }}
             </span>
-            <span class="report-view-time">{{ report.created_at.strftime('%d %b %Y · %H:%M') }}</span>
+            <div class="report-view-header-right">
+                {% if current_user.is_authenticated %}
+                    <button type="button"
+                            id="report-fav-btn"
+                            class="report-fav-btn {{ 'is-saved' if is_report_favourited else '' }}"
+                            data-report-id="{{ report.id }}"
+                            data-saved="{{ 'true' if is_report_favourited else 'false' }}">
+                        {{ 'Saved ✓' if is_report_favourited else 'Save report' }}
+                    </button>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="report-fav-login-link">Log in to save</a>
+                {% endif %}
+            </div>
         </header>
 
         <h1 class="report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
@@ -26,6 +38,7 @@
         <p class="report-view-author">
             Posted by
             <a href="{{ url_for('user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
+            on {{ report.created_at.strftime('%d %b %Y · %H:%M') }}
         </p>
 
         {% if report.description %}
@@ -294,6 +307,33 @@
         } catch (err) {
             btn.disabled = false;
             alert('Network error — please try again.');
+        }
+    });
+})();
+</script>
+{% endif %}
+
+{% if current_user.is_authenticated %}
+<script>
+(function () {
+    const btn = document.getElementById('report-fav-btn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        const reportId = btn.dataset.reportId;
+        const isSaved = btn.dataset.saved === 'true';
+        btn.disabled = true;
+        try {
+            const method = isSaved ? 'DELETE' : 'POST';
+            const res = await fetch(`/api/favourites/report/${reportId}`, { method });
+            if (!res.ok) throw new Error('Request failed');
+            const nowSaved = !isSaved;
+            btn.dataset.saved = nowSaved ? 'true' : 'false';
+            btn.classList.toggle('is-saved', nowSaved);
+            btn.textContent = nowSaved ? 'Saved ✓' : 'Save report';
+        } catch (err) {
+            alert('Could not update report favourite.');
+        } finally {
+            btn.disabled = false;
         }
     });
 })();

@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -98,6 +98,7 @@ STATE_FLAG_URL = {
 
 
 @app.route('/favourites')
+@app.route('/favourites/locations')
 @login_required
 def favourites_page():
     # load saved city favourites for the current user
@@ -140,8 +141,38 @@ def favourites_page():
             'trending': trending,
         })
 
-    # for now we ignore saved reports — that will be a separate page
+    # locations-only page (report favourites are on /favourites/reports)
     return render_template('favourites.html', saved_cities=saved_cities)
+
+
+@app.route('/favourites/reports')
+@login_required
+def favourite_reports_page():
+    fav_rows = (
+        FavouriteReport.query
+        .filter_by(user_id=current_user.id)
+        .order_by(FavouriteReport.created_at.desc())
+        .all()
+    )
+
+    fav_reports = []
+    for row in fav_rows:
+        report = row.report
+        if not report:
+            continue
+        fav_reports.append({
+            'id': report.id,
+            'category': report.category.name if report.category else 'Unknown',
+            'category_color': report.category.marker_color if report.category else '#94a3b8',
+            'city': report.city.name if report.city else 'Unknown city',
+            'state': report.city.state.code if report.city and report.city.state else '',
+            'author': report.author.username if report.author else 'unknown',
+            'created_at': report.created_at.strftime('%d %b %Y · %H:%M') if report.created_at else '—',
+            'description': report.description or '',
+            'token': _encode_report_id(report.id),
+        })
+
+    return render_template('favourite_reports.html', fav_reports=fav_reports)
 
 
 @app.route('/api/favourites/locations', methods=['GET'])
@@ -177,6 +208,37 @@ def api_add_favourite_location(city_id):
 @login_required
 def api_remove_favourite_location(city_id):
     fav = FavouriteLocation.query.filter_by(user_id=current_user.id, city_id=city_id).first()
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+    return jsonify({'removed': True})
+
+
+@app.route('/api/favourites/reports', methods=['GET'])
+@login_required
+def api_get_favourite_reports():
+    fav_rows = FavouriteReport.query.filter_by(user_id=current_user.id).all()
+    return jsonify([
+        {'report_id': row.report_id}
+        for row in fav_rows
+    ])
+
+
+@app.route('/api/favourites/report/<int:report_id>', methods=['POST'])
+@login_required
+def api_add_favourite_report(report_id):
+    report = Report.query.get_or_404(report_id)
+    existing = FavouriteReport.query.filter_by(user_id=current_user.id, report_id=report.id).first()
+    if not existing:
+        db.session.add(FavouriteReport(user_id=current_user.id, report_id=report.id))
+        db.session.commit()
+    return jsonify({'added': True})
+
+
+@app.route('/api/favourites/report/<int:report_id>', methods=['DELETE'])
+@login_required
+def api_remove_favourite_report(report_id):
+    fav = FavouriteReport.query.filter_by(user_id=current_user.id, report_id=report_id).first()
     if fav:
         db.session.delete(fav)
         db.session.commit()
@@ -686,7 +748,18 @@ def view_report(token):
     except BadSignature:
         abort(404)
     report = Report.query.get_or_404(report_id)
-    return render_template('report_view.html', report=report, comment_max_length=COMMENT_MAX_LENGTH)
+    is_report_favourited = False
+    if current_user.is_authenticated:
+        is_report_favourited = FavouriteReport.query.filter_by(
+            user_id=current_user.id,
+            report_id=report.id,
+        ).first() is not None
+    return render_template(
+        'report_view.html',
+        report=report,
+        comment_max_length=COMMENT_MAX_LENGTH,
+        is_report_favourited=is_report_favourited,
+    )
 
 
 # POST /api/reports/<id>/vote — verify or dispute a report.
@@ -887,6 +960,13 @@ def listing_page():
     }
     categories = Category.query.order_by(Category.id).all()
 
+    fav_report_ids = []
+    if current_user.is_authenticated:
+        fav_report_ids = [
+            row.report_id
+            for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
+        ]
+
     return render_template(
         'reports_listing.html',
         pagination=pagination,
@@ -897,6 +977,7 @@ def listing_page():
         selected_city_id=city_id,
         selected_category_id=category_id,
         sort=sort,
+        fav_report_ids=fav_report_ids,
     )
 
 # /reports — page where a logged-in user fills out and submits a report

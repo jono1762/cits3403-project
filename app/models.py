@@ -124,6 +124,21 @@ class FavouriteLocation(db.Model):
         db.UniqueConstraint('user_id', 'city_id', name='uq_user_city_fav'),
     )
 
+
+class FavouriteReport(db.Model):
+    __tablename__ = 'favourite_reports'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    report_id = db.Column(db.Integer, db.ForeignKey('reports.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    report = db.relationship('Report', foreign_keys=[report_id])
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'report_id', name='uq_user_report_fav'),
+    )
+
 class Report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)
