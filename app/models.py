@@ -109,6 +109,21 @@ class City(db.Model):
 
     reports = db.relationship('Report', backref='city', lazy=True)
 
+
+class FavouriteLocation(db.Model):
+    __tablename__ = 'favourite_locations'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    city = db.relationship('City', foreign_keys=[city_id])
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'city_id', name='uq_user_city_fav'),
+    )
+
 class Report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)

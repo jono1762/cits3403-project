@@ -175,10 +175,17 @@
 				? `{{ url_for('listing_page') }}?city_id=${cityId}`
 				: `{{ url_for('listing_page') }}`;
 
+			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button">Save location</button>` : '';
+
 			marker.bindPopup(`
-				<strong>${city.name}</strong>
-				<span class="popup-state">${city.state}</span>
-				<a href="${listingHref}" class="popup-action">View reports for ${shortName} →</a>
+				<div class="popup-content">
+					<strong>${city.name}</strong>
+					<div class="popup-state">${city.state}</div>
+					<div class="popup-actions">
+						<a href="${listingHref}" class="popup-action">View reports for ${shortName} →</a>
+						${popupSaveButton}
+					</div>
+				</div>
 			`);
 
 			marker.on("click", function () {
@@ -336,6 +343,29 @@
 	searchBar.addEventListener("keydown", onSearchBarKeyDown);
 	searchButton.addEventListener("click", onSearchSubmit);
 	viewReportsButton.addEventListener("click", onViewReportsSubmit);
+
+	// Handle Save Location clicks inside marker popups (delegated)
+	document.addEventListener('click', function (ev) {
+		const btn = ev.target.closest('.popup-save-location');
+		if (!btn) return;
+		ev.preventDefault();
+		const cityId = btn.getAttribute('data-city-id');
+		if (!cityId) {
+			alert('This location cannot be saved because it is not in the database.');
+			return;
+		}
+		fetch(`/api/favourites/location/${cityId}`, { method: 'POST' })
+			.then(r => {
+				if (!r.ok) throw new Error('Network error');
+				return r.json();
+			})
+			.then(() => {
+				// small visual feedback
+				btn.textContent = 'Saved ✓';
+				btn.disabled = true;
+			})
+			.catch(() => alert('Could not save location.'));
+	});
 	document.body.addEventListener("click", minimise);
 	suggestions.addEventListener("click", autocomplete);
 	map.on("moveend", clampMapCenterToAustralia);

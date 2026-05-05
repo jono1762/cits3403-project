@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -97,27 +97,90 @@ STATE_FLAG_URL = {
 }
 
 
-# /favourites — saved cities + saved reports for the logged-in user.
-# Backend doesn't actually persist favourites yet — page renders placeholder
-# items so the UI exists. Wire to a real Favourite model later.
 @app.route('/favourites')
 @login_required
 def favourites_page():
-    fake_cities = [
-        {'name': 'Sydney', 'state_code': 'NSW', 'reports_today': 8},
-        {'name': 'Perth', 'state_code': 'WA', 'reports_today': 3},
-        {'name': 'Melbourne', 'state_code': 'VIC', 'reports_today': 5},
-    ]
-    fake_reports = [
-        {'category': 'Weather',  'color': '#3498db', 'title': 'Storm warning issued',  'where': 'Bondi · NSW',     'when': '24 min ago'},
-        {'category': 'Hazards',  'color': '#e67e22', 'title': 'Tree down at Yarra',    'where': 'Melbourne · VIC', 'when': '5 min ago'},
-        {'category': 'Traffic',  'color': '#f1c40f', 'title': 'Mitchell Fwy backed up','where': 'Perth · WA',      'when': '8 min ago'},
-    ]
-    return render_template(
-        'favourites.html',
-        fake_cities=fake_cities,
-        fake_reports=fake_reports,
-    )
+    # load saved city favourites for the current user
+    fav_rows = FavouriteLocation.query.filter_by(user_id=current_user.id).all()
+    saved_cities = []
+    for f in fav_rows:
+        city = f.city
+        if not city:
+            continue
+        # small convenience stat: how many reports exist for this city
+        reports_today = Report.query.filter_by(city_id=city.id).count()
+        # latest report time (for "Last Update")
+        last_report = Report.query.filter_by(city_id=city.id).order_by(Report.created_at.desc()).first()
+        if last_report and last_report.created_at:
+            delta = datetime.utcnow() - last_report.created_at
+            minutes = int(delta.total_seconds() // 60)
+            if minutes < 1:
+                last_update = 'just now'
+            elif minutes < 60:
+                last_update = f"{minutes} minute{'s' if minutes!=1 else ''} ago"
+            elif minutes < 60*24:
+                hours = minutes // 60
+                last_update = f"{hours} hour{'s' if hours!=1 else ''} ago"
+            else:
+                days = minutes // (60*24)
+                last_update = f"{days} day{'s' if days!=1 else ''} ago"
+        else:
+            last_update = '—'
+
+        # trending heuristic: many reports today
+        trending = reports_today >= 20
+
+        saved_cities.append({
+            'id': city.id,
+            'name': city.name,
+            'country': 'Australia',
+            'state_code': city.state.code if getattr(city, 'state', None) else '',
+            'reports_today': reports_today,
+            'last_update': last_update,
+            'trending': trending,
+        })
+
+    # for now we ignore saved reports — that will be a separate page
+    return render_template('favourites.html', saved_cities=saved_cities)
+
+
+@app.route('/api/favourites/locations', methods=['GET'])
+@login_required
+def api_get_favourite_locations():
+    fav_rows = FavouriteLocation.query.filter_by(user_id=current_user.id).all()
+    data = []
+    for f in fav_rows:
+        city = f.city
+        if not city:
+            continue
+        data.append({
+            'city_id': city.id,
+            'name': city.name,
+            'state_code': city.state.code if getattr(city, 'state', None) else '',
+        })
+    return jsonify(data)
+
+
+@app.route('/api/favourites/location/<int:city_id>', methods=['POST'])
+@login_required
+def api_add_favourite_location(city_id):
+    city = City.query.get_or_404(city_id)
+    existing = FavouriteLocation.query.filter_by(user_id=current_user.id, city_id=city.id).first()
+    if not existing:
+        fav = FavouriteLocation(user_id=current_user.id, city_id=city.id)
+        db.session.add(fav)
+        db.session.commit()
+    return jsonify({'added': True})
+
+
+@app.route('/api/favourites/location/<int:city_id>', methods=['DELETE'])
+@login_required
+def api_remove_favourite_location(city_id):
+    fav = FavouriteLocation.query.filter_by(user_id=current_user.id, city_id=city_id).first()
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+    return jsonify({'removed': True})
 
 
 # /settings — UI-only stub. Renders the form, accepts POST, flashes a

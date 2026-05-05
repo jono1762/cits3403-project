@@ -7,54 +7,81 @@
 {% block content %}
 <section class="fav-page">
     <header class="fav-header">
-        <h1 class="fav-title">⭐ Your favourites</h1>
-        <p class="fav-subtitle">Cities you watch and reports you've starred.</p>
+        <h1 class="fav-title">Favourites</h1>
+        <p class="fav-subtitle">Cities you watch.</p>
     </header>
 
-    {# ============== Saved cities ============== #}
-    <h2 class="fav-section-title">Saved cities</h2>
-    {% if fake_cities %}
-        <ul class="fav-city-list">
-            {% for s in fake_cities %}
-                <li class="fav-city-card">
-                    <div class="fav-city-info">
-                        <span class="fav-star" aria-hidden="true">⭐</span>
-                        <div>
-                            <div class="fav-city-name">{{ s.name }}</div>
-                            <div class="fav-city-state">{{ s.state_code }}</div>
+    {# ============== Saved cities (persisted) ============== #}
+    <h2 class="fav-section-title">Saved Locations</h2>
+    {% if saved_cities and saved_cities|length > 0 %}
+        <div class="fav-grid">
+            {% for s in saved_cities %}
+                <article class="fav-panel" data-city-id="{{ s.id }}">
+                    <button class="fav-panel-star" aria-label="Unstar" title="Remove">
+                        ⭐
+                    </button>
+
+                    <div class="fav-panel-content">
+                        <div class="fav-city-header">
+                            <div>
+                                <div class="fav-city-name">{{ s.name }}</div>
+                                <div class="fav-city-country">{{ s.country }}</div>
+                            </div>
+                        </div>
+
+                        <div class="fav-stats-row">
+                            <div class="fav-stat-label">Active Reports</div>
+                            <div class="fav-stat-value">{{ s.reports_today }}</div>
+                        </div>
+
+                        <div class="fav-stats-row">
+                            <div class="fav-stat-label">Last Update</div>
+                            <div class="fav-stat-value">{{ s.last_update }}</div>
+                        </div>
+
+                        {% if s.trending %}
+                            <div class="fav-trending">📈 Trending</div>
+                        {% endif %}
+
+                        <div class="fav-panel-actions">
+                            <a class="btn btn-ghost" href="{{ url_for('listing_page') }}?city_id={{ s.id }}">View Reports</a>
                         </div>
                     </div>
-                    <div class="fav-city-meta">{{ s.reports_today }} reports today</div>
-                </li>
+                </article>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
         <div class="fav-empty">
-            No saved cities yet. Star a city on the map to track it here.
+            No saved locations yet. Use the map search to find a place and save it.
         </div>
     {% endif %}
 
-    {# ============== Saved reports ============== #}
-    <h2 class="fav-section-title">Saved reports</h2>
-    {% if fake_reports %}
-        <ul class="fav-report-list">
-            {% for r in fake_reports %}
-                <li class="fav-report-card" style="--cat: {{ r.color }};">
-                    <div class="fav-report-meta">
-                        <span class="fav-report-badge">
-                            {{ CATEGORY_EMOJI.get(r.category, '') }} {{ r.category }}
-                        </span>
-                        <span class="fav-report-time">{{ r.when }}</span>
-                    </div>
-                    <h3 class="fav-report-title">{{ r.title }}</h3>
-                    <p class="fav-report-where">{{ r.where }}</p>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <div class="fav-empty">
-            No saved reports yet. Star a report's view page to keep it here.
-        </div>
-    {% endif %}
+    {# saved reports intentionally omitted — implemented on a separate page later #}
+
+    <script>
+        // Unstar/remove a saved location from the favourites grid.
+        document.addEventListener('click', function (ev) {
+            const btn = ev.target.closest('.fav-panel-star');
+            if (!btn) return;
+            const panel = btn.closest('.fav-panel');
+            const cityId = panel && panel.getAttribute('data-city-id');
+            if (!cityId) return;
+            if (!confirm('Remove this location from your favourites?')) return;
+            fetch(`/api/favourites/location/${cityId}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(() => {
+                    panel.remove();
+                    // if no panels left, show empty state
+                    if (!document.querySelectorAll('.fav-panel').length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'fav-empty';
+                        empty.textContent = 'No saved locations yet. Use the map search to find a place and save it.';
+                        const grid = document.querySelector('.fav-grid');
+                        if (grid) grid.replaceWith(empty);
+                    }
+                })
+                .catch(() => alert('Could not remove favourite.'));
+        });
+    </script>
 </section>
 {% endblock %}
