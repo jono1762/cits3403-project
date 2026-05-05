@@ -1241,6 +1241,12 @@ def listing_page():
         query = query.order_by(Report.created_at.desc())
     pagination = query.paginate(page=page, per_page=20, error_out=False)
 
+    # Score each report so we can mark the top list as trending.
+    # This is a simple heuristic using verify/dispute/comment activity.
+    for report in pagination.items:
+        report.trending_score = report.verify_count + report.comment_count - report.dispute_count
+        report.trending = report.trending_score >= 3
+
     states = State.query.order_by(State.name).all()
     cities_by_state = {
         s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
