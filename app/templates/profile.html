@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='15') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='16') }}">
 {% endblock %}
 
 {% block content %}
@@ -525,6 +525,7 @@
     }
 })();
 </script>
+
 
 {# Vote (verify/dispute) AJAX — updates the vote-bar AND the live credibility
    stats in the hero (no page reload needed). Server returns author aggregates

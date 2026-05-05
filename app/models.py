@@ -337,3 +337,18 @@ class ChatMessageMedia(db.Model):
     original_name = db.Column(db.String(255), nullable=False)
     media_type = db.Column(db.String(10), nullable=False)      # 'image' or 'video'
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class BlockedUser(db.Model):
+    """Chat-only block. blocker_id has stopped accepting messages from blocked_id.
+    Blocked users can still see the blocker's posts / profile / comments —
+    only the messaging surface is restricted."""
+    __tablename__ = 'blocked_users'
+    id = db.Column(db.Integer, primary_key=True)
+    blocker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    blocked_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('blocker_id', 'blocked_id', name='uq_block_pair'),
+    )

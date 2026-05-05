@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, BlockedUser
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -533,6 +533,70 @@ def api_unfollow_user(user_id):
     })
 
 
+# ---------------- Block / Unblock (chat-only) ----------------
+# When user A blocks user B:
+#   - B can no longer send messages to A (server returns 403 in api_send_message)
+#   - B's existing conversations with A are filtered out of A's inbox
+#   - B can still see A's posts / comments / profile — this is chat-only
+# Block button appears on the OTHER user's profile page (next to Follow / Message).
+
+def _is_blocked(blocker_id, blocked_id):
+    """True if blocker_id has blocked blocked_id (chat-wise)."""
+    return BlockedUser.query.filter_by(
+        blocker_id=blocker_id, blocked_id=blocked_id
+    ).first() is not None
+
+
+@app.route('/api/block/<int:user_id>', methods=['POST'])
+@login_required
+def api_block_user(user_id):
+    if user_id == current_user.id:
+        return jsonify({'error': "You can't block yourself."}), 400
+    target = User.query.get_or_404(user_id)
+    if not _is_blocked(current_user.id, target.id):
+        db.session.add(BlockedUser(blocker_id=current_user.id, blocked_id=target.id))
+        db.session.commit()
+    return jsonify({'is_blocked': True})
+
+
+@app.route('/api/blocked-users')
+@login_required
+def api_list_blocked_users():
+    """List the users the current user has blocked, newest-first.
+    Powers the 'manage blocked' modal in the chat sidebar."""
+    rows = (
+        BlockedUser.query
+        .filter_by(blocker_id=current_user.id)
+        .order_by(BlockedUser.created_at.desc())
+        .all()
+    )
+    out = []
+    for row in rows:
+        u = User.query.get(row.blocked_id)
+        if not u:
+            continue
+        out.append({
+            'user_id': u.id,
+            'username': u.username,
+            'avatar_initial': u.username[:1].upper(),
+            'profile_url': url_for('user_profile_page', username=u.username),
+        })
+    return jsonify(out)
+
+
+@app.route('/api/block/<int:user_id>', methods=['DELETE'])
+@login_required
+def api_unblock_user(user_id):
+    target = User.query.get_or_404(user_id)
+    row = BlockedUser.query.filter_by(
+        blocker_id=current_user.id, blocked_id=target.id
+    ).first()
+    if row:
+        db.session.delete(row)
+        db.session.commit()
+    return jsonify({'is_blocked': False})
+
+
 # ---------------- Chat ----------------
 # 1-on-1 messaging. Conversation rows store the per-pair state (accepted vs
 # request); ChatMessage rows store the actual messages.
@@ -606,13 +670,20 @@ def api_user_brief(user_id):
         'username': u.username,
         'avatar_initial': u.username[:1].upper(),
         'profile_url': url_for('user_profile_page', username=u.username),
+        'is_blocked': _is_blocked(current_user.id, u.id),
     })
 
 
 @app.route('/api/conversations')
 @login_required
 def api_list_conversations():
-    """Return chats and requests as two separate lists, both newest-first."""
+    """Return chats and requests as two separate lists, both newest-first.
+    Conversations with users I've blocked are filtered out of both lists —
+    they reappear in the inbox if I unblock the user later."""
+    blocked_ids = {
+        row.blocked_id
+        for row in BlockedUser.query.filter_by(blocker_id=current_user.id).all()
+    }
     convs = Conversation.query.filter(
         db.or_(Conversation.user_a_id == current_user.id,
                Conversation.user_b_id == current_user.id)
@@ -621,6 +692,9 @@ def api_list_conversations():
     chats = []
     requests_list = []
     for conv in convs:
+        other = conv.other(current_user)
+        if other.id in blocked_ids:
+            continue  # hide conversations with blocked users
         item = _serialize_conversation_summary(conv, current_user)
         if conv.is_request_for(current_user):
             requests_list.append(item)
@@ -642,7 +716,10 @@ def api_get_messages(user_id):
     me, them = sorted([current_user.id, other.id])
     conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
     if conv is None:
-        return jsonify({'messages': [], 'accepted': False, 'is_request': False})
+        return jsonify({
+            'messages': [], 'accepted': False, 'is_request': False,
+            'is_blocked': _is_blocked(current_user.id, other.id),
+        })
 
     since = request.args.get('since')
     q = ChatMessage.query.filter_by(conversation_id=conv.id)
@@ -657,6 +734,7 @@ def api_get_messages(user_id):
     return jsonify({
         'accepted': conv.accepted,
         'is_request': conv.is_request_for(current_user),
+        'is_blocked': _is_blocked(current_user.id, other.id),
         'messages': [{
             'id': m.id,
             'body': m.body,
@@ -684,6 +762,12 @@ def api_send_message(user_id):
     if user_id == current_user.id:
         return jsonify({'error': "You can't message yourself."}), 400
     recipient = User.query.get_or_404(user_id)
+
+    # Block check — recipient may have blocked the current user from messaging.
+    # Show a generic "can't reach this user" message rather than confirming
+    # the block (avoids leaking the recipient's privacy choice).
+    if _is_blocked(blocker_id=recipient.id, blocked_id=current_user.id):
+        return jsonify({'error': "This user isn't accepting messages from you."}), 403
 
     if request.content_type and 'multipart/form-data' in request.content_type:
         body = (request.form.get('body') or '').strip()
