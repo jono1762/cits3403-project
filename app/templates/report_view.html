@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='11') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='12') }}">
 {% endblock %}
 
 {% block content %}
@@ -154,7 +154,11 @@
                     {% set is_own_c = current_user.is_authenticated and c.user_id == current_user.id %}
                     <li class="comment-item" data-comment-id="{{ c.id }}">
                         <a class="comment-avatar" href="{{ url_for('user_profile_page', username=c.author.username) }}" aria-hidden="true">
-                            {{ c.author.username[0]|upper }}
+                            {% if c.author.avatar_filename %}
+                                <img src="{{ url_for('static', filename='uploads/' + c.author.avatar_filename) }}" alt="">
+                            {% else %}
+                                {{ c.author.username[0]|upper }}
+                            {% endif %}
                         </a>
                         <div class="comment-body">
                             <div class="comment-meta">
@@ -352,8 +356,15 @@
         const avatar = document.createElement('a');
         avatar.className = 'comment-avatar';
         avatar.href = c.author_url;
-        avatar.textContent = c.author_initial;
         avatar.setAttribute('aria-hidden', 'true');
+        if (c.author_avatar_url) {
+            const img = document.createElement('img');
+            img.src = c.author_avatar_url;
+            img.alt = '';
+            avatar.appendChild(img);
+        } else {
+            avatar.textContent = c.author_initial;
+        }
 
         const body = document.createElement('div');
         body.className = 'comment-body';

@@ -69,12 +69,247 @@
     margin-bottom: 0.85rem;
 }
 
+/* ============================================================
+   Profile picture — preview tile + upload + (optional) remove
+   ============================================================ */
+.settings-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+/* group of preview shapes — circle (chat/comments) + rounded-square (profile hero) */
+.settings-avatar-previews {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+}
+
+.settings-avatar-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.settings-avatar-figure figcaption {
+    color: #94a3b8;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* circle preview — what shows in chat avatars + comment avatars + profile post cards */
+.settings-avatar-preview {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.10);
+}
+
+.settings-avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.settings-avatar-initial {
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* rounded-square preview — matches the profile hero's avatar shape (.profile-avatar) */
+.settings-avatar-preview-square {
+    width: 84px;
+    height: 84px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #2d2a4a 0%, #1e1b3a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.10);
+}
+
+.settings-avatar-preview-square img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.settings-avatar-initial-sq {
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.settings-avatar-actions {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.settings-avatar-form {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin: 0;
+}
+
+/* small inline submit (different from the full-width main settings save button) */
+.settings-save-inline {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+}
+
+.settings-avatar-remove {
+    background: none;
+    border: 1.5px solid #fecaca;
+    color: #b91c1c;
+    padding: 0.4rem 1rem;
+    border-radius: 9px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.settings-avatar-remove:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
 /* small helper text shown under inputs (e.g. "At least 8 characters") */
 .settings-field-hint {
     margin: 0.3rem 0 0;
     color: #94a3b8;
     font-size: 0.78rem;
     line-height: 1.4;
+}
+
+/* indigo pill in the Settings header that links across to the Edit Profile page */
+.settings-profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding: 0.45rem 1.05rem;
+    border-radius: 9px;
+    background: #eef2ff;
+    border: 1.5px solid #c7d2fe;
+    color: #4f46e5;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.settings-profile-link:hover {
+    background: #e0e7ff;
+    border-color: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.settings-profile-link svg {
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   Modal styling — matches the rest of the app's modal language
+   (delete-report, delete-comment, unfollow). Used on profile_edit
+   for the avatar-preview modal and the remove-picture modal.
+   ============================================================ */
+.delete-modal-content {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.delete-modal-content .modal-header {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.delete-modal-content .modal-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.delete-modal-content .modal-body {
+    color: #475569;
+    line-height: 1.55;
+}
+
+.delete-modal-content .modal-footer {
+    border-top: 1px solid #f1f5f9;
+}
+
+/* avatar-preview modal — primary "Upload" button uses the brand gradient
+   so it matches the Submit Report / Save changes buttons elsewhere */
+#avatar-modal-upload.btn-primary,
+#avatar-modal-upload.btn-primary:focus {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.5rem 1.4rem;
+    border-radius: 9px;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+#avatar-modal-upload.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(79, 70, 229, 0.42);
+    color: #fff;
+}
+
+#avatar-modal-upload.btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* tighten the preview row inside the modal so the two shapes sit centered */
+.avatar-modal-previews {
+    justify-content: center;
+}
+
+/* small back-link sitting above the Edit Profile page header */
+.profile-edit-back {
+    display: inline-block;
+    color: #4f46e5;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 0.6rem;
+    transition: color 0.18s ease, transform 0.15s ease;
+}
+
+.profile-edit-back:hover {
+    color: #4338ca;
+    transform: translateX(-3px);
 }
 
 /* live verification states for the current-password gate */

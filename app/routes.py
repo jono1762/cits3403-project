@@ -197,6 +197,135 @@ def settings_update_password():
     return redirect(url_for('settings_page'))
 
 
+ALLOWED_AVATAR_EXTS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+AVATAR_MAX_BYTES = 5 * 1024 * 1024  # 5MB — generous for an avatar, blocks oversized uploads early
+
+# Magic-byte signatures for the formats we accept. Reading the actual file
+# header lets us reject "evil.exe → renamed to evil.png" — extension-only
+# checks would let that slip through.
+_IMAGE_MAGIC = (
+    (b'\xff\xd8\xff',                            'jpg'),
+    (b'\x89PNG\r\n\x1a\n',                       'png'),
+    (b'GIF87a',                                  'gif'),
+    (b'GIF89a',                                  'gif'),
+)
+
+def _sniff_image_type(stream):
+    """Return one of {'jpg', 'png', 'gif', 'webp'} if the stream's first bytes
+    look like a real image, else None. Stream position is restored so the
+    caller can still .save() the full content afterwards."""
+    pos = stream.tell()
+    head = stream.read(12)
+    stream.seek(pos)
+    for sig, kind in _IMAGE_MAGIC:
+        if head.startswith(sig):
+            return kind
+    # WebP wraps its magic inside a RIFF container
+    if head[:4] == b'RIFF' and head[8:12] == b'WEBP':
+        return 'webp'
+    return None
+
+BIO_MAX_LENGTH = 500
+
+@app.route('/profile/edit', methods=['GET'])
+@login_required
+def profile_edit_page():
+    """Profile-public details (avatar, bio, ...). Account / security stuff
+    (email, password, delete) lives on /settings instead."""
+    return render_template('profile_edit.html', bio_max_length=BIO_MAX_LENGTH)
+
+
+@app.route('/profile/edit/bio', methods=['POST'])
+@login_required
+def profile_edit_bio():
+    """Update the profile bio. Empty string clears it (falls back to the
+    'add a bio' prompt on the user's own profile)."""
+    bio = (request.form.get('bio') or '').strip() or None
+    if bio and len(bio) > BIO_MAX_LENGTH:
+        flash(f'Bio must be {BIO_MAX_LENGTH} characters or fewer.', 'error')
+        return redirect(url_for('profile_edit_page'))
+    current_user.bio = bio
+    db.session.commit()
+    flash('Bio updated.', 'success')
+    return redirect(url_for('profile_edit_page'))
+
+
+@app.route('/settings/avatar', methods=['POST'])
+@login_required
+def settings_upload_avatar():
+    """Upload a new profile picture. Replaces any existing avatar (the old
+    file on disk is deleted to avoid orphans). Defence-in-depth checks:
+      1. @login_required — guests can't upload
+      2. Filename extension whitelist (cheap pre-filter)
+      3. Size cap (rejects oversized uploads before we touch disk)
+      4. Magic-byte sniff — rejects renamed non-images even if their
+         extension passes the whitelist
+      5. Filename on disk is always our own UUID, never user-supplied
+         (path-traversal-proof, no overwrite of existing files)
+    """
+    f = request.files.get('avatar')
+    if not f or not f.filename:
+        flash('Please choose an image file.', 'error')
+        return redirect(url_for('profile_edit_page'))
+
+    # 2. extension whitelist
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in ALLOWED_AVATAR_EXTS:
+        flash(f'Unsupported file type. Use one of: {", ".join(sorted(ALLOWED_AVATAR_EXTS))}.', 'error')
+        return redirect(url_for('profile_edit_page'))
+
+    # 3. size cap — measure by seeking to the end, then rewind for save()
+    f.stream.seek(0, os.SEEK_END)
+    size = f.stream.tell()
+    f.stream.seek(0)
+    if size > AVATAR_MAX_BYTES:
+        flash(f'Image is too large (max {AVATAR_MAX_BYTES // (1024 * 1024)}MB).', 'error')
+        return redirect(url_for('profile_edit_page'))
+
+    # 4. magic-byte sniff — confirms the file ACTUALLY is an image of an
+    #    accepted format, not just something with a friendly extension
+    sniffed = _sniff_image_type(f.stream)
+    if sniffed is None:
+        flash('That file does not look like a valid image.', 'error')
+        return redirect(url_for('profile_edit_page'))
+
+    # 5. save with a fresh UUID name + canonical extension from the sniff
+    #    (so the on-disk extension always matches the actual content)
+    stored_name = f'{uuid.uuid4().hex}.{sniffed}'
+    save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
+    f.save(save_path)
+
+    # remove the previous avatar from disk before swapping the DB pointer
+    old = current_user.avatar_filename
+    current_user.avatar_filename = stored_name
+    db.session.commit()
+    if old:
+        try:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], old))
+        except OSError:
+            pass
+
+    flash('Profile picture updated.', 'success')
+    return redirect(url_for('profile_edit_page'))
+
+
+@app.route('/settings/avatar/remove', methods=['POST'])
+@login_required
+def settings_remove_avatar():
+    """Drop the current avatar. Falls back to the initial-letter avatar everywhere."""
+    old = current_user.avatar_filename
+    if not old:
+        return redirect(url_for('profile_edit_page'))
+    current_user.avatar_filename = None
+    db.session.commit()
+    try:
+        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], old))
+    except OSError:
+        pass
+    flash('Profile picture removed.', 'success')
+    return redirect(url_for('profile_edit_page'))
+
+
 @app.route('/api/settings/verify-password', methods=['POST'])
 @login_required
 def api_verify_password():
@@ -555,6 +684,8 @@ def _serialize_conversation_summary(conv, viewer):
         'user_id': other.id,
         'username': other.username,
         'avatar_initial': other.username[:1].upper(),
+        'avatar_url': (url_for('static', filename=f'uploads/{other.avatar_filename}')
+                       if other.avatar_filename else None),
         'profile_url': url_for('user_profile_page', username=other.username),
         'last_body': last.body if last else '',
         'last_at': conv.last_message_at.isoformat() if conv.last_message_at else None,
@@ -584,6 +715,8 @@ def api_user_brief(user_id):
         'user_id': u.id,
         'username': u.username,
         'avatar_initial': u.username[:1].upper(),
+        'avatar_url': (url_for('static', filename=f'uploads/{u.avatar_filename}')
+                       if u.avatar_filename else None),
         'profile_url': url_for('user_profile_page', username=u.username),
     })
 
@@ -1166,6 +1299,8 @@ def _serialize_comment(comment, current_user_id=None):
         'author_username': comment.author.username,
         'author_url': url_for('user_profile_page', username=comment.author.username),
         'author_initial': comment.author.username[:1].upper(),
+        'author_avatar_url': (url_for('static', filename=f'uploads/{comment.author.avatar_filename}')
+                              if comment.author.avatar_filename else None),
         'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
         'is_own': comment.user_id == current_user_id,
         'verify_count': comment.verify_count,
