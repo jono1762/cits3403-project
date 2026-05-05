@@ -971,8 +971,11 @@ def edit_report_page(report_id):
 # /listing — list all reports.
 # Public — guests can browse without an account.
 # Default sort = newest first; ?sort=top sorts by verification count (top reports).
-@app.route('/listing')
-def listing_page():
+def _build_listing_response(base_query, feed_mode=None):
+    """Shared listing-page handler. base_query is the starting Report.query
+    (already pre-filtered by /listing/following if applicable). feed_mode is
+    'following' for the From Following page, None for the regular listing —
+    template uses it to render the right title."""
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     city_id = request.args.get('city_id', type=int)
@@ -984,7 +987,7 @@ def listing_page():
         if selected_city:
             state_id = selected_city.state_id
 
-    query = Report.query
+    query = base_query
     # state filter has to go through City because Report only stores city_id, not state_id
     if state_id:
         query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
@@ -1029,7 +1032,31 @@ def listing_page():
         selected_category_id=category_id,
         sort=sort,
         fav_report_ids=fav_report_ids,
+        feed_mode=feed_mode,
     )
+
+
+@app.route('/listing')
+def listing_page():
+    return _build_listing_response(Report.query)
+
+
+@app.route('/listing/following')
+@login_required
+def listing_following_page():
+    """From Following — only reports authored by users the current user follows.
+    State / city / category filters and sort still apply on top of this base."""
+    followed_ids = [
+        row.followed_id
+        for row in Follow.query.filter_by(follower_id=current_user.id).all()
+    ]
+    if not followed_ids:
+        # short-circuit to an empty pagination so the empty-state message renders
+        # without bothering with a follow-graph join that would return nothing anyway
+        base = Report.query.filter(db.literal(False))
+    else:
+        base = Report.query.filter(Report.user_id.in_(followed_ids))
+    return _build_listing_response(base, feed_mode='following')
 
 # /reports — page where a logged-in user fills out and submits a report
 @app.route('/reports')

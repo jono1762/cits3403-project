@@ -98,6 +98,9 @@
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Top Reports</a>
+                    {% if not is_guest %}
+                        <a href="{{ url_for('listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_following_page') else '' }}" data-bs-dismiss="offcanvas">From Following</a>
+                    {% endif %}
 
                     <div class="app-sidebar-group-header">Favourites</div>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}" data-bs-dismiss="offcanvas">Locations</a>
@@ -161,6 +164,9 @@
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}">Top Reports</a>
+                    {% if not is_guest %}
+                        <a href="{{ url_for('listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_following_page') else '' }}">From Following</a>
+                    {% endif %}
 
                     <div class="app-sidebar-group-header">Favourites</div>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
