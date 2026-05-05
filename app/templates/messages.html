@@ -255,7 +255,14 @@
 
         const avatar = document.createElement('div');
         avatar.className = 'messages-item-avatar';
-        avatar.textContent = c.avatar_initial;
+        if (c.avatar_url) {
+            const img = document.createElement('img');
+            img.src = c.avatar_url;
+            img.alt = '';
+            avatar.appendChild(img);
+        } else {
+            avatar.textContent = c.avatar_initial;
+        }
 
         const body = document.createElement('div');
         body.className = 'messages-item-body';
@@ -362,8 +369,16 @@
         threadActive.hidden = false;
         threadBubbles.innerHTML = '';
 
-        threadAvatar.textContent = c.avatar_initial;
+        threadAvatar.replaceChildren();
         threadAvatar.href = c.profile_url;
+        if (c.avatar_url) {
+            const img = document.createElement('img');
+            img.src = c.avatar_url;
+            img.alt = '';
+            threadAvatar.appendChild(img);
+        } else {
+            threadAvatar.textContent = c.avatar_initial;
+        }
         threadName.textContent = c.username;
         threadName.href = c.profile_url;
         threadStatus.textContent = c.is_request ? 'Message request' : '';

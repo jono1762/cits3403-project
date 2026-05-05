@@ -72,7 +72,9 @@
     min-width: 0;
 }
 
-/* compact initial-letter avatar — translucent on the dark background */
+/* compact initial-letter avatar — translucent on the dark background.
+   When the user has an uploaded image, the <img> inside fills the tile
+   and the gradient bg + initial letter are hidden behind it. */
 .profile-avatar {
     flex-shrink: 0;
     width: 64px;
@@ -88,6 +90,14 @@
     align-items: center;
     justify-content: center;
     text-transform: uppercase;
+    overflow: hidden;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .profile-hero-text {
@@ -197,50 +207,35 @@
     flex-shrink: 0;
 }
 
-/* Block / Unblock button — quiet by default (translucent on dark hero),
-   red-tinted when active so the "currently blocked" state is unmistakable. */
-.profile-block-btn {
+/* "Edit profile" button — own-profile only, sits below the bio. Quiet
+   translucent style on the dark hero so it doesn't compete with content. */
+.profile-edit-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.45rem 1rem;
+    margin-top: 0.85rem;
+    padding: 0.45rem 1.1rem;
     border-radius: 9px;
     border: 1.5px solid rgba(255, 255, 255, 0.25);
     background: rgba(255, 255, 255, 0.10);
     color: #e2e8f0;
     font-size: 0.88rem;
     font-weight: 600;
+    text-decoration: none;
     cursor: pointer;
     transition: background 0.18s ease, border-color 0.18s ease,
                 color 0.18s ease, transform 0.15s ease;
 }
 
-.profile-block-btn:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.18);
-    border-color: rgba(239, 68, 68, 0.55);
-    color: #fca5a5;
+.profile-edit-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.40);
+    color: #fff;
     transform: translateY(-1px);
 }
 
-.profile-block-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.profile-block-btn svg { flex-shrink: 0; }
-
-/* "Currently blocked" state — solid red tint so the user can't miss that
-   they're already blocking this person. Clicking unblocks. */
-.profile-block-btn.is-blocked {
-    background: rgba(239, 68, 68, 0.28);
-    border-color: rgba(239, 68, 68, 0.65);
-    color: #fff;
-}
-
-.profile-block-btn.is-blocked:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.45);
-    border-color: rgba(239, 68, 68, 0.85);
-    color: #fff;
+.profile-edit-btn svg {
+    flex-shrink: 0;
 }
 
 /* row that holds the Follow + Message buttons side-by-side */
