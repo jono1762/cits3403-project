@@ -177,6 +177,14 @@
                         </div>
                         {% if r.address %}<p class="listing-item-address">{{ r.address }}</p>{% endif %}
                         {% if r.description %}<p class="listing-item-desc">{{ r.description }}</p>{% endif %}
+                        <p class="listing-item-stats">
+                            <span class="listing-item-stat">✓ {{ r.verify_count }}</span>
+                            <span class="listing-item-stat">✗ {{ r.dispute_count }}</span>
+                            <span class="listing-item-stat">💬 {{ r.comment_count }}</span>
+                            {% if sort == 'top' or r.trending %}
+                                <span class="listing-item-trending">Trending</span>
+                            {% endif %}
+                        </p>
                     </div>
 
                     {# Top-right corner — own reports show an "Your report" tag instead
