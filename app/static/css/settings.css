@@ -69,6 +69,46 @@
     margin-bottom: 0.85rem;
 }
 
+/* small helper text shown under inputs (e.g. "At least 8 characters") */
+.settings-field-hint {
+    margin: 0.3rem 0 0;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+/* live verification states for the current-password gate */
+.settings-hint-ok {
+    color: #047857;
+    font-weight: 600;
+}
+
+.settings-hint-error {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+/* disabled inputs (the new + confirm password fields before verification)
+   should look obviously inert — no blinking cursor, dimmer background */
+.settings-card .form-control:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* required-indicator + (optional) hint inside the label */
+.settings-card .form-label .text-danger {
+    color: #ef4444 !important;
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.settings-card .form-label .text-muted {
+    color: #94a3b8 !important;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
 .settings-card .form-label {
     font-weight: 600;
     color: #1e293b;
