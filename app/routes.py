@@ -377,6 +377,17 @@ def _following_users_for(user):
     return [User.query.get(r.followed_id) for r in rows if User.query.get(r.followed_id)]
 
 
+def _follower_users_for(user):
+    """Return the User rows that follow this profile-user (newest follow first)."""
+    rows = (
+        Follow.query
+        .filter_by(followed_id=user.id)
+        .order_by(Follow.created_at.desc())
+        .all()
+    )
+    return [User.query.get(r.follower_id) for r in rows if User.query.get(r.follower_id)]
+
+
 # /profile — show the logged-in user's own basic info
 @app.route('/profile')
 @login_required
@@ -394,6 +405,7 @@ def profile_page():
         recent_reports=recent_reports,
         is_own_profile=True,
         following_users=_following_users_for(current_user),
+        follower_users=_follower_users_for(current_user),
     )
 
 # /users/<username> — view someone else's profile (read-only, no edit buttons)
@@ -414,6 +426,7 @@ def user_profile_page(username):
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
         following_users=_following_users_for(user),
+        follower_users=_follower_users_for(user),
     )
 
 
@@ -426,6 +439,16 @@ def profile_toggle_following_privacy():
     current_user.following_list_public = not current_user.following_list_public
     db.session.commit()
     return redirect(url_for('profile_page') + '#following')
+
+
+@app.route('/profile/followers-privacy', methods=['POST'])
+@login_required
+def profile_toggle_followers_privacy():
+    """Flip the visibility of the current user's Followers list. Same shape
+    as the Following privacy toggle — owner-only, redirects with #followers."""
+    current_user.followers_list_public = not current_user.followers_list_public
+    db.session.commit()
+    return redirect(url_for('profile_page') + '#followers')
 
 # /search — find users by username substring (case-insensitive)
 @app.route('/search')

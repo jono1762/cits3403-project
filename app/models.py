@@ -16,6 +16,9 @@ class User(UserMixin, db.Model):
     # server_default='1' so existing rows get backfilled when the column
     # is added — SQLite requires a SQL-level DEFAULT for NOT NULL adds.
     following_list_public = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
+    # Same idea for the Followers list — control whether others can see
+    # who follows this user.
+    followers_list_public = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
 
     reports = db.relationship('Report', backref='author', lazy=True)
     verifications = db.relationship('Verification', backref='verifier', lazy=True)

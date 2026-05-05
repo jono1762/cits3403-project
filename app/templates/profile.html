@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='14') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css', v='15') }}">
 {% endblock %}
 
 {% block content %}
@@ -129,6 +129,15 @@
                 <polyline points="17 11 19 13 23 9"/>
             </svg>
             Following ({{ user.following_count }})
+        </button>
+        <button type="button" class="profile-tab" data-tab="followers">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Followers ({{ user.follower_count }})
         </button>
     </nav>
 
@@ -326,6 +335,62 @@
         {% else %}
             <div class="profile-empty">
                 {{ "You're not following anyone yet." if is_own_profile else user.username + " isn't following anyone yet." }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# ============== Followers pane ============== #}
+    <div class="profile-tab-pane" data-pane="followers" hidden>
+        {# Privacy gate — owner always sees their followers; others only when public. #}
+        {% set can_view_followers = is_own_profile or user.followers_list_public %}
+
+        {% if is_own_profile %}
+            <form method="POST" action="{{ url_for('profile_toggle_followers_privacy') }}"
+                  class="profile-following-privacy {{ 'is-public' if user.followers_list_public else 'is-private' }}">
+                <span class="profile-following-status">
+                    {% if user.followers_list_public %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span>Visibility: <strong>Public</strong></span>
+                        <span class="profile-following-status-hint">— other users can see who follows you</span>
+                    {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                        <span>Visibility: <strong>Private</strong></span>
+                        <span class="profile-following-status-hint">— only you can see who follows you</span>
+                    {% endif %}
+                </span>
+                <button type="submit" class="profile-following-toggle-btn">
+                    {{ 'Make private' if user.followers_list_public else 'Make public' }}
+                </button>
+            </form>
+        {% endif %}
+
+        {% if not can_view_followers %}
+            <div class="profile-empty">
+                <strong>{{ user.username }}</strong> keeps their Followers list private.
+            </div>
+        {% elif follower_users %}
+            <ul class="profile-following-list">
+                {% for f in follower_users %}
+                    <li class="profile-following-item">
+                        <a class="profile-following-avatar" href="{{ url_for('user_profile_page', username=f.username) }}" aria-hidden="true">
+                            {{ f.username[0]|upper }}
+                        </a>
+                        <div class="profile-following-info">
+                            <a class="profile-following-name" href="{{ url_for('user_profile_page', username=f.username) }}">{{ f.username }}</a>
+                            <span class="profile-following-handle">@{{ f.username|lower }}</span>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="profile-empty">
+                {{ "Nobody's following you yet." if is_own_profile else "Nobody follows " + user.username + " yet." }}
             </div>
         {% endif %}
     </div>
