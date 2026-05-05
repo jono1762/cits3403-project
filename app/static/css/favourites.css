@@ -23,7 +23,8 @@
     letter-spacing: -0.03em;
     line-height: 1.1;
     margin: 0 0 0.4rem;
-    background: linear-gradient(135deg, #1e293b 0%, #f59e0b 60%, #fbbf24 100%);
+    /* Use same indigo->cyan gradient as other page headers */
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -62,6 +63,67 @@
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 0.75rem;
 }
+
+/* Grid-style panels for the new Saved Locations layout */
+.fav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+    margin: 0 0 1rem;
+}
+
+.fav-panel {
+    position: relative;
+    background: rgba(255,255,255,1);
+    border: 1px solid #e6e6ea;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 2px 10px rgba(15,23,42,0.04);
+}
+
+.fav-panel-star {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.fav-panel-star { color: #f59e0b; }
+
+.fav-panel-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.fav-panel-left .fav-city-name { font-size: 1.1rem; font-weight:700; }
+.fav-panel-left .fav-city-state { font-size: 0.85rem; color: #64748b; }
+
+.fav-panel-actions { margin-top: 0.9rem; }
+.fav-panel .btn { padding: 0.6rem 1rem; border-radius: 10px; text-decoration:none; display:inline-block }
+
+/* New content layout matching reference card */
+.fav-panel-content { display: flex; flex-direction: column; gap: 0.8rem; }
+.fav-city-header { display:flex; gap:0.8rem; align-items:center; }
+.fav-city-icon { font-size:1.15rem; color:#4f46e5 }
+.fav-city-name { font-family: 'Space Grotesk', sans-serif; font-size:1.15rem; font-weight:700; color:#1e293b }
+.fav-city-country { font-size:0.92rem; color:#64748b }
+
+.fav-stats-row { display:flex; justify-content:space-between; align-items:center; padding:0.15rem 0; color:#475569 }
+.fav-stat-label { font-size:0.92rem }
+.fav-stat-value { font-weight:700; color:#1e293b }
+
+.fav-trending { background: #fff4eb; color: #e67e22; padding:0.5rem 0.75rem; border-radius:8px; font-weight:700 }
+
+.fav-panel .btn.btn-ghost {
+    display:block; width:100%; text-align:center; padding:0.9rem 1rem; background:#3f3842; color:#fff; border-radius:12px; text-decoration:none; box-shadow:0 6px 18px rgba(15,23,42,0.06)
+}
+
+.fav-panel .btn.btn-ghost:hover { transform: translateY(-2px) }
 
 .fav-city-card {
     background: rgba(255, 255, 255, 0.94);
@@ -130,6 +192,7 @@
 }
 
 .fav-report-card {
+    position: relative;
     background: rgba(255, 255, 255, 0.94);
     border: 1px solid #e2e8f0;
     border-left: 4px solid var(--cat, #cbd5e1);

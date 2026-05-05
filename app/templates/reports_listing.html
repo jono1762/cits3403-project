@@ -91,6 +91,33 @@
     });
     </script>
 
+    {% if current_user.is_authenticated %}
+    <script>
+    document.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.listing-fav-btn');
+        if (!btn || btn.disabled) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const reportId = btn.dataset.reportId;
+        const isSaved = btn.dataset.saved === 'true';
+        btn.disabled = true;
+        try {
+            const method = isSaved ? 'DELETE' : 'POST';
+            const res = await fetch(`/api/favourites/report/${reportId}`, { method });
+            if (!res.ok) throw new Error('Request failed');
+            const nowSaved = !isSaved;
+            btn.dataset.saved = nowSaved ? 'true' : 'false';
+            btn.classList.toggle('is-saved', nowSaved);
+            btn.textContent = nowSaved ? 'Saved ✓' : 'Save';
+        } catch (err) {
+            alert('Could not update report favourite.');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+    </script>
+    {% endif %}
+
     {# Vote (verify/dispute) AJAX handler — auth-only API, guests' buttons are disabled.
        Click a button → POST to /api/reports/<id>/vote → update counts + active state.
        Uses event delegation so it works regardless of where the script sits in the
@@ -152,8 +179,15 @@
                        hover tooltip. #}
                     {% set my_vote = r.vote_by(current_user) %}
                     {% set is_own = current_user.is_authenticated and r.user_id == current_user.id %}
+                    {% set is_saved = current_user.is_authenticated and (r.id in fav_report_ids) %}
                     {% if is_own %}
                         <div class="own-report-actions">
+                            <button type="button"
+                                    class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
+                                    data-report-id="{{ r.id }}"
+                                    data-saved="{{ 'true' if is_saved else 'false' }}">
+                                {{ 'Saved ✓' if is_saved else 'Save' }}
+                            </button>
                             <a href="{{ url_for('view_report', token=r.id|report_token) }}" class="own-report-tag">Your report</a>
                             <a href="{{ url_for('edit_report_page', report_id=r.id) }}" class="listing-item-edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -167,6 +201,14 @@
                         {% set vote_disabled = not current_user.is_authenticated %}
                         {% set vote_tip = 'Please log in to verify or dispute reports' if vote_disabled else '' %}
                         <div class="vote-bar" data-report-id="{{ r.id }}">
+                            {% if current_user.is_authenticated %}
+                                <button type="button"
+                                        class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
+                                        data-report-id="{{ r.id }}"
+                                        data-saved="{{ 'true' if is_saved else 'false' }}">
+                                    {{ 'Saved ✓' if is_saved else 'Save' }}
+                                </button>
+                            {% endif %}
                             <span class="vote-wrap" title="{{ vote_tip }}">
                                 <button type="button"
                                         class="vote-btn vote-verify {{ 'is-active' if my_vote == 'verify' else '' }}"
