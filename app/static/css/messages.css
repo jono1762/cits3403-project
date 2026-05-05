@@ -42,6 +42,70 @@
     padding: 1rem 1.15rem 0.6rem;
 }
 
+/* user-search input — sits below the title, above the tabs.
+   Magnifying-glass icon pinned left, clear-x pinned right. */
+.messages-search-wrap {
+    position: relative;
+    margin-top: 0.7rem;
+}
+
+.messages-search-icon {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.messages-search-input {
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 2.1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 0.88rem;
+    color: #1e293b;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.messages-search-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    outline: none;
+}
+
+.messages-search-input::-webkit-search-cancel-button {
+    /* hide native browser X — we render our own to match the design */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.messages-search-clear {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.messages-search-clear:hover {
+    background: #cbd5e1;
+    color: #1e293b;
+}
+
 .messages-title {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1.5rem;

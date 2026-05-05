@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css', v='2') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css', v='4') }}">
 {% endblock %}
 
 {% block content %}
@@ -10,6 +10,21 @@
     <aside class="messages-sidebar">
         <header class="messages-sidebar-header">
             <h1 class="messages-title">Messages</h1>
+
+            {# user search — type to find someone to message even if you've never
+               talked to them before. Replaces the tab pane while a query is active. #}
+            <div class="messages-search-wrap">
+                <svg class="messages-search-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="search" id="messages-search-input"
+                       class="messages-search-input"
+                       placeholder="Search a user to message..."
+                       autocomplete="off">
+                <button type="button" class="messages-search-clear"
+                        id="messages-search-clear" hidden aria-label="Clear search">×</button>
+            </div>
         </header>
 
         <div class="messages-tabs" role="tablist">
@@ -30,6 +45,12 @@
         <div class="messages-list-wrap" data-pane="requests" hidden>
             <ul class="messages-list" id="requests-list"></ul>
             <p class="messages-empty" id="requests-empty" hidden>No message requests.</p>
+        </div>
+
+        {# search-results pane — only visible while the search input has text #}
+        <div class="messages-list-wrap" data-pane="search" hidden>
+            <ul class="messages-list" id="search-results-list"></ul>
+            <p class="messages-empty" id="search-empty" hidden>No users match.</p>
         </div>
     </aside>
 
@@ -433,6 +454,124 @@
             panes.forEach(p => p.hidden = p.dataset.pane !== target);
         });
     });
+
+    // ---- user search (Instagram-style: type to find someone to chat with) ----
+    const searchInput = document.getElementById('messages-search-input');
+    const searchClear = document.getElementById('messages-search-clear');
+    const searchList = document.getElementById('search-results-list');
+    const searchEmpty = document.getElementById('search-empty');
+    const searchPane = document.querySelector('.messages-list-wrap[data-pane="search"]');
+    const tabsRow = document.querySelector('.messages-tabs');
+    const chatsPane = document.querySelector('.messages-list-wrap[data-pane="chats"]');
+    const requestsPane = document.querySelector('.messages-list-wrap[data-pane="requests"]');
+    let searchTimer;
+
+    function buildSearchResult(u) {
+        // shape compatible with openConversation() so clicking just works
+        const conv = {
+            user_id: u.user_id,
+            username: u.username,
+            avatar_initial: u.avatar_initial,
+            avatar_url: u.avatar_url,
+            profile_url: u.profile_url,
+            is_request: false,
+            unread: 0,
+            last_body: '',
+            last_at: null,
+            last_sender_is_me: false,
+        };
+        const li = document.createElement('li');
+        li.className = 'messages-item';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'messages-item-avatar';
+        if (u.avatar_url) {
+            const img = document.createElement('img');
+            img.src = u.avatar_url;
+            img.alt = '';
+            avatar.appendChild(img);
+        } else {
+            avatar.textContent = u.avatar_initial;
+        }
+
+        const body = document.createElement('div');
+        body.className = 'messages-item-body';
+        const name = document.createElement('span');
+        name.className = 'messages-item-name';
+        name.textContent = u.username;
+        const sub = document.createElement('span');
+        sub.className = 'messages-item-preview';
+        sub.textContent = '@' + u.username.toLowerCase() + ' · click to message';
+        body.appendChild(name);
+        body.appendChild(sub);
+
+        li.appendChild(avatar);
+        li.appendChild(body);
+        li.addEventListener('click', () => {
+            // open the chosen user's thread, then clear search so the inbox
+            // returns to view (the new conversation will appear there once a
+            // message is sent)
+            openConversation(conv);
+            searchInput.value = '';
+            exitSearchMode();
+        });
+        return li;
+    }
+
+    function enterSearchMode() {
+        if (tabsRow) tabsRow.hidden = true;
+        if (chatsPane) chatsPane.hidden = true;
+        if (requestsPane) requestsPane.hidden = true;
+        if (searchPane) searchPane.hidden = false;
+        if (searchClear) searchClear.hidden = false;
+    }
+
+    function exitSearchMode() {
+        if (tabsRow) tabsRow.hidden = false;
+        // restore whichever tab was active when the user started searching
+        const active = document.querySelector('.messages-tab.is-active');
+        const target = active ? active.dataset.tab : 'chats';
+        if (chatsPane) chatsPane.hidden = (target !== 'chats');
+        if (requestsPane) requestsPane.hidden = (target !== 'requests');
+        if (searchPane) searchPane.hidden = true;
+        if (searchClear) searchClear.hidden = true;
+        searchList.innerHTML = '';
+        if (searchEmpty) searchEmpty.hidden = true;
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            const q = searchInput.value.trim();
+            if (!q) {
+                exitSearchMode();
+                return;
+            }
+            enterSearchMode();
+            searchTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch('/api/search-users?q=' + encodeURIComponent(q));
+                    if (!res.ok) return;
+                    const users = await res.json();
+                    searchList.innerHTML = '';
+                    if (users.length === 0) {
+                        searchEmpty.hidden = false;
+                    } else {
+                        searchEmpty.hidden = true;
+                        users.forEach(u => searchList.appendChild(buildSearchResult(u)));
+                    }
+                } catch (err) { /* silent */ }
+            }, 200);
+        });
+    }
+
+    if (searchClear) {
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            exitSearchMode();
+            searchInput.focus();
+        });
+    }
 
     // ---- boot + inbox polling ----
     refreshInbox().then(maybeOpenFromQuery);

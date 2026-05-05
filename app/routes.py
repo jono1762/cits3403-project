@@ -429,13 +429,16 @@ def api_search_users():
     users = (
         User.query
         .filter(User.username.ilike(f'%{q}%'))
+        .filter(User.id != current_user.id)   # don't surface self in chat search
         .order_by(User.username)
         .limit(10)
         .all()
     )
     return jsonify([
         {
+            'user_id': u.id,
             'username': u.username,
+            'avatar_initial': u.username[:1].upper(),
             'profile_url': url_for('user_profile_page', username=u.username),
         }
         for u in users
