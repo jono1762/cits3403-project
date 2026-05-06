@@ -163,10 +163,19 @@
 }
 
 .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     font-family: 'Italiana', serif;
     font-weight: 400;          /* Italiana only ships in 400 — looks best at regular weight */
     font-size: 1.6rem;
     letter-spacing: 0.04em;    /* slight extra tracking, typical for elegant serifs */
+}
+
+.navbar-logo {
+    height: 24px;
+    width: auto;
+    display: inline-block;
 }
 
 /* "Please log in" placeholder — sits in the same slot the username will fill after login */
