@@ -189,6 +189,36 @@ class Report(db.Model):
     def comment_count(self):
         return len(self.comments)
 
+    @property
+    def hours_until_expiry(self):
+        """Whole hours until the report expires. Negative if already expired,
+        None if no expiry set."""
+        if not self.expires_at:
+            return None
+        delta = self.expires_at - datetime.utcnow()
+        return int(delta.total_seconds() // 3600)
+
+    @property
+    def is_expiring_soon(self):
+        """True when the report will expire in the next 24 hours (and isn't
+        already expired). Used to drive the orange banner + button styling."""
+        h = self.hours_until_expiry
+        return h is not None and 0 <= h < 24
+
+    @property
+    def expiry_label(self):
+        """Short human label for the countdown badge — '7 days left',
+        '1 day left', '<1 day left'. Returns None if no expiry set."""
+        h = self.hours_until_expiry
+        if h is None:
+            return None
+        if h < 0:
+            return 'expired'
+        if h < 24:
+            return '<1 day left'
+        days = h // 24
+        return f'{days} day{"s" if days != 1 else ""} left'
+
     def vote_by(self, user):
         """Return the given user's vote on this report — 'verify', 'dispute', or None."""
         if not getattr(user, 'is_authenticated', False):

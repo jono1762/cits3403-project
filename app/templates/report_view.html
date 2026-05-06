@@ -43,6 +43,10 @@
                 <span class="deleted-user">deleted_user</span>
             {% endif %}
             on {{ report.created_at.strftime('%d %b %Y · %H:%M') }}
+            {% if report.expires_at %}
+                <span class="report-expiry {{ 'is-urgent' if report.is_expiring_soon else '' }}"
+                      data-expires-at="{{ report.expires_at.isoformat() }}Z">⏰ …</span>
+            {% endif %}
         </p>
 
         {% if report.description %}

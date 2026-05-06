@@ -228,6 +228,21 @@
                         {% endfor %}
                     {% endwith %}
 
+                    {# site-wide flash — shown on every page when one or more of
+                       the user's own reports lapses in the next 24h. Reminds
+                       them to manually re-create the content if they want
+                       to keep it (auto-extend was removed by design).
+                       Dismissed state survives the tab session via sessionStorage. #}
+                    {% if expiring_soon_count and expiring_soon_count > 0 %}
+                        <div class="expiring-banner" id="expiring-banner" role="status" data-count="{{ expiring_soon_count }}">
+                            <span class="expiring-banner-text">
+                                ⏰ {{ expiring_soon_count }} of your report{{ 's' if expiring_soon_count != 1 else '' }} will be removed soon. If you want to keep the content, please create a new report for it.
+                            </span>
+                            <a href="{{ url_for('profile_page') }}" class="expiring-banner-action">View on profile</a>
+                            <button type="button" class="expiring-banner-close" id="expiring-banner-close" aria-label="Dismiss">×</button>
+                        </div>
+                    {% endif %}
+
                     {% block content %}{% endblock %}
                 </div>
 
@@ -266,6 +281,52 @@
                 }
             });
         });
+
+        // Expiring-soon banner — dismissable per session. The dismiss key includes
+        // the current count so a new report becoming urgent re-shows the banner
+        // even if the user already dismissed an earlier one.
+        (function () {
+            const banner = document.getElementById('expiring-banner');
+            const closeBtn = document.getElementById('expiring-banner-close');
+            if (!banner || !closeBtn) return;
+            const key = 'expiringBannerDismissed:' + (banner.dataset.count || '0');
+            try {
+                if (sessionStorage.getItem(key) === '1') {
+                    banner.style.display = 'none';
+                }
+            } catch (e) { /* sessionStorage blocked — banner just stays visible */ }
+            closeBtn.addEventListener('click', () => {
+                banner.style.display = 'none';
+                try { sessionStorage.setItem(key, '1'); } catch (e) { /* fine */ }
+            });
+        })();
+
+        // Live HH:MM:SS countdown on report cards. Server emits the absolute
+        // expires_at on each .report-expiry pill via data-expires-at; this loop
+        // formats the remaining time and re-renders every second.
+        (function () {
+            const URGENT_MS = 24 * 60 * 60 * 1000;   // 24 h — flips pill to orange
+            function pad(n) { return String(n).padStart(2, '0'); }
+            function formatHMS(ms) {
+                const totalSec = Math.max(0, Math.floor(ms / 1000));
+                const h = Math.floor(totalSec / 3600);
+                const m = Math.floor((totalSec % 3600) / 60);
+                const s = totalSec % 60;
+                return pad(h) + ':' + pad(m) + ':' + pad(s);
+            }
+            function tickExpiries() {
+                const now = Date.now();
+                document.querySelectorAll('.report-expiry[data-expires-at]').forEach((el) => {
+                    const target = new Date(el.dataset.expiresAt).getTime();
+                    if (Number.isNaN(target)) return;
+                    const ms = target - now;
+                    el.textContent = '⏰ ' + (ms <= 0 ? 'expired' : formatHMS(ms));
+                    el.classList.toggle('is-urgent', ms > 0 && ms <= URGENT_MS);
+                });
+            }
+            tickExpiries();
+            setInterval(tickExpiries, 1000);
+        })();
     </script>
 
     {% if current_user.is_authenticated %}

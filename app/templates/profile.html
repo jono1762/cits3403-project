@@ -216,6 +216,13 @@
                         <p class="profile-post-desc">{{ r.description }}</p>
                     {% endif %}
 
+                    {% if r.expires_at %}
+                        <p class="profile-post-expiry">
+                            <span class="report-expiry {{ 'is-urgent' if r.is_expiring_soon else '' }}"
+                                  data-expires-at="{{ r.expires_at.isoformat() }}Z">⏰ …</span>
+                        </p>
+                    {% endif %}
+
                     {# carousel for image/video attachments #}
                     {% if r.media %}
                         <div id="carousel-{{ r.id }}" class="carousel slide profile-post-carousel" data-bs-ride="false">

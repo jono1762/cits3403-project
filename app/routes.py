@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime, timedelta
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, REPORT_LIFETIME_DAYS
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 
@@ -126,6 +126,23 @@ def inject_unread_messages():
     if current_user.is_authenticated:
         return {'unread_message_count': current_user.unread_message_count}
     return {'unread_message_count': 0}
+
+
+@app.context_processor
+def inject_expiring_reports():
+    """Surface the count of the user's own reports expiring in the next 24h
+    so base.html can render a single site-wide banner reminding them to
+    re-post the content if they want to keep it."""
+    if not current_user.is_authenticated:
+        return {'expiring_soon_count': 0}
+    now = datetime.utcnow()
+    soon = now + timedelta(hours=24)
+    count = Report.query.filter(
+        Report.user_id == current_user.id,
+        Report.expires_at > now,
+        Report.expires_at <= soon,
+    ).count()
+    return {'expiring_soon_count': count}
 
 
 # mapping each city to its state code (lowercase, used as the flag dictionary key)
