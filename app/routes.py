@@ -1232,13 +1232,22 @@ def listing_page():
             state_id = selected_city.state_id
 
     query = Report.query
-    # state filter has to go through City because Report only stores city_id, not state_id
-    if state_id:
-        query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
-    if city_id:
-        query = query.filter(Report.city_id == city_id)
-    if category_id:
-        query = query.filter(Report.category_id == category_id)
+    # Trending shows the global top across every category and city — filters
+    # don't apply. The regular listing keeps state/city/category filtering.
+    if sort != 'top':
+        # state filter has to go through City because Report only stores city_id, not state_id
+        if state_id:
+            query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
+        if city_id:
+            query = query.filter(Report.city_id == city_id)
+        if category_id:
+            query = query.filter(Report.category_id == category_id)
+    else:
+        # zero out the "selected" values so the template's filter UI (now hidden
+        # on Trending anyway) doesn't reflect stale selections
+        state_id = None
+        city_id = None
+        category_id = None
 
     if sort == 'top':
         # Trending score = verifies − disputes − days_old. Reports get one point

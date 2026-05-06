@@ -17,62 +17,61 @@
         {% endif %}
     </header>
 
-    {# Location filter (form) — state + city selectors. Carries the current
-       category through a hidden input so the chip selection survives a re-filter. #}
-    <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">State</label>
-                <select name="state_id" id="filter-state" class="form-select form-select-sm">
-                    <option value="">All states</option>
-                    {% for s in states %}
-                        <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">City</label>
-                <select name="city_id" id="filter-city" class="form-select form-select-sm"
-                        {% if not selected_state_id %}disabled{% endif %}>
-                    <option value="">All cities</option>
-                    {% if selected_state_id %}
-                        {% for city in cities_by_state.get(selected_state_id, []) %}
-                            <option value="{{ city.id }}" {% if selected_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+    {# Filter UI is only on the regular listing — Trending is a global ranking
+       across every state/city/category, so filters don't apply there. #}
+    {% if sort != 'top' %}
+        {# Location filter (form) — state + city selectors. Carries the current
+           category through a hidden input so the chip selection survives a re-filter. #}
+        <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">State</label>
+                    <select name="state_id" id="filter-state" class="form-select form-select-sm">
+                        <option value="">All states</option>
+                        {% for s in states %}
+                            <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
                         {% endfor %}
-                    {% endif %}
-                </select>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">City</label>
+                    <select name="city_id" id="filter-city" class="form-select form-select-sm"
+                            {% if not selected_state_id %}disabled{% endif %}>
+                        <option value="">All cities</option>
+                        {% if selected_state_id %}
+                            {% for city in cities_by_state.get(selected_state_id, []) %}
+                                <option value="{{ city.id }}" {% if selected_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-4 listing-filter-actions mt-2">
+                    <button type="submit" class="listing-filter-apply">Apply</button>
+                    <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
+                </div>
             </div>
-            <div class="col-md-4 listing-filter-actions mt-2">
-                <button type="submit" class="listing-filter-apply">Apply</button>
-                <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
-            </div>
-        </div>
-        {# preserve the category selection across location-filter Applies #}
-        {% if selected_category_id %}
-            <input type="hidden" name="category_id" value="{{ selected_category_id }}">
-        {% endif %}
-        {# preserve the sort mode (top vs recent) when applying location filters #}
-        {% if sort and sort != 'recent' %}
-            <input type="hidden" name="sort" value="{{ sort }}">
-        {% endif %}
-    </form>
+            {# preserve the category selection across location-filter Applies #}
+            {% if selected_category_id %}
+                <input type="hidden" name="category_id" value="{{ selected_category_id }}">
+            {% endif %}
+        </form>
 
-    {# Category chips — click any one to filter. Each link carries the current
-       state/city so users don't lose those filters when changing category. #}
-    {% set keep_sort = sort if sort != 'recent' else None %}
-    <div class="listing-categories">
-        <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id, sort=keep_sort) }}"
-           class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
-            🌏 All categories
-        </a>
-        {% for cat in categories %}
-            <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id, sort=keep_sort) }}"
-               class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
-               style="--cat: {{ cat.marker_color }};">
-                {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
+        {# Category chips — click any one to filter. Each link carries the current
+           state/city so users don't lose those filters when changing category. #}
+        <div class="listing-categories">
+            <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id) }}"
+               class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
+                🌏 All categories
             </a>
-        {% endfor %}
-    </div>
+            {% for cat in categories %}
+                <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id) }}"
+                   class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
+                   style="--cat: {{ cat.marker_color }};">
+                    {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <script>
     const CITIES_BY_STATE = {{ cities_by_state | tojson }};
