@@ -1,7 +1,16 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
+
+# Reports auto-expire this many days after creation. Authors can extend by
+# clicking "Post it again" before expiry.
+REPORT_LIFETIME_DAYS = 7
+
+
+def _default_report_expiry():
+    """Default `expires_at` for a freshly-created report."""
+    return datetime.utcnow() + timedelta(days=REPORT_LIFETIME_DAYS)
 
 db = SQLAlchemy()
 
@@ -157,6 +166,10 @@ class Report(db.Model):
     address = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Auto-expiry — after this datetime the report is hidden from public lists
+    # and gets deleted by the next cleanup pass. Authors can reset it via the
+    # "Post it again" button before it lapses.
+    expires_at = db.Column(db.DateTime, default=_default_report_expiry, nullable=True)
 
     verifications = db.relationship('Verification', backref='report', lazy=True)
     # cascade so deleting a report also deletes its attached images/videos

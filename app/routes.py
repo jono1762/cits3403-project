@@ -5,9 +5,65 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from datetime import datetime
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport
+from datetime import datetime, timedelta
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, REPORT_LIFETIME_DAYS
 from .forms import LoginForm, EmailLoginForm, SignupForm
+
+
+def _active_reports_q():
+    """Base query for reports still within their expiry window. Use this
+    everywhere reports are rendered to a guest or non-author audience so
+    expired stuff doesn't leak."""
+    return Report.query.filter(Report.expires_at > datetime.utcnow())
+
+
+# Track when the lazy cleanup last ran so we don't hammer the DB on every
+# listing render. Module-level (per-process) state — fine for single-worker
+# dev / a single gunicorn process. For multi-worker prod we'd promote this
+# into the DB or a cron job.
+_LAST_REPORT_CLEANUP = None
+_REPORT_CLEANUP_INTERVAL_MIN = 5
+
+
+def _cleanup_expired_reports():
+    """Hard-delete reports whose expiry has lapsed (plus their on-disk media).
+    Throttled so a burst of listing-page hits doesn't run this every request."""
+    global _LAST_REPORT_CLEANUP
+    now = datetime.utcnow()
+    if _LAST_REPORT_CLEANUP and (now - _LAST_REPORT_CLEANUP) < timedelta(minutes=_REPORT_CLEANUP_INTERVAL_MIN):
+        return
+    _LAST_REPORT_CLEANUP = now
+
+    expired = Report.query.filter(Report.expires_at <= now).all()
+    if not expired:
+        return
+
+    upload_dir = app.config['UPLOAD_FOLDER']
+    files_to_remove = set()
+    for report in expired:
+        for m in report.media:
+            files_to_remove.add(m.filename)
+        for c in report.comments:
+            for m in c.media:
+                files_to_remove.add(m.filename)
+
+    # other users' votes / comment-votes don't cascade, so clear them first
+    expired_ids = [r.id for r in expired]
+    Verification.query.filter(Verification.report_id.in_(expired_ids)).delete(synchronize_session=False)
+    comment_ids = [c.id for r in expired for c in r.comments]
+    if comment_ids:
+        CommentVote.query.filter(CommentVote.comment_id.in_(comment_ids)).delete(synchronize_session=False)
+    FavouriteReport.query.filter(FavouriteReport.report_id.in_(expired_ids)).delete(synchronize_session=False)
+
+    for report in expired:
+        db.session.delete(report)
+    db.session.commit()
+
+    for fname in files_to_remove:
+        try:
+            os.remove(os.path.join(upload_dir, fname))
+        except OSError:
+            pass
 
 # Encode/decode helpers for the public report URL.
 # Hides the integer DB id behind a signed token so visitors can't iterate
@@ -108,10 +164,10 @@ def favourites_page():
         city = f.city
         if not city:
             continue
-        # small convenience stat: how many reports exist for this city
-        reports_today = Report.query.filter_by(city_id=city.id).count()
-        # latest report time (for "Last Update")
-        last_report = Report.query.filter_by(city_id=city.id).order_by(Report.created_at.desc()).first()
+        # small convenience stat: how many non-expired reports exist for this city
+        reports_today = _active_reports_q().filter(Report.city_id == city.id).count()
+        # latest non-expired report time (for "Last Update")
+        last_report = _active_reports_q().filter(Report.city_id == city.id).order_by(Report.created_at.desc()).first()
         if last_report and last_report.created_at:
             delta = datetime.utcnow() - last_report.created_at
             minutes = int(delta.total_seconds() // 60)
@@ -547,21 +603,24 @@ def map_page():
 def _map_page_context():
     city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
+    now = datetime.utcnow()
 
-    # real top-trending city = city with the most reports overall
+    # real top-trending city = city with the most non-expired reports
     top_city_row = (
         db.session.query(City.name, db.func.count(Report.id))
         .join(Report, Report.city_id == City.id)
+        .filter(Report.expires_at > now)
         .group_by(City.id)
         .order_by(db.func.count(Report.id).desc())
         .first()
     )
     top_city = {'name': top_city_row[0], 'count': top_city_row[1]} if top_city_row else None
 
-    # real top-trending category = category with the most reports overall
+    # real top-trending category = category with the most non-expired reports
     top_cat_row = (
         db.session.query(Category.name, db.func.count(Report.id))
         .join(Report, Report.category_id == Category.id)
+        .filter(Report.expires_at > now)
         .group_by(Category.id)
         .order_by(db.func.count(Report.id).desc())
         .first()
@@ -1022,6 +1081,10 @@ def view_report(token):
     except BadSignature:
         abort(404)
     report = Report.query.get_or_404(report_id)
+    # expired reports get hidden until cleanup deletes them — 404 the URL too
+    # so direct links don't leak content scheduled for deletion
+    if report.expires_at and report.expires_at <= datetime.utcnow():
+        abort(404)
     is_report_favourited = False
     if current_user.is_authenticated:
         is_report_favourited = FavouriteReport.query.filter_by(
@@ -1196,6 +1259,10 @@ def edit_report_page(report_id):
 # Default sort = newest first; ?sort=top sorts by verification count (top reports).
 @app.route('/listing')
 def listing_page():
+    # Lazy cleanup — high-traffic public endpoint, throttled internally so
+    # most requests are no-ops and the rare one actually deletes expired rows.
+    _cleanup_expired_reports()
+
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     city_id = request.args.get('city_id', type=int)
@@ -1207,7 +1274,7 @@ def listing_page():
         if selected_city:
             state_id = selected_city.state_id
 
-    query = Report.query
+    query = _active_reports_q()
     # state filter has to go through City because Report only stores city_id, not state_id
     if state_id:
         query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
