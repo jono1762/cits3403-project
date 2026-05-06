@@ -148,7 +148,9 @@ class FavouriteReport(db.Model):
 class Report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # nullable so that deleting the author's account doesn't wipe their reports —
+    # the author column is set to NULL and the byline renders as "deleted_user"
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
     # optional free-text for extra detail like street name or landmark
@@ -206,7 +208,8 @@ class Comment(db.Model):
     __tablename__ = 'comments'
     id = db.Column(db.Integer, primary_key=True)
     report_id = db.Column(db.Integer, db.ForeignKey('reports.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # nullable so deleting the author keeps the comment but anonymises it
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     # plain text only — Jinja auto-escapes on render so HTML/script tags become
     # inert. body is capped at the route layer (2000 chars) to keep abuse manageable.
     # body can be empty if the comment carries media instead — server enforces

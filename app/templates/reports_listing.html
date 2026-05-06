@@ -164,7 +164,11 @@
                                 <span class="listing-item-badge">{{ r.category.name }}</span>
                                 <span>{{ r.city.name }}, {{ r.city.state.code }}</span>
                                 <span class="listing-item-author">— by
-                                    <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
+                                    {% if r.author %}
+                                        <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
+                                    {% else %}
+                                        <span class="deleted-user">deleted_user</span>
+                                    {% endif %}
                                     on {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
                                 </span>
                             </div>

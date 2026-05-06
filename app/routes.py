@@ -466,13 +466,10 @@ def api_verify_password():
 @login_required
 def settings_delete_account():
     """Permanent account deletion. Requires the user's password as a final
-    safety check, then wipes:
-      - their reports (cascade-deletes attached media DB rows + we remove
-        the on-disk files manually since SQLAlchemy doesn't know about them)
-      - their comments anywhere on the site (+ their media)
-      - their verifications, comment-votes, follow edges (both directions)
-      - every conversation they're part of (cascades messages + message media)
-      - the user row itself
+    safety check. Reports and comments authored by the user are KEPT so other
+    users' threads stay coherent — their author column is set to NULL and the
+    UI renders the byline as "deleted_user". The user-specific stuff (votes,
+    follows, conversations) still gets wiped.
     """
     if not current_user.check_password(request.form.get('password') or ''):
         flash('Incorrect password — account not deleted.', 'error')
@@ -481,19 +478,9 @@ def settings_delete_account():
     user = current_user._get_current_object()
     upload_dir = app.config['UPLOAD_FOLDER']
 
-    # collect every on-disk file we'll need to remove (reports' media,
-    # comments' media on others' reports, chat message media)
+    # only chat-message media gets removed from disk — reports' / comments'
+    # media stays because the parent rows stay too (just anonymised)
     files_to_remove = set()
-    for report in list(user.reports):
-        for m in report.media:
-            files_to_remove.add(m.filename)
-        for c in report.comments:
-            for m in c.media:
-                files_to_remove.add(m.filename)
-    other_comments = Comment.query.filter_by(user_id=user.id).all()
-    for c in other_comments:
-        for m in c.media:
-            files_to_remove.add(m.filename)
     convs = Conversation.query.filter(
         db.or_(Conversation.user_a_id == user.id,
                Conversation.user_b_id == user.id)
@@ -509,18 +496,17 @@ def settings_delete_account():
         db.or_(Follow.follower_id == user.id, Follow.followed_id == user.id)
     ).delete(synchronize_session=False)
     CommentVote.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    FavouriteLocation.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    FavouriteReport.query.filter_by(user_id=user.id).delete(synchronize_session=False)
 
-    # delete user's comments on other people's reports (cascade kills media DB rows)
-    for c in other_comments:
-        db.session.delete(c)
-
-    # delete user's reports — but first clear other users' votes/comment-votes
-    # on those reports (no cascade for Verification / CommentVote)
-    for report in list(user.reports):
-        Verification.query.filter_by(report_id=report.id).delete(synchronize_session=False)
-        for c in report.comments:
-            CommentVote.query.filter_by(comment_id=c.id).delete(synchronize_session=False)
-        db.session.delete(report)
+    # anonymise the user's posts instead of deleting them — keeps comment
+    # threads readable for everyone else, byline becomes "deleted_user"
+    Report.query.filter_by(user_id=user.id).update(
+        {Report.user_id: None}, synchronize_session=False
+    )
+    Comment.query.filter_by(user_id=user.id).update(
+        {Comment.user_id: None}, synchronize_session=False
+    )
 
     # delete conversations involving this user (cascades messages + message-media DB rows)
     for conv in convs:
@@ -529,7 +515,7 @@ def settings_delete_account():
     db.session.delete(user)
     db.session.commit()
 
-    # wipe disk files after the DB transaction succeeds
+    # wipe disk files (chat media) after the DB transaction succeeds
     for fname in files_to_remove:
         try:
             os.remove(os.path.join(upload_dir, fname))
@@ -1437,14 +1423,15 @@ COMMENT_MAX_LENGTH = 2000
 
 def _serialize_comment(comment, current_user_id=None):
     """Shared comment-to-JSON shape for the create endpoint and any future list endpoint."""
+    author = comment.author
     return {
         'id': comment.id,
         'body': comment.body,
-        'author_username': comment.author.username,
-        'author_url': url_for('user_profile_page', username=comment.author.username),
-        'author_initial': comment.author.username[:1].upper(),
-        'author_avatar_url': (url_for('static', filename=f'uploads/{comment.author.avatar_filename}')
-                              if comment.author.avatar_filename else None),
+        'author_username': author.username if author else 'deleted_user',
+        'author_url': url_for('user_profile_page', username=author.username) if author else None,
+        'author_initial': (author.username[:1].upper() if author else '?'),
+        'author_avatar_url': (url_for('static', filename=f'uploads/{author.avatar_filename}')
+                              if author and author.avatar_filename else None),
         'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
         'is_own': comment.user_id == current_user_id,
         'verify_count': comment.verify_count,

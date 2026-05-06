@@ -129,3 +129,18 @@ body::after {
     white-space: nowrap;
     border: 0;
 }
+
+/* Author byline shown when a user account has been deleted but their
+   reports / comments are still on the page. Non-clickable, muted grey,
+   slightly italic so it's clearly different from a live username. */
+.deleted-user {
+    color: #94a3b8;
+    font-style: italic;
+    font-weight: 500;
+}
+
+.comment-avatar-deleted {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: default;
+}
