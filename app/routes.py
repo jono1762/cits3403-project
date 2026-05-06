@@ -558,25 +558,62 @@ def _map_page_context():
     city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
 
-    # real top-trending city = city with the most reports overall
-    top_city_row = (
-        db.session.query(City.name, db.func.count(Report.id))
-        .join(Report, Report.city_id == City.id)
-        .group_by(City.id)
-        .order_by(db.func.count(Report.id).desc())
-        .first()
+    # Top trending city / category derived from the global Trending top N.
+    # Group the top-N reports by city (or category), and rank groups by:
+    #   1. how many of the top-N are in that city (descending)
+    #   2. the highest-scoring single report within that city (tiebreaker)
+    from sqlalchemy import case
+    verify_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
+    dispute_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
+    days_old_expr = db.func.julianday('now') - db.func.julianday(Report.created_at)
+    score_expr = (verify_sum - dispute_sum - days_old_expr).label('score')
+    trending_rows = (
+        db.session.query(
+            Report.id, Report.city_id, Report.category_id, score_expr,
+        )
+        .outerjoin(Verification, Verification.report_id == Report.id)
+        .group_by(Report.id)
+        .order_by(score_expr.desc(), Report.created_at.desc())
+        .limit(TRENDING_LIMIT)
+        .all()
     )
-    top_city = {'name': top_city_row[0], 'count': top_city_row[1]} if top_city_row else None
+    total_in_top = len(trending_rows)
 
-    # real top-trending category = category with the most reports overall
-    top_cat_row = (
-        db.session.query(Category.name, db.func.count(Report.id))
-        .join(Report, Report.category_id == Category.id)
-        .group_by(Category.id)
-        .order_by(db.func.count(Report.id).desc())
-        .first()
-    )
-    top_category = {'name': top_cat_row[0], 'count': top_cat_row[1]} if top_cat_row else None
+    def _top_group(get_key):
+        """For each report in the trending top-N, bucket by `get_key(row)`,
+        track count and best score per bucket, then pick the bucket with the
+        highest count (tiebreak by best score)."""
+        buckets = {}  # key -> {'count': int, 'best_score': float}
+        for row in trending_rows:
+            key = get_key(row)
+            if key is None:
+                continue
+            b = buckets.setdefault(key, {'count': 0, 'best_score': float('-inf')})
+            b['count'] += 1
+            if row.score > b['best_score']:
+                b['best_score'] = row.score
+        if not buckets:
+            return None
+        winner_key = max(buckets, key=lambda k: (buckets[k]['count'], buckets[k]['best_score']))
+        return winner_key, buckets[winner_key]['count']
+
+    top_city = None
+    city_pick = _top_group(lambda r: r.city_id)
+    if city_pick:
+        cid, cnt = city_pick
+        c = City.query.get(cid)
+        if c:
+            top_city = {'name': c.name, 'count': cnt, 'total': total_in_top}
+
+    top_category = None
+    cat_pick = _top_group(lambda r: r.category_id)
+    if cat_pick:
+        cat_id, cnt = cat_pick
+        cat = Category.query.get(cat_id)
+        if cat:
+            top_category = {'name': cat.name, 'count': cnt, 'total': total_in_top}
 
     return {
         'city_ids_by_name': city_ids,

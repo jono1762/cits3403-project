@@ -29,7 +29,7 @@
 					{% endif %}
 					{{ top_city.name }}
 				</div>
-				<div class="stat-trend">{{ top_city.count }} report{{ 's' if top_city.count != 1 else '' }} so far</div>
+				<div class="stat-trend">{{ top_city.count }} of {{ top_city.total }} trending</div>
 				<span class="stat-card-fire" aria-hidden="true">🔥</span>
 			</a>
 		{% else %}
@@ -51,7 +51,7 @@
 					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_category.name, '') }}</span>
 					{{ top_category.name }}
 				</div>
-				<div class="stat-trend">{{ top_category.count }} report{{ 's' if top_category.count != 1 else '' }} so far</div>
+				<div class="stat-trend">{{ top_category.count }} of {{ top_category.total }} trending</div>
 				<span class="stat-card-spark" aria-hidden="true">📈</span>
 			</a>
 		{% else %}
