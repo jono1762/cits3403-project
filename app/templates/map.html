@@ -63,13 +63,29 @@
 			</div>
 		{% endif %}
 
-		{# Favourites — generic prompt for now (no Favourite model yet, no fake count) #}
-		<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
-			<div class="stat-label">Watching · favourites</div>
-			<div class="stat-num">Saved places</div>
-			<div class="stat-trend">Star a report to follow it</div>
-			<span class="stat-card-star" aria-hidden="true">⭐</span>
-		</a>
+		{# Favourites — surface the user's most-engaged saved report (or the
+		   top report among their saved cities). Falls back to a stub for
+		   guests / users with no saves. #}
+		{% if top_pinned_report %}
+			<a class="stat-card stat-card-fav"
+			   href="{{ url_for('view_report', token=top_pinned_report.id|report_token) }}"
+			   aria-label="Open your top pinned report">
+				<div class="stat-label">From your saves</div>
+				<div class="stat-num">
+					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_pinned_report.category.name, '') }}</span>
+					{{ top_pinned_report.city.name }}
+				</div>
+				<div class="stat-trend">{{ top_pinned_report.category.name }} · ✓{{ top_pinned_report.verify_count }} ✗{{ top_pinned_report.dispute_count }}</div>
+				<span class="stat-card-star" aria-hidden="true">⭐</span>
+			</a>
+		{% else %}
+			<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
+				<div class="stat-label">Watching · favourites</div>
+				<div class="stat-num">Saved places</div>
+				<div class="stat-trend">Star a report to follow it</div>
+				<span class="stat-card-star" aria-hidden="true">⭐</span>
+			</a>
+		{% endif %}
 	</div>
 
 	<div class="search-wrapper">

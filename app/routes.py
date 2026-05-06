@@ -615,6 +615,12 @@ def _map_page_context():
         if cat:
             top_category = {'name': cat.name, 'count': cnt, 'total': total_in_top}
 
+    # Third bubble — the user's "most important" pinned report, picked from
+    # everything they've saved (favourited reports + reports in favourited
+    # cities). Highest engagement score across that pool wins. Falls back to
+    # None for guests / users with no saves; the template shows a stub then.
+    top_pinned_report = _top_pinned_report_for(current_user)
+
     return {
         'city_ids_by_name': city_ids,
         'category_ids_by_name': category_ids,
@@ -622,7 +628,41 @@ def _map_page_context():
         'state_flag_url': STATE_FLAG_URL,
         'top_city': top_city,
         'top_category': top_category,
+        'top_pinned_report': top_pinned_report,
     }
+
+
+def _top_pinned_report_for(user):
+    """Highest-scoring report across the user's saved reports + reports in
+    their saved cities. Returns the Report object or None."""
+    if not getattr(user, 'is_authenticated', False):
+        return None
+    fav_report_ids = {row.report_id for row in FavouriteReport.query.filter_by(user_id=user.id).all()}
+    fav_city_ids = {row.city_id for row in FavouriteLocation.query.filter_by(user_id=user.id).all()}
+    candidate_ids = set(fav_report_ids)
+    if fav_city_ids:
+        candidate_ids.update(
+            r.id for r in Report.query.filter(Report.city_id.in_(fav_city_ids)).all()
+        )
+    if not candidate_ids:
+        return None
+
+    from sqlalchemy import case
+    verify_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
+    dispute_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
+    days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
+    score_expr = (verify_sum - dispute_sum - days_old).label('score')
+    row = (
+        db.session.query(Report.id)
+        .filter(Report.id.in_(candidate_ids))
+        .outerjoin(Verification, Verification.report_id == Report.id)
+        .group_by(Report.id)
+        .order_by(score_expr.desc(), Report.created_at.desc())
+        .first()
+    )
+    return Report.query.get(row[0]) if row else None
 
 
 # /intro — same content as / but always rendered in the marketing/intro
