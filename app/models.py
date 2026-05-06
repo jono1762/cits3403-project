@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -17,8 +17,9 @@ class User(UserMixin, db.Model):
     # Optional free-text bio shown on the public profile. Length capped at the
     # form layer (500 chars). Plain text — Jinja auto-escapes on render.
     bio = db.Column(db.Text, nullable=True)
-    # Account creation time — drives features that gate on signup age (e.g.
-    # the Trending page is only visible once the account is at least 1 day old).
+    # Account creation time — drives anti-gaming on the Trending leaderboard:
+    # only verifies / disputes from accounts older than the configured min
+    # age count toward a report's trending score.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Whether the user's "Following" list is visible to other users.
     # The owner always sees their own list regardless of this flag.
@@ -37,14 +38,6 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
-    @property
-    def can_view_trending(self):
-        """Trending is gated to accounts at least 1 day old to keep newly-
-        spammed accounts from gaming the engagement leaderboard."""
-        if not self.created_at:
-            return True  # legacy / unbackfilled rows — let them through
-        return (datetime.utcnow() - self.created_at) >= timedelta(days=1)
 
     # ---- Aggregated reputation stats (computed live from related rows) ----
     # These run sums in Python over the `reports` relationship. Fine at the

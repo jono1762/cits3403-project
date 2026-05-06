@@ -1468,22 +1468,37 @@ def edit_report_page(report_id):
     )
 
 TRENDING_LIMIT = 10
+# Anti-gaming — only verifies / disputes from accounts at least this many
+# days old count toward the trending score. The displayed verify_count /
+# dispute_count on each card stays unchanged (still totals every vote);
+# this only affects which reports rank in the top N.
+TRENDING_VOTER_MIN_AGE_DAYS = 7
+
+
+def _trending_score_components():
+    """SQLAlchemy expressions for the trending score, factored out so
+    _trending_report_ids() and the listing page sort agree on the formula.
+    Counts only verifies / disputes from accounts older than the min age."""
+    from sqlalchemy import case
+    eligible = db.func.julianday('now') - db.func.julianday(User.created_at) >= TRENDING_VOTER_MIN_AGE_DAYS
+    verify_sum = db.func.coalesce(
+        db.func.sum(case(((Verification.status == 'verify') & eligible, 1), else_=0)), 0)
+    dispute_sum = db.func.coalesce(
+        db.func.sum(case(((Verification.status == 'dispute') & eligible, 1), else_=0)), 0)
+    days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
+    score_expr = (verify_sum - dispute_sum - days_old).label('score')
+    return verify_sum, dispute_sum, days_old, score_expr
 
 
 def _trending_report_ids():
     """Return the set of report IDs currently in the global Trending top N.
     Matches the Trending page's query exactly so the 🔥 badge on a report
     means the same thing on every page: this report is currently on Trending."""
-    from sqlalchemy import case
-    verify_sum = db.func.coalesce(
-        db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
-    dispute_sum = db.func.coalesce(
-        db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
-    days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
-    score_expr = (verify_sum - dispute_sum - days_old).label('score')
+    _, _, _, score_expr = _trending_score_components()
     rows = (
         db.session.query(Report.id)
         .outerjoin(Verification, Verification.report_id == Report.id)
+        .outerjoin(User, User.id == Verification.user_id)
         .group_by(Report.id)
         .order_by(score_expr.desc(), Report.created_at.desc())
         .limit(TRENDING_LIMIT)
@@ -1507,16 +1522,12 @@ def _build_listing_response(base_query, feed_mode=None):
     category_id = request.args.get('category_id', type=int)
     sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
-    # Trending is auth-only + account-age-gated. Bounce guests + brand-new
-    # accounts back to the regular listing with a friendly message instead
-    # of letting them see a stripped/empty page.
-    if sort == 'top':
-        if not current_user.is_authenticated:
-            flash('Please log in to view the Trending page.', 'error')
-            return redirect(url_for('login'))
-        if not current_user.can_view_trending:
-            flash('Trending is available once your account is at least 1 day old.', 'error')
-            return redirect(url_for('listing_page'))
+    # Trending is auth-only — but anyone logged in can view it. The
+    # account-age requirement applies to whose VOTES count toward the
+    # ranking, not who can see the page (see _trending_score_components).
+    if sort == 'top' and not current_user.is_authenticated:
+        flash('Please log in to view the Trending page.', 'error')
+        return redirect(url_for('login'))
 
     if city_id and not state_id:
         selected_city = City.query.get(city_id)
@@ -1583,19 +1594,14 @@ def _build_listing_response(base_query, feed_mode=None):
             query = query.filter(Report.category_id == category_id)
 
     if sort == 'top':
-        # Trending score = verifies − disputes − days_old. Reports get one point
-        # of decay per day, so fresh + popular reports float to the top while
-        # old ones sink even if they were once highly verified.
-        # SQLite julianday gives the difference in days directly.
-        from sqlalchemy import case
-        verify_sum = db.func.coalesce(
-            db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
-        dispute_sum = db.func.coalesce(
-            db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
-        days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
-        score = verify_sum - dispute_sum - days_old
+        # Trending score = eligible_verifies − eligible_disputes − days_old.
+        # Only votes from accounts older than TRENDING_VOTER_MIN_AGE_DAYS
+        # count toward the score; the displayed verify/dispute counts on
+        # cards still show every vote.
+        _, _, _, score = _trending_score_components()
         query = (
             query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .outerjoin(User, User.id == Verification.user_id)
                  .group_by(Report.id)
                  .order_by(score.desc(), Report.created_at.desc())
         )
