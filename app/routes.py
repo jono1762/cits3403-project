@@ -1205,8 +1205,8 @@ def edit_report_page(report_id):
     )
 
 # /listing — list all reports.
-# Public — guests can browse without an account.
-# Default sort = newest first; ?sort=top sorts by verification count (top reports).
+# Default sort = newest first. ?sort=top is the Trending page, gated to
+# logged-in users whose accounts are at least 1 day old (anti-spam).
 @app.route('/listing')
 def listing_page():
     page = request.args.get('page', 1, type=int)
@@ -1214,6 +1214,17 @@ def listing_page():
     city_id = request.args.get('city_id', type=int)
     category_id = request.args.get('category_id', type=int)
     sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
+
+    # Trending is auth-only + account-age-gated. Bounce guests + brand-new
+    # accounts back to the regular listing with a friendly message instead
+    # of letting them see a stripped/empty page.
+    if sort == 'top':
+        if not current_user.is_authenticated:
+            flash('Please log in to view the Trending page.', 'error')
+            return redirect(url_for('login'))
+        if not current_user.can_view_trending:
+            flash('Trending is available once your account is at least 1 day old.', 'error')
+            return redirect(url_for('listing_page'))
 
     if city_id and not state_id:
         selected_city = City.query.get(city_id)
@@ -1230,11 +1241,21 @@ def listing_page():
         query = query.filter(Report.category_id == category_id)
 
     if sort == 'top':
-        # outer-join + group + count so reports with zero verifications still appear
+        # Trending score = verifies − disputes − days_old. Reports get one point
+        # of decay per day, so fresh + popular reports float to the top while
+        # old ones sink even if they were once highly verified.
+        # SQLite julianday gives the difference in days directly.
+        from sqlalchemy import case
+        verify_sum = db.func.coalesce(
+            db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
+        dispute_sum = db.func.coalesce(
+            db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
+        days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
+        score = verify_sum - dispute_sum - days_old
         query = (
             query.outerjoin(Verification, Verification.report_id == Report.id)
                  .group_by(Report.id)
-                 .order_by(db.func.count(Verification.id).desc(), Report.created_at.desc())
+                 .order_by(score.desc(), Report.created_at.desc())
         )
     else:
         query = query.order_by(Report.created_at.desc())
