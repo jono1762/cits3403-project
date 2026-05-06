@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css', v='3') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css', v='6') }}">
 {% endblock %}
 
 {% block content %}
@@ -9,7 +9,34 @@
     {# ============== Left column — conversation list with two tabs ============== #}
     <aside class="messages-sidebar">
         <header class="messages-sidebar-header">
-            <h1 class="messages-title">Messages</h1>
+            <div class="messages-title-row">
+                <h1 class="messages-title">Messages</h1>
+                {# small "manage blocked users" icon — opens a modal with the
+                   list and an unblock button next to each entry #}
+                <button type="button" class="messages-blocked-icon"
+                        id="open-blocked-modal-btn"
+                        title="Blocked users" aria-label="Blocked users">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                </button>
+            </div>
+
+            {# user search — type to find someone to message even if you've never
+               talked to them before. Replaces the tab pane while a query is active. #}
+            <div class="messages-search-wrap">
+                <svg class="messages-search-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="search" id="messages-search-input"
+                       class="messages-search-input"
+                       placeholder="Search a user to message..."
+                       autocomplete="off">
+                <button type="button" class="messages-search-clear"
+                        id="messages-search-clear" hidden aria-label="Clear search">×</button>
+            </div>
         </header>
 
         <div class="messages-tabs" role="tablist">
@@ -31,6 +58,12 @@
             <ul class="messages-list" id="requests-list"></ul>
             <p class="messages-empty" id="requests-empty" hidden>No message requests.</p>
         </div>
+
+        {# search-results pane — only visible while the search input has text #}
+        <div class="messages-list-wrap" data-pane="search" hidden>
+            <ul class="messages-list" id="search-results-list"></ul>
+            <p class="messages-empty" id="search-empty" hidden>No users match.</p>
+        </div>
     </aside>
 
     {# ============== Right column — active conversation thread ============== #}
@@ -49,7 +82,20 @@
                     <a class="messages-thread-name" id="thread-name" href="#"></a>
                     <span class="messages-thread-status" id="thread-status"></span>
                 </div>
+                {# Block / Unblock — chat-only restriction. JS swaps label + state. #}
+                <button type="button" class="messages-thread-block-btn" id="thread-block-btn" data-blocked="false">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                    <span id="thread-block-label">Block</span>
+                </button>
             </header>
+
+            {# Banner when the OTHER user is currently blocked — composer hides too. #}
+            <div class="messages-blocked-banner" id="thread-blocked-banner" hidden>
+                You've blocked this user. They can't message you, and you can't message them. Click <strong>Unblock</strong> above to lift it.
+            </div>
 
             {# request banner — only shown when this conversation is a pending request #}
             <div class="messages-request-banner" id="thread-request-banner" hidden>
@@ -94,6 +140,49 @@
     </section>
 </section>
 
+{# Blocked-users list modal — opened by the small icon next to "Messages" in
+   the sidebar header. Shows everyone the current user has blocked + a quick
+   Unblock button next to each entry. Empty state shown when nobody's blocked. #}
+<div class="modal fade" id="blocked-list-modal" tabindex="-1" aria-labelledby="blocked-list-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="blocked-list-title">Blocked users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="blocked-list" id="blocked-list"></ul>
+                <p class="blocked-list-empty" id="blocked-list-empty" hidden>You haven't blocked anyone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Block / Unblock confirmation modal — JS swaps the title, body, and confirm
+   button based on the current block state when it's opened. Same Bootstrap
+   pattern as the delete-report and unfollow modals so the design language is
+   consistent across the app. #}
+<div class="modal fade" id="block-confirm-modal" tabindex="-1" aria-labelledby="block-confirm-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="block-confirm-title">Block this user?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="block-confirm-body">
+                <!-- text set by JS when the modal opens -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="block-confirm-btn">Block</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     const ROOT = document.getElementById('messages-page');
@@ -123,6 +212,9 @@
     const requestBanner = document.getElementById('thread-request-banner');
     const requestNameEl = document.getElementById('thread-request-name');
     const acceptBtn = document.getElementById('thread-accept-btn');
+    const blockBtn = document.getElementById('thread-block-btn');
+    const blockLabel = document.getElementById('thread-block-label');
+    const blockedBanner = document.getElementById('thread-blocked-banner');
 
     let activeUserId = null;        // which conversation is open
     let lastMessageAt = null;       // ISO timestamp of latest message we've rendered (for polling)
@@ -301,6 +393,18 @@
         startThreadPolling();
     }
 
+    function applyBlockState(isBlocked) {
+        // updates the block button + composer visibility based on whether
+        // the current user has blocked the OTHER user in this thread
+        if (blockBtn) {
+            blockBtn.dataset.blocked = isBlocked ? 'true' : 'false';
+            blockBtn.classList.toggle('is-blocked', isBlocked);
+        }
+        if (blockLabel) blockLabel.textContent = isBlocked ? 'Unblock' : 'Block';
+        if (blockedBanner) blockedBanner.hidden = !isBlocked;
+        if (threadComposer) threadComposer.hidden = isBlocked;
+    }
+
     async function loadMessages(userId) {
         try {
             const res = await fetch(`/api/conversations/${userId}/messages`);
@@ -319,6 +423,9 @@
             } else {
                 requestBanner.hidden = true;
             }
+
+            // sync block button + composer visibility with server state
+            applyBlockState(!!data.is_blocked);
         } catch (err) { /* silent */ }
     }
 
@@ -437,6 +544,161 @@
         }
     });
 
+    // ---- blocked-users list modal — fetches /api/blocked-users on open ----
+    const openBlockedListBtn = document.getElementById('open-blocked-modal-btn');
+    const blockedListModalEl = document.getElementById('blocked-list-modal');
+    const blockedListEl = document.getElementById('blocked-list');
+    const blockedListEmpty = document.getElementById('blocked-list-empty');
+
+    // pending state shared with the confirm modal — set when the user clicks
+    // Unblock on a row in the blocked-users list, consumed when they confirm
+    let pendingListUnblock = null;   // { userId, username, li } | null
+
+    async function refreshBlockedList() {
+        try {
+            const res = await fetch('/api/blocked-users');
+            if (!res.ok) return;
+            const users = await res.json();
+            blockedListEl.replaceChildren();
+            if (users.length === 0) {
+                blockedListEmpty.hidden = false;
+                return;
+            }
+            blockedListEmpty.hidden = true;
+            for (const u of users) {
+                const li = document.createElement('li');
+                li.className = 'blocked-list-item';
+                li.dataset.userId = u.user_id;
+
+                const avatar = document.createElement('a');
+                avatar.className = 'blocked-list-avatar';
+                avatar.href = u.profile_url;
+                avatar.textContent = u.avatar_initial;
+
+                const name = document.createElement('a');
+                name.className = 'blocked-list-name';
+                name.href = u.profile_url;
+                name.textContent = u.username;
+
+                const unblockBtn = document.createElement('button');
+                unblockBtn.type = 'button';
+                unblockBtn.className = 'blocked-list-unblock';
+                unblockBtn.textContent = 'Unblock';
+                unblockBtn.addEventListener('click', () => {
+                    // route through the shared confirm modal — hide the list,
+                    // show the confirm, perform action, then re-open the list
+                    pendingListUnblock = { userId: u.user_id, username: u.username, li };
+                    blockConfirmTitle.textContent = 'Unblock ' + u.username + '?';
+                    blockConfirmBody.textContent =
+                        "They'll be able to message you again. Their old messages won't reappear " +
+                        "automatically — they'll come back into your inbox the next time someone sends.";
+                    blockConfirmBtn.textContent = 'Unblock';
+                    // keep the red destructive style — matches other modals
+                    blockConfirmBtn.classList.remove('btn-primary');
+                    blockConfirmBtn.classList.add('btn-danger');
+                    bootstrap.Modal.getInstance(blockedListModalEl)?.hide();
+                    bootstrap.Modal.getOrCreateInstance(blockModalEl).show();
+                });
+
+                li.appendChild(avatar);
+                li.appendChild(name);
+                li.appendChild(unblockBtn);
+                blockedListEl.appendChild(li);
+            }
+        } catch (err) { /* silent */ }
+    }
+
+    if (openBlockedListBtn && blockedListModalEl) {
+        openBlockedListBtn.addEventListener('click', () => {
+            refreshBlockedList();
+            bootstrap.Modal.getOrCreateInstance(blockedListModalEl).show();
+        });
+    }
+
+    // ---- block / unblock — opens the confirm modal first, fetch happens on confirm ----
+    const blockModalEl = document.getElementById('block-confirm-modal');
+    const blockConfirmBtn = document.getElementById('block-confirm-btn');
+    const blockConfirmTitle = document.getElementById('block-confirm-title');
+    const blockConfirmBody = document.getElementById('block-confirm-body');
+
+    // If the user opened the confirm modal from the blocked-list (pending
+    // unblock set) and then dismisses without confirming, take them back to
+    // the list rather than dumping them on the empty inbox.
+    if (blockModalEl) {
+        blockModalEl.addEventListener('hidden.bs.modal', () => {
+            if (pendingListUnblock !== null) {
+                pendingListUnblock = null;
+                bootstrap.Modal.getOrCreateInstance(blockedListModalEl).show();
+            }
+        });
+    }
+
+    if (blockBtn && blockModalEl && blockConfirmBtn) {
+        blockBtn.addEventListener('click', () => {
+            if (!activeUserId) return;
+            const blocked = blockBtn.dataset.blocked === 'true';
+            const name = threadName.textContent || 'this user';
+
+            // swap modal text + confirm-button color based on what we're about to do
+            // confirm button stays the standard red destructive style for both
+            // actions — matches the look of delete-report / delete-comment etc.
+            blockConfirmBtn.classList.remove('btn-primary');
+            blockConfirmBtn.classList.add('btn-danger');
+            if (blocked) {
+                blockConfirmTitle.textContent = 'Unblock ' + name + '?';
+                blockConfirmBody.textContent =
+                    "They'll be able to message you again. Their old messages won't reappear " +
+                    "automatically — they'll come back into your inbox the next time someone sends.";
+                blockConfirmBtn.textContent = 'Unblock';
+            } else {
+                blockConfirmTitle.textContent = 'Block ' + name + '?';
+                blockConfirmBody.textContent =
+                    "They won't be able to message you, and the conversation disappears " +
+                    "from your inbox. They can still see your posts and profile — this is chat-only.";
+                blockConfirmBtn.textContent = 'Block';
+            }
+            bootstrap.Modal.getOrCreateInstance(blockModalEl).show();
+        });
+
+        blockConfirmBtn.addEventListener('click', async () => {
+            blockConfirmBtn.disabled = true;
+            try {
+                // Case 1: user is unblocking from the blocked-list modal
+                if (pendingListUnblock) {
+                    const target = pendingListUnblock;
+                    const r = await fetch(`/api/block/${target.userId}`, {method: 'DELETE'});
+                    if (r.ok) {
+                        target.li.remove();
+                        if (blockedListEl.children.length === 0) blockedListEmpty.hidden = false;
+                        // if this user's thread is currently open, sync its state too
+                        if (parseInt(activeUserId, 10) === target.userId) applyBlockState(false);
+                        refreshInbox();
+                    }
+                    pendingListUnblock = null;
+                    bootstrap.Modal.getInstance(blockModalEl)?.hide();
+                    // re-open the list so the user can keep managing
+                    bootstrap.Modal.getOrCreateInstance(blockedListModalEl).show();
+                    return;
+                }
+
+                // Case 2: user is blocking/unblocking from inside the open thread
+                if (!activeUserId) return;
+                const blocked = blockBtn.dataset.blocked === 'true';
+                const res = await fetch(`/api/block/${activeUserId}`, {
+                    method: blocked ? 'DELETE' : 'POST',
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    applyBlockState(!!data.is_blocked);
+                    refreshInbox();   // blocking hides the conversation from inbox
+                }
+                bootstrap.Modal.getInstance(blockModalEl)?.hide();
+            } finally {
+                blockConfirmBtn.disabled = false;
+            }
+        });
+    }
+
     // ---- tab switching ----
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -448,6 +710,124 @@
             panes.forEach(p => p.hidden = p.dataset.pane !== target);
         });
     });
+
+    // ---- user search (Instagram-style: type to find someone to chat with) ----
+    const searchInput = document.getElementById('messages-search-input');
+    const searchClear = document.getElementById('messages-search-clear');
+    const searchList = document.getElementById('search-results-list');
+    const searchEmpty = document.getElementById('search-empty');
+    const searchPane = document.querySelector('.messages-list-wrap[data-pane="search"]');
+    const tabsRow = document.querySelector('.messages-tabs');
+    const chatsPane = document.querySelector('.messages-list-wrap[data-pane="chats"]');
+    const requestsPane = document.querySelector('.messages-list-wrap[data-pane="requests"]');
+    let searchTimer;
+
+    function buildSearchResult(u) {
+        // shape compatible with openConversation() so clicking just works
+        const conv = {
+            user_id: u.user_id,
+            username: u.username,
+            avatar_initial: u.avatar_initial,
+            avatar_url: u.avatar_url,
+            profile_url: u.profile_url,
+            is_request: false,
+            unread: 0,
+            last_body: '',
+            last_at: null,
+            last_sender_is_me: false,
+        };
+        const li = document.createElement('li');
+        li.className = 'messages-item';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'messages-item-avatar';
+        if (u.avatar_url) {
+            const img = document.createElement('img');
+            img.src = u.avatar_url;
+            img.alt = '';
+            avatar.appendChild(img);
+        } else {
+            avatar.textContent = u.avatar_initial;
+        }
+
+        const body = document.createElement('div');
+        body.className = 'messages-item-body';
+        const name = document.createElement('span');
+        name.className = 'messages-item-name';
+        name.textContent = u.username;
+        const sub = document.createElement('span');
+        sub.className = 'messages-item-preview';
+        sub.textContent = '@' + u.username.toLowerCase() + ' · click to message';
+        body.appendChild(name);
+        body.appendChild(sub);
+
+        li.appendChild(avatar);
+        li.appendChild(body);
+        li.addEventListener('click', () => {
+            // open the chosen user's thread, then clear search so the inbox
+            // returns to view (the new conversation will appear there once a
+            // message is sent)
+            openConversation(conv);
+            searchInput.value = '';
+            exitSearchMode();
+        });
+        return li;
+    }
+
+    function enterSearchMode() {
+        if (tabsRow) tabsRow.hidden = true;
+        if (chatsPane) chatsPane.hidden = true;
+        if (requestsPane) requestsPane.hidden = true;
+        if (searchPane) searchPane.hidden = false;
+        if (searchClear) searchClear.hidden = false;
+    }
+
+    function exitSearchMode() {
+        if (tabsRow) tabsRow.hidden = false;
+        // restore whichever tab was active when the user started searching
+        const active = document.querySelector('.messages-tab.is-active');
+        const target = active ? active.dataset.tab : 'chats';
+        if (chatsPane) chatsPane.hidden = (target !== 'chats');
+        if (requestsPane) requestsPane.hidden = (target !== 'requests');
+        if (searchPane) searchPane.hidden = true;
+        if (searchClear) searchClear.hidden = true;
+        searchList.innerHTML = '';
+        if (searchEmpty) searchEmpty.hidden = true;
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            const q = searchInput.value.trim();
+            if (!q) {
+                exitSearchMode();
+                return;
+            }
+            enterSearchMode();
+            searchTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch('/api/search-users?q=' + encodeURIComponent(q));
+                    if (!res.ok) return;
+                    const users = await res.json();
+                    searchList.innerHTML = '';
+                    if (users.length === 0) {
+                        searchEmpty.hidden = false;
+                    } else {
+                        searchEmpty.hidden = true;
+                        users.forEach(u => searchList.appendChild(buildSearchResult(u)));
+                    }
+                } catch (err) { /* silent */ }
+            }, 200);
+        });
+    }
+
+    if (searchClear) {
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            exitSearchMode();
+            searchInput.focus();
+        });
+    }
 
     // ---- boot + inbox polling ----
     refreshInbox().then(maybeOpenFromQuery);

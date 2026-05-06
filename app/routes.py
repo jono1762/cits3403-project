@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, BlockedUser
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 # Encode/decode helpers for the public report URL.
@@ -773,6 +773,29 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+def _following_users_for(user):
+    """Return the User rows this profile-user follows (newest follow first)."""
+    rows = (
+        Follow.query
+        .filter_by(follower_id=user.id)
+        .order_by(Follow.created_at.desc())
+        .all()
+    )
+    # Resolve each Follow row to the actual followed-User object
+    return [User.query.get(r.followed_id) for r in rows if User.query.get(r.followed_id)]
+
+
+def _follower_users_for(user):
+    """Return the User rows that follow this profile-user (newest follow first)."""
+    rows = (
+        Follow.query
+        .filter_by(followed_id=user.id)
+        .order_by(Follow.created_at.desc())
+        .all()
+    )
+    return [User.query.get(r.follower_id) for r in rows if User.query.get(r.follower_id)]
+
+
 # /profile — show the logged-in user's own basic info
 @app.route('/profile')
 @login_required
@@ -789,6 +812,8 @@ def profile_page():
         user=current_user,
         recent_reports=recent_reports,
         is_own_profile=True,
+        following_users=_following_users_for(current_user),
+        follower_users=_follower_users_for(current_user),
     )
 
 # /users/<username> — view someone else's profile (read-only, no edit buttons)
@@ -808,7 +833,30 @@ def user_profile_page(username):
         user=user,
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
+        following_users=_following_users_for(user),
+        follower_users=_follower_users_for(user),
     )
+
+
+@app.route('/profile/following-privacy', methods=['POST'])
+@login_required
+def profile_toggle_following_privacy():
+    """Flip the visibility of the current user's Following list. Only the
+    profile owner can toggle their own setting (enforced by current_user).
+    Redirects with #following so the JS keeps the user on the Following tab."""
+    current_user.following_list_public = not current_user.following_list_public
+    db.session.commit()
+    return redirect(url_for('profile_page') + '#following')
+
+
+@app.route('/profile/followers-privacy', methods=['POST'])
+@login_required
+def profile_toggle_followers_privacy():
+    """Flip the visibility of the current user's Followers list. Same shape
+    as the Following privacy toggle — owner-only, redirects with #followers."""
+    current_user.followers_list_public = not current_user.followers_list_public
+    db.session.commit()
+    return redirect(url_for('profile_page') + '#followers')
 
 # /search — find users by username substring (case-insensitive)
 @app.route('/search')
@@ -837,13 +885,16 @@ def api_search_users():
     users = (
         User.query
         .filter(User.username.ilike(f'%{q}%'))
+        .filter(User.id != current_user.id)   # don't surface self in chat search
         .order_by(User.username)
         .limit(10)
         .all()
     )
     return jsonify([
         {
+            'user_id': u.id,
             'username': u.username,
+            'avatar_initial': u.username[:1].upper(),
             'profile_url': url_for('user_profile_page', username=u.username),
         }
         for u in users
@@ -888,6 +939,70 @@ def api_unfollow_user(user_id):
         'follower_count': target.follower_count,
         'following_count': target.following_count,
     })
+
+
+# ---------------- Block / Unblock (chat-only) ----------------
+# When user A blocks user B:
+#   - B can no longer send messages to A (server returns 403 in api_send_message)
+#   - B's existing conversations with A are filtered out of A's inbox
+#   - B can still see A's posts / comments / profile — this is chat-only
+# Block button appears on the OTHER user's profile page (next to Follow / Message).
+
+def _is_blocked(blocker_id, blocked_id):
+    """True if blocker_id has blocked blocked_id (chat-wise)."""
+    return BlockedUser.query.filter_by(
+        blocker_id=blocker_id, blocked_id=blocked_id
+    ).first() is not None
+
+
+@app.route('/api/block/<int:user_id>', methods=['POST'])
+@login_required
+def api_block_user(user_id):
+    if user_id == current_user.id:
+        return jsonify({'error': "You can't block yourself."}), 400
+    target = User.query.get_or_404(user_id)
+    if not _is_blocked(current_user.id, target.id):
+        db.session.add(BlockedUser(blocker_id=current_user.id, blocked_id=target.id))
+        db.session.commit()
+    return jsonify({'is_blocked': True})
+
+
+@app.route('/api/blocked-users')
+@login_required
+def api_list_blocked_users():
+    """List the users the current user has blocked, newest-first.
+    Powers the 'manage blocked' modal in the chat sidebar."""
+    rows = (
+        BlockedUser.query
+        .filter_by(blocker_id=current_user.id)
+        .order_by(BlockedUser.created_at.desc())
+        .all()
+    )
+    out = []
+    for row in rows:
+        u = User.query.get(row.blocked_id)
+        if not u:
+            continue
+        out.append({
+            'user_id': u.id,
+            'username': u.username,
+            'avatar_initial': u.username[:1].upper(),
+            'profile_url': url_for('user_profile_page', username=u.username),
+        })
+    return jsonify(out)
+
+
+@app.route('/api/block/<int:user_id>', methods=['DELETE'])
+@login_required
+def api_unblock_user(user_id):
+    target = User.query.get_or_404(user_id)
+    row = BlockedUser.query.filter_by(
+        blocker_id=current_user.id, blocked_id=target.id
+    ).first()
+    if row:
+        db.session.delete(row)
+        db.session.commit()
+    return jsonify({'is_blocked': False})
 
 
 # ---------------- Chat ----------------
@@ -967,13 +1082,20 @@ def api_user_brief(user_id):
         'avatar_url': (url_for('static', filename=f'uploads/{u.avatar_filename}')
                        if u.avatar_filename else None),
         'profile_url': url_for('user_profile_page', username=u.username),
+        'is_blocked': _is_blocked(current_user.id, u.id),
     })
 
 
 @app.route('/api/conversations')
 @login_required
 def api_list_conversations():
-    """Return chats and requests as two separate lists, both newest-first."""
+    """Return chats and requests as two separate lists, both newest-first.
+    Conversations with users I've blocked are filtered out of both lists —
+    they reappear in the inbox if I unblock the user later."""
+    blocked_ids = {
+        row.blocked_id
+        for row in BlockedUser.query.filter_by(blocker_id=current_user.id).all()
+    }
     convs = Conversation.query.filter(
         db.or_(Conversation.user_a_id == current_user.id,
                Conversation.user_b_id == current_user.id)
@@ -982,6 +1104,9 @@ def api_list_conversations():
     chats = []
     requests_list = []
     for conv in convs:
+        other = conv.other(current_user)
+        if other.id in blocked_ids:
+            continue  # hide conversations with blocked users
         item = _serialize_conversation_summary(conv, current_user)
         if conv.is_request_for(current_user):
             requests_list.append(item)
@@ -1003,7 +1128,10 @@ def api_get_messages(user_id):
     me, them = sorted([current_user.id, other.id])
     conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
     if conv is None:
-        return jsonify({'messages': [], 'accepted': False, 'is_request': False})
+        return jsonify({
+            'messages': [], 'accepted': False, 'is_request': False,
+            'is_blocked': _is_blocked(current_user.id, other.id),
+        })
 
     since = request.args.get('since')
     q = ChatMessage.query.filter_by(conversation_id=conv.id)
@@ -1018,6 +1146,7 @@ def api_get_messages(user_id):
     return jsonify({
         'accepted': conv.accepted,
         'is_request': conv.is_request_for(current_user),
+        'is_blocked': _is_blocked(current_user.id, other.id),
         'messages': [{
             'id': m.id,
             'body': m.body,
@@ -1045,6 +1174,12 @@ def api_send_message(user_id):
     if user_id == current_user.id:
         return jsonify({'error': "You can't message yourself."}), 400
     recipient = User.query.get_or_404(user_id)
+
+    # Block check — recipient may have blocked the current user from messaging.
+    # Show a generic "can't reach this user" message rather than confirming
+    # the block (avoids leaking the recipient's privacy choice).
+    if _is_blocked(blocker_id=recipient.id, blocked_id=current_user.id):
+        return jsonify({'error': "This user isn't accepting messages from you."}), 403
 
     if request.content_type and 'multipart/form-data' in request.content_type:
         body = (request.form.get('body') or '').strip()
@@ -1358,10 +1493,14 @@ def _trending_report_ids():
 
 
 # /listing — list all reports.
+# Public — guests can browse without an account.
 # Default sort = newest first. ?sort=top is the Trending page, gated to
 # logged-in users whose accounts are at least 1 day old (anti-spam).
-@app.route('/listing')
-def listing_page():
+def _build_listing_response(base_query, feed_mode=None):
+    """Shared listing-page handler. base_query is the starting Report.query
+    (already pre-filtered by /listing/following if applicable). feed_mode is
+    'following' for the From Following page, None for the regular listing —
+    template uses it to render the right title."""
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     city_id = request.args.get('city_id', type=int)
@@ -1384,7 +1523,7 @@ def listing_page():
         if selected_city:
             state_id = selected_city.state_id
 
-    query = Report.query
+    query = base_query
     # Trending filter options surface only cities / categories that actually
     # appear in the current top 10. Empty until we compute them below.
     trending_filter_cities = []
@@ -1408,7 +1547,7 @@ def listing_page():
             top_reports = []
         else:
             query = query.filter(Report.id.in_(trending_ids_set))
-            top_reports = Report.query.filter(Report.id.in_(trending_ids_set)).all()
+            top_reports = base_query.filter(Report.id.in_(trending_ids_set)).all()
 
         # Drop a stale selection that isn't anywhere in the trending set —
         # avoids confusing "no results" for a filter that doesn't apply.
@@ -1513,7 +1652,31 @@ def listing_page():
         trending_ids=trending_ids,
         trending_filter_cities=trending_filter_cities,
         trending_filter_categories=trending_filter_categories,
+        feed_mode=feed_mode,
     )
+
+
+@app.route('/listing')
+def listing_page():
+    return _build_listing_response(Report.query)
+
+
+@app.route('/listing/following')
+@login_required
+def listing_following_page():
+    """From Following — only reports authored by users the current user follows.
+    State / city / category filters and sort still apply on top of this base."""
+    followed_ids = [
+        row.followed_id
+        for row in Follow.query.filter_by(follower_id=current_user.id).all()
+    ]
+    if not followed_ids:
+        # short-circuit to an empty pagination so the empty-state message renders
+        # without bothering with a follow-graph join that would return nothing anyway
+        base = Report.query.filter(db.literal(False))
+    else:
+        base = Report.query.filter(Report.user_id.in_(followed_ids))
+    return _build_listing_response(base, feed_mode='following')
 
 # /reports — page where a logged-in user fills out and submits a report
 @app.route('/reports')

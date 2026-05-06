@@ -20,6 +20,14 @@ class User(UserMixin, db.Model):
     # Account creation time — drives features that gate on signup age (e.g.
     # the Trending page is only visible once the account is at least 1 day old).
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Whether the user's "Following" list is visible to other users.
+    # The owner always sees their own list regardless of this flag.
+    # server_default='1' so existing rows get backfilled when the column
+    # is added — SQLite requires a SQL-level DEFAULT for NOT NULL adds.
+    following_list_public = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
+    # Same idea for the Followers list — control whether others can see
+    # who follows this user.
+    followers_list_public = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
 
     reports = db.relationship('Report', backref='author', lazy=True)
     verifications = db.relationship('Verification', backref='verifier', lazy=True)
@@ -346,3 +354,18 @@ class ChatMessageMedia(db.Model):
     original_name = db.Column(db.String(255), nullable=False)
     media_type = db.Column(db.String(10), nullable=False)      # 'image' or 'video'
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class BlockedUser(db.Model):
+    """Chat-only block. blocker_id has stopped accepting messages from blocked_id.
+    Blocked users can still see the blocker's posts / profile / comments —
+    only the messaging surface is restricted."""
+    __tablename__ = 'blocked_users'
+    id = db.Column(db.Integer, primary_key=True)
+    blocker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    blocked_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('blocker_id', 'blocked_id', name='uq_block_pair'),
+    )
