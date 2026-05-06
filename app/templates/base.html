@@ -27,9 +27,12 @@
     {% if not is_landing %}
     <nav class="navbar navbar-dark bg-dark fixed-top app-navbar">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Australia Explorer</a>
-
-
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='images/flags/Logo_for_Weather_web.png') }}" 
+                     alt="Australia Explorer logo" 
+                     class="navbar-logo me-2">
+                Australia Explorer
+            </a>
             <div class="app-navbar-right">
                 {# small home icon — takes anyone back to the landing page.
                    Shown on every page (login, signup, map, profile, etc.) so users
