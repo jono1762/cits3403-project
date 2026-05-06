@@ -39,12 +39,10 @@ def _media_type_for(filename):
 
 @app.route('/')
 def index():
-    if not current_user.is_authenticated:
-        return render_template('landing.html')
-    return render_template(
-        'index.html',
-        **_map_page_context(),
-    )
+    # Home page — same template for everyone now. Guests get the marketing-
+    # style chrome (no navbar/sidebar) via the is_landing toggle in base.html;
+    # logged-in users get the full app shell. The map lives at /map.
+    return render_template('index.html')
 
 # single source of truth for the category-name → emoji map.
 # Injected into every template via the context processor below so the same
@@ -555,7 +553,7 @@ def about_page():
 @app.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the landing page
-    return render_template('index.html', **_map_page_context())
+    return render_template('map.html', **_map_page_context())
 
 
 def _map_page_context():
@@ -591,11 +589,12 @@ def _map_page_context():
         'top_category': top_category,
     }
 
-# /landing — always renders the landing/intro page regardless of auth state.
-# Lets logged-in users revisit the public-facing home if they want.
+# /landing — same content as / but always rendered in the marketing/intro
+# style (no navbar / sidebar). Lets logged-in users revisit the public-facing
+# home page (linked from the navbar brand + home icon).
 @app.route('/landing')
 def home_landing():
-    return render_template('landing.html')
+    return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

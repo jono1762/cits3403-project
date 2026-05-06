@@ -1,398 +1,322 @@
 {% extends "base.html" %}
 
 {% block styles %}
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="container" id="mapPage">
-	<h1>Map</h1>
-	<p>Explore situation reports across Australia</p>
+<section class="landing-hero">
+    <div class="landing-hero-grid">
+        {# ---------- left column: hero text + buttons ---------- #}
+        <div class="landing-hero-text">
+            <span class="landing-badge">
+                <span class="landing-live-dot" aria-hidden="true"></span>
+                LIVE · AUSTRALIA
+            </span>
 
-	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
-	   Card 3 links to the user's favourites page (stub for now). #}
-	<div class="map-stats">
-		{# Top trending cities — pulled from server-side aggregation (no fake numbers) #}
-		{% if top_city %}
-			{% set trending_state = city_to_state.get(top_city.name) %}
-			{% set trending_flag = state_flag_url.get(trending_state) %}
-			<a class="stat-card stat-card-trending"
-			   href="{{ url_for('listing_page', city_id=city_ids_by_name.get(top_city.name)) }}"
-			   aria-label="View reports for {{ top_city.name }}">
-				<div class="stat-label">Top trending cities</div>
-				<div class="stat-num">
-					{% if trending_flag %}
-						<img class="stat-flag" src="{{ trending_flag }}"
-						     alt="{{ trending_state|upper }} flag"
-						     onerror="this.style.display='none'">
-					{% endif %}
-					{{ top_city.name }}
-				</div>
-				<div class="stat-trend">{{ top_city.count }} report{{ 's' if top_city.count != 1 else '' }} so far</div>
-				<span class="stat-card-fire" aria-hidden="true">🔥</span>
-			</a>
-		{% else %}
-			<div class="stat-card stat-card-trending">
-				<div class="stat-label">Top trending cities</div>
-				<div class="stat-num">No reports yet</div>
-				<div class="stat-trend">Be the first to post one</div>
-				<span class="stat-card-fire" aria-hidden="true">🔥</span>
-			</div>
-		{% endif %}
+            {% if current_user.is_authenticated %}
+                {# Logged-in version — personal greeting, single "open the map" CTA #}
+                <h1 class="landing-title">
+                    Welcome back,<br>
+                    <span class="landing-title-accent">{{ current_user.username }}.</span>
+                </h1>
 
-		{# Top trending categories — also from server-side aggregation #}
-		{% if top_category %}
-			<a class="stat-card stat-card-trending-cat"
-			   href="{{ url_for('listing_page', category_id=category_ids_by_name.get(top_category.name)) }}"
-			   aria-label="View reports for {{ top_category.name }}">
-				<div class="stat-label">Top trending categories</div>
-				<div class="stat-num">
-					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_category.name, '') }}</span>
-					{{ top_category.name }}
-				</div>
-				<div class="stat-trend">{{ top_category.count }} report{{ 's' if top_category.count != 1 else '' }} so far</div>
-				<span class="stat-card-spark" aria-hidden="true">📈</span>
-			</a>
-		{% else %}
-			<div class="stat-card stat-card-trending-cat">
-				<div class="stat-label">Top trending categories</div>
-				<div class="stat-num">No reports yet</div>
-				<div class="stat-trend">Be the first to post one</div>
-				<span class="stat-card-spark" aria-hidden="true">📈</span>
-			</div>
-		{% endif %}
+                <p class="landing-subtitle">
+                    Here's what's happening across Australia today. Pick up where you left off,
+                    or jump straight onto the map.
+                </p>
 
-		{# Favourites — generic prompt for now (no Favourite model yet, no fake count) #}
-		<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
-			<div class="stat-label">Watching · favourites</div>
-			<div class="stat-num">Saved places</div>
-			<div class="stat-trend">Star a report to follow it</div>
-			<span class="stat-card-star" aria-hidden="true">⭐</span>
-		</a>
-	</div>
+                <div class="landing-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Open the map</a>
+                    <a href="{{ url_for('reports_page') }}" class="btn btn-outline-primary btn-lg landing-btn">Submit a report</a>
+                </div>
+            {% else %}
+                {# Logged-out / guest version — original public CTAs #}
+                <h1 class="landing-title">
+                    Know what's happening<br>
+                    <span class="landing-title-accent">in your city.</span>
+                </h1>
 
-	<div class="search-wrapper">
-		<div class="search-row">
-			<div class="search-input-area">
-				<input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its state...">
-				<ul id="suggestions"></ul>
-			</div>
-			{# "Search" zooms the map to the matched city's pin and opens its popup #}
-			<button type="button" id="searchButton">Search</button>
-			{# "View Reports" navigates to the filtered listing for that city #}
-			<button type="button" id="viewReportsButton">View Reports</button>
-		</div>
-	</div>
+                <p class="landing-subtitle">
+                    Real-time community reports — weather, hazards, traffic, noise, and emergencies.
+                    Posted by your neighbours, verified by your community.
+                </p>
 
-	{# Attention-grabbing CTA banner — sits above the map so it catches the eye first #}
-	<section class="map-cta">
-		<div class="map-cta-text">
-			<h2 class="map-cta-title">Spotted something? Share it.</h2>
-		</div>
-		<a href="{{ url_for('reports_page') }}" class="map-cta-btn">+ Submit a report</a>
-	</section>
+                <div class="landing-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
+                </div>
+            {% endif %}
 
-	<div class="map-wrapper">
-		<div id="map" aria-label="Interactive Australia map"></div>
-		<div class="zoom-controls">
-			<button type="button" onclick="zoom(true)">+</button>
-			<button type="button" onclick="zoom(false)">-</button>
-			<button type="button" onclick="resetMap()">Reset</button>
-		</div>
-	</div>
-</div>
+            <div class="landing-categories">
+                <span class="landing-cat" style="--cat:#3498db">☁️ Weather</span>
+                <span class="landing-cat" style="--cat:#9b59b6">🔊 Noisiness</span>
+                <span class="landing-cat" style="--cat:#e67e22">⚠️ Hazards</span>
+                <span class="landing-cat" style="--cat:#f1c40f">🚦 Traffic</span>
+                <span class="landing-cat" style="--cat:#e74c3c">🚨 Emergency</span>
+                {# coming-soon placeholder — single muted pill teasing future categories #}
+                <span class="landing-cat landing-cat-soon" style="--cat:#94a3b8">+ More categories coming soon</span>
+            </div>
+        </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        {# ---------- right column: desktop monitor showing the app ---------- #}
+        <div class="landing-illustration-wrap">
+            <svg class="landing-illustration" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.4"/>
+                        <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.4"/>
+                    </linearGradient>
+                </defs>
 
-{# server-rendered { city_name: city_id } lookup, read by the map JS below
-   so each marker can build a /listing?city_id=... link in its popup #}
-<script type="application/json" id="city-ids-data">{{ city_ids_by_name|tojson }}</script>
+                {# soft circular background behind the monitor #}
+                <circle cx="250" cy="200" r="200" fill="url(#bgGrad)"/>
+
+                {# ============== MONITOR FRAME ============== #}
+                <rect x="20" y="20" width="460" height="320" rx="14" fill="#1e293b"/>
+                <rect x="24" y="24" width="452" height="312" rx="10" fill="#0f172a"/>
+                <rect x="30" y="30" width="440" height="300" rx="6" fill="#f8fafc"/>
+
+                {# ============== APP CHROME INSIDE THE SCREEN ============== #}
+                {# top navbar #}
+                <rect x="30" y="30" width="440" height="34" fill="#0f172a"/>
+                <text x="44" y="52" font-family="Italiana, serif" font-size="14" fill="#fff" letter-spacing="0.5">Australia Explorer</text>
+                <rect x="316" y="40" width="100" height="18" rx="9" fill="rgba(255,255,255,0.1)"/>
+                {# magnifier glyph + the city name; both updated by JS as the city cycles #}
+                <text x="324" y="53" font-size="9" fill="rgba(255,255,255,0.55)"
+                      font-family="Inter, system-ui, sans-serif">⌕</text>
+                <text id="landing-search-text" x="366" y="53" font-size="8.5" fill="rgba(255,255,255,0.85)" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Sydney</text>
+                <circle cx="438" cy="49" r="9" fill="#4f46e5"/>
+
+                {# left sidebar #}
+                <rect x="30" y="64" width="100" height="266" fill="#0f172a"/>
+                <text x="44" y="86" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">LOCATIONS</text>
+                <text x="50" y="106" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Map</text>
+                <text x="50" y="128" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Favourites</text>
+                <text x="44" y="156" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">REPORTS</text>
+                <text x="50" y="174" font-size="10" fill="rgba(255,255,255,0.65)"
+                      font-family="Inter, system-ui, sans-serif">Create Report</text>
+                {# Top Reports — now the active page (indigo highlight, white bold text) #}
+                <rect x="40" y="184" width="80" height="20" rx="5" fill="#4f46e5"/>
+                <text x="50" y="198" font-size="10" fill="#fff" font-weight="600"
+                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
+
+                {# main heading — now "Top Reports" with a trending subhead #}
+                <text x="146" y="86" font-size="13" font-weight="700" fill="#1e293b"
+                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
+                <text x="146" y="100" font-size="9" fill="#64748b"
+                      font-family="Inter, system-ui, sans-serif">🔥 Trending across Australia · last 24h</text>
+
+                {# ============== 6 REPORT CARDS — 2 COLUMNS, EACH SLIDING FROM A DIFFERENT DIRECTION ============== #}
+
+                {# Each card now has TWO nested <g> elements:
+                   - outer <g transform="translate(...)"> handles POSITIONING (SVG attribute)
+                   - inner <g class="landing-row ..."> handles ANIMATION (CSS transform)
+                   Without this nesting, the CSS transform overrides the SVG transform attribute,
+                   which is why every card was sliding in from (0,0) — the top-left of the SVG. #}
+
+                {# --- LEFT COLUMN --- #}
+                {# 1. WEATHER — slides in from LEFT #}
+                <g transform="translate(146, 110)">
+                    <g class="landing-row landing-row-from-left landing-row-1">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 142</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Heavy rain across CBD</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Sydney · 2m ago</text>
+                    </g>
+                </g>
+
+                {# 2. HAZARDS — slides in from BELOW #}
+                <g transform="translate(146, 180)">
+                    <g class="landing-row landing-row-from-bottom landing-row-2">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="60" height="15" rx="7.5" fill="#e67e22"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">⚠ HAZARDS</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 87</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Tree down on Yarra trail</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Melbourne · 5m ago</text>
+                    </g>
+                </g>
+
+                {# 3. TRAFFIC — slides in from LEFT #}
+                <g transform="translate(146, 250)">
+                    <g class="landing-row landing-row-from-left landing-row-3">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="58" height="15" rx="7.5" fill="#f1c40f"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🚦 TRAFFIC</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 54</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">M1 backed up</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Brisbane · 8m ago</text>
+                    </g>
+                </g>
+
+                {# --- RIGHT COLUMN --- #}
+                {# 4. EMERGENCY — slides in from RIGHT #}
+                <g transform="translate(308, 110)">
+                    <g class="landing-row landing-row-from-right landing-row-4">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="76" height="15" rx="7.5" fill="#e74c3c"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🚨 EMERGENCY</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 203</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Power outage citywide</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Perth · 12m ago</text>
+                    </g>
+                </g>
+
+                {# 5. NOISINESS — slides in from TOP #}
+                <g transform="translate(308, 180)">
+                    <g class="landing-row landing-row-from-top landing-row-5">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="68" height="15" rx="7.5" fill="#9b59b6"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">🔊 NOISINESS</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 31</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Construction noise</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Adelaide · 18m ago</text>
+                    </g>
+                </g>
+
+                {# 6. WEATHER (storm) — slides in from RIGHT #}
+                <g transform="translate(308, 250)">
+                    <g class="landing-row landing-row-from-right landing-row-6">
+                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
+                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
+                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
+                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">🔥 96</text>
+                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Storm warning issued</text>
+                        <text x="8" y="54" font-size="8" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Sydney · 24m ago</text>
+                    </g>
+                </g>
+
+                {# ============== MONITOR STAND ============== #}
+                <rect x="230" y="340" width="40" height="34" fill="#334155"/>
+                <rect x="180" y="370" width="140" height="14" rx="6" fill="#475569"/>
+            </svg>
+        </div>
+    </div>
+</section>
 
 <script>
-	const CITY_IDS_BY_NAME = JSON.parse(document.getElementById("city-ids-data").textContent);
-	const searchBar = document.getElementById("searchBar");
-	const searchButton = document.getElementById("searchButton");
-	const suggestions = document.getElementById("suggestions");
-	const searchWrapper = document.querySelector(".search-wrapper");
-	const cityData = [
-		{ name: "Sydney, New South Wales", state: "New South Wales", lat: -33.8688, lng: 151.2093 },
-		{ name: "Melbourne, Victoria", state: "Victoria", lat: -37.8136, lng: 144.9631 },
-		{ name: "Brisbane, Queensland", state: "Queensland", lat: -27.4698, lng: 153.0251 },
-		{ name: "Perth, Western Australia", state: "Western Australia", lat: -31.9523, lng: 115.8613 },
-		{ name: "Adelaide, South Australia", state: "South Australia", lat: -34.9285, lng: 138.6007 },
-		{ name: "Canberra, Australian Capital Territory", state: "Australian Capital Territory", lat: -35.2809, lng: 149.1300 },
-		{ name: "Gold Coast, Queensland", state: "Queensland", lat: -28.0167, lng: 153.4000 },
-		{ name: "Hobart, Tasmania", state: "Tasmania", lat: -42.8821, lng: 147.3272 },
-		{ name: "Darwin, Northern Territory", state: "Northern Territory", lat: -12.4634, lng: 130.8456 },
-		{ name: "Cairns, Queensland", state: "Queensland", lat: -16.9203, lng: 145.7710 },
-		{ name: "Alice Springs, Northern Territory", state: "Northern Territory", lat: -23.6980, lng: 133.8807 }
-	];
-	const australiaBounds = [[-45.5, 106.0], [-8.0, 160.0]];
-	const southBound = australiaBounds[0][0];
-	const westBound = australiaBounds[0][1];
-	const northBound = australiaBounds[1][0];
-	const eastBound = australiaBounds[1][1];
-	const defaultView = { center: [-27.0, 133.7751], zoom: 4 };
-	const map = L.map("map", {
-		center: defaultView.center,
-		zoom: defaultView.zoom,
-		minZoom: defaultView.zoom,
-		maxZoom: 8,
-		zoomControl: false,
-		worldCopyJump: true
-	});
-	const cityMarkerLayer = L.layerGroup().addTo(map);
-	let suggestionsOpen = false;
-	// set of city_ids (strings) the current user has saved as favourites
-	let SAVED_CITY_IDS = new Set();
+// Cycle the search bar + the 6 report cards through Australian cities every few seconds,
+// to make the monitor feel "live" — like the user is searching different cities.
+(function () {
+    const cities = [
+        { name: 'Sydney',    posts: ['Heavy rain across CBD', 'Tree down at Centennial', 'M5 backed up south', 'Power outage in Bondi', 'Construction Pyrmont', 'Storm warning issued'] },
+        { name: 'Melbourne', posts: ['Hail across the city',  'Tree down Yarra trail',   'Tram delays Flinders', 'Power cut Brunswick',   'Construction Carlton',  'Storm warning issued'] },
+        { name: 'Brisbane',  posts: ['Heavy rain in CBD',     'Tree down at South Bank', 'M1 backed up south',   'Flood warning Logan',    'Construction West End', 'Severe storm warning'] },
+        { name: 'Perth',     posts: ['Rain at Stirling Hwy',  'Tree down Kings Park',    'Mitchell Fwy jam',     'Power outage citywide',  'Construction Subiaco',  'Bushfire watch issued'] },
+        { name: 'Adelaide',  posts: ['Heavy rain in CBD',     'Tree down North Adelaide','South Rd backed up',   'Power outage Norwood',   'Construction Glenelg',  'Severe storm warning'] },
+    ];
 
-	// OpenStreetMap default tiles — colorful base (greens for land, blues for water)
-	// then we tint the whole pane via CSS filter to push the palette toward purple-green
-	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-	}).addTo(map);
+    // timestamps stay the same per slot — only the city + post text changes
+    const times = ['2m ago', '5m ago', '8m ago', '12m ago', '18m ago', '24m ago'];
 
-	function initializeCityMarkers() {
-		cityMarkerLayer.clearLayers();
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const cards   = () => document.querySelectorAll('.landing-illustration .landing-row');
+    const search  = () => document.getElementById('landing-search-text');
 
-		// custom indigo teardrop pin — built as a DivIcon with HTML/CSS,
-		// no image asset needed, matches the brand
-		const cityPinIcon = L.divIcon({
-			className: 'city-pin',
-			html: '<div class="pin-body"><div class="pin-dot"></div></div>',
-			iconSize: [26, 36],
-			iconAnchor: [13, 34]
-		});
+    // type / delete one character at a time — the typewriter effect on the search bar
+    async function deleteText(el) {
+        while (el.textContent.length > 0) {
+            el.textContent = el.textContent.slice(0, -1);
+            await sleep(45);
+        }
+    }
+    async function typeText(el, text) {
+        for (let i = 1; i <= text.length; i++) {
+            el.textContent = text.substring(0, i);
+            await sleep(95);
+        }
+    }
 
-		cityData.forEach((city) => {
-			const marker = L.marker([city.lat, city.lng], { icon: cityPinIcon }).addTo(cityMarkerLayer);
+    function updateCardContent(city) {
+        cards().forEach((card, n) => {
+            if (n >= city.posts.length) return;
+            const texts = card.querySelectorAll('text');
+            // text order inside each card: [0] badge label, [1] fire count, [2] title, [3] meta
+            if (texts[2]) texts[2].textContent = city.posts[n];
+            if (texts[3]) texts[3].textContent = city.name + ' · ' + times[n];
+        });
+    }
 
-			// city.name is "Sydney, New South Wales" — short name is just "Sydney"
-			const shortName = city.name.split(",")[0].trim();
-			const cityId = CITY_IDS_BY_NAME[shortName];
-			// build the listing URL with the city filter if we know the id,
-			// otherwise fall back to the unfiltered listing
-			const listingHref = cityId
-				? `{{ url_for('listing_page') }}?city_id=${cityId}`
-				: `{{ url_for('listing_page') }}`;
+    // Re-trigger the existing slide-in CSS animation on each card.
+    // Single-frame `none → ''` toggles get optimized away by the browser, so we use
+    // requestAnimationFrame twice to guarantee the reset is rendered in one frame
+    // BEFORE we re-attach the animation in the next frame.
+    function replaySlideIns() {
+        const all = Array.from(cards());
+        // 1. kill the running animations + force the cards back to their pre-animation state
+        all.forEach((card) => {
+            card.style.animation = 'none';
+            card.style.opacity = '0';
+        });
+        // 2. let the browser paint that "hidden" state
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                // 3. drop the inline overrides so the CSS classes' keyframes fire from frame 0
+                all.forEach((card) => {
+                    card.style.animation = '';
+                    card.style.opacity = '';
+                });
+            });
+        });
+    }
 
-			// If the city is already saved, render the button as disabled + Saved
-			const isSaved = cityId && (SAVED_CITY_IDS.has(String(cityId)) || SAVED_CITY_IDS.has(Number(cityId)));
-			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button" ${isSaved ? 'disabled' : ''}>${isSaved ? 'Saved ✓' : 'Save location'}</button>` : '';
+    async function loop() {
+        // give the initial page-load slide-in time to finish before we start cycling
+        await sleep(2800);
 
-			marker.bindPopup(`
-				<div class="popup-content">
-					<strong>${city.name}</strong>
-					<div class="popup-state">${city.state}</div>
-					<div class="popup-actions">
-						<a href="${listingHref}" class="popup-action">View reports for ${shortName} →</a>
-						${popupSaveButton}
-					</div>
-				</div>
-			`);
+        let cursor = 0;
+        while (true) {
+            cursor = (cursor + 1) % cities.length;
+            const city = cities[cursor];
+            const s = search();
 
-			marker.on("click", function () {
-				searchBar.value = city.name;
-				clearSuggestions();
-				focusCity(city);
-			});
+            if (s) {
+                await deleteText(s);              // 1. delete previous city, char by char
+                await typeText(s, city.name);     // 2. type new city, char by char
+            }
+            await sleep(250);                     // brief pause so the typed name registers
 
-			// keep a reference on the city so onSearchSubmit can openPopup() on it
-			city.marker = marker;
-		});
-	}
+            updateCardContent(city);              // 3. swap 6 cards' titles + meta lines
+            replaySlideIns();                     // 4. cards slide in fresh, like a refresh
 
+            await sleep(3800);                    // 5. let the user read before the next city
+        }
+    }
 
-	// Load saved favourites from the server so popups can reflect the saved state.
-	function loadSavedFavourites() {
-		return fetch('/api/favourites/locations')
-			.then(r => {
-				if (!r.ok) throw new Error('Failed to load favourites');
-				return r.json();
-			})
-			.then(list => {
-				SAVED_CITY_IDS = new Set(list.map(item => String(item.city_id)));
-			})
-			.catch(() => {
-				// fail silently — default to empty set
-				SAVED_CITY_IDS = new Set();
-			});
-	}
-
-	function clearSuggestions() {
-		suggestions.innerHTML = "";
-		suggestionsOpen = false;
-	}
-
-	function focusCity(city) {
-		const latlng = [city.lat, city.lng];
-		map.setView(latlng, 5);
-	}
-
-	function wrapLongitude(lng) {
-		return ((lng + 180) % 360 + 360) % 360 - 180;
-	}
-
-	function clampMapCenterToAustralia() {
-		const center = map.getCenter();
-		const wrappedLng = wrapLongitude(center.lng);
-		const clampedLat = Math.min(Math.max(center.lat, southBound), northBound);
-		const clampedLng = Math.min(Math.max(wrappedLng, westBound), eastBound);
-
-		if (Math.abs(clampedLat - center.lat) > 1e-6 || Math.abs(clampedLng - wrappedLng) > 1e-6) {
-			map.panTo([clampedLat, clampedLng], { animate: false });
-		}
-	}
-
-	function search() {
-		const query = searchBar.value.toLowerCase();
-		let filteredCities;
-
-		if (!query.trim()) {
-			filteredCities = cityData.slice(0, 5);
-		} else {
-			filteredCities = cityData.filter((item) => (
-				item.name.toLowerCase().includes(query) || item.state.toLowerCase().includes(query)
-			));
-		}
-
-		suggestions.innerHTML = "";
-		const length = filteredCities.length < 5 ? filteredCities.length : 5;
-		for (let i = 0; i < length; i++) {
-			const suggestion = document.createElement("li");
-			suggestion.textContent = filteredCities[i].name;
-			suggestions.appendChild(suggestion);
-		}
-		suggestionsOpen = length > 0;
-	}
-
-	function autocomplete(event) {
-		event.stopPropagation();
-
-		if (event.target.tagName === "LI") {
-			const selectedCity = cityData.find((item) => item.name === event.target.textContent);
-
-			if (selectedCity) {
-				searchBar.value = selectedCity.name;
-				clearSuggestions();
-				focusCity(selectedCity);
-			}
-		}
-	}
-
-	function minimise(event) {
-		if (!searchWrapper.contains(event.target)) {
-			clearSuggestions();
-			return;
-		}
-	}
-
-	function onSearchBarClick(event) {
-		event.stopPropagation();
-
-		if (suggestionsOpen) {
-			clearSuggestions();
-		} else {
-			search();
-		}
-	}
-
-	// shared helper — both buttons need to find the city the user typed
-	function findCityFromQuery() {
-		const query = searchBar.value.trim().toLowerCase();
-		if (!query) {
-			alert("Please enter a location to search.");
-			return null;
-		}
-		const match = cityData.find((item) => (
-			item.name.toLowerCase() === query ||
-			item.name.toLowerCase().includes(query) ||
-			item.state.toLowerCase().includes(query)
-		));
-		if (!match) {
-			alert("No matching location found.");
-			return null;
-		}
-		return match;
-	}
-
-	// "Search" — zoom the map to the matched city's pin and open its popup
-	function onSearchSubmit(event) {
-		event.stopPropagation();
-		const selectedCity = findCityFromQuery();
-		if (!selectedCity) return;
-		searchBar.value = selectedCity.name;
-		focusCity(selectedCity);
-		clearSuggestions();
-		// open the marker's popup so the user lands on the same UI as a pin click
-		if (selectedCity.marker) selectedCity.marker.openPopup();
-	}
-
-	// "View Reports" — navigate to the listing filtered by this city
-	function onViewReportsSubmit(event) {
-		event.stopPropagation();
-		const selectedCity = findCityFromQuery();
-		if (!selectedCity) return;
-		const shortName = selectedCity.name.split(",")[0].trim();
-		const cityId = CITY_IDS_BY_NAME[shortName];
-		const url = cityId
-			? `{{ url_for('listing_page') }}?city_id=${cityId}`
-			: `{{ url_for('listing_page') }}`;
-		window.location = url;
-	}
-
-	function onSearchBarKeyDown(event) {
-		if (event.key === "Enter") {
-			event.preventDefault();
-			onSearchSubmit(event);
-		}
-	}
-
-	function zoom(zoomIn) {
-		zoomIn ? map.zoomIn() : map.zoomOut();
-	}
-
-	function resetMap() {
-		map.setView(defaultView.center, defaultView.zoom);
-	}
-
-	const viewReportsButton = document.getElementById("viewReportsButton");
-
-	searchBar.addEventListener("click", onSearchBarClick);
-	searchBar.addEventListener("input", search);
-	searchBar.addEventListener("keydown", onSearchBarKeyDown);
-	searchButton.addEventListener("click", onSearchSubmit);
-	viewReportsButton.addEventListener("click", onViewReportsSubmit);
-
-	// Handle Save Location clicks inside marker popups (delegated)
-	document.addEventListener('click', function (ev) {
-		const btn = ev.target.closest('.popup-save-location');
-		if (!btn) return;
-		ev.preventDefault();
-		const cityId = btn.getAttribute('data-city-id');
-		if (!cityId) {
-			alert('This location cannot be saved because it is not in the database.');
-			return;
-		}
-		fetch(`/api/favourites/location/${cityId}`, { method: 'POST' })
-			.then(r => {
-				if (!r.ok) throw new Error('Network error');
-				return r.json();
-			})
-			.then(() => {
-				// small visual feedback
-				btn.textContent = 'Saved ✓';
-				btn.disabled = true;
-				// persist state so popups recreated later show Saved
-				SAVED_CITY_IDS.add(String(cityId));
-			})
-			.catch(() => alert('Could not save location.'));
-	});
-	document.body.addEventListener("click", minimise);
-	suggestions.addEventListener("click", autocomplete);
-	map.on("moveend", clampMapCenterToAustralia);
-	// load saved favourites first so marker popups render correct saved state
-	loadSavedFavourites().then(() => initializeCityMarkers());
+    loop();
+})();
 </script>
 {% endblock %}
