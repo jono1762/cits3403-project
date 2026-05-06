@@ -72,7 +72,7 @@
     margin-bottom: 0.35rem;
 }
 
-/* submit button — matches the gradient used on the landing CTA buttons */
+/* submit button — matches the gradient used on the home page CTA buttons */
 .auth-card .btn-primary {
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
     border: none;

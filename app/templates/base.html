@@ -13,28 +13,28 @@
     {% block styles %}{% endblock %}
 </head>
 <body>
-    {# Detect whether we're rendering the public landing page.
-       True for /landing AND for / when the user is not authenticated. #}
-    {% set is_landing = request.endpoint == 'home_landing' or (request.endpoint == 'index' and not current_user.is_authenticated) %}
+    {# Detect whether we're rendering the home page in the marketing/intro style.
+       True for /intro AND for / when the user is not authenticated. #}
+    {% set is_intro = request.endpoint == 'home_intro' or (request.endpoint == 'index' and not current_user.is_authenticated) %}
 
     {# Show the full app shell (sidebar + navbar account stuff) for authenticated users
-       AND for guests browsing public pages (map, listing). Landing stays a clean intro. #}
+       AND for guests browsing public pages (map, listing). Intro stays a clean marketing-style page. #}
     {% set guest_pages = ['map_page', 'listing_page'] %}
-    {% set show_app = (current_user.is_authenticated or request.endpoint in guest_pages) and not is_landing %}
+    {% set show_app = (current_user.is_authenticated or request.endpoint in guest_pages) and not is_intro %}
     {% set is_guest = show_app and not current_user.is_authenticated %}
 
-    {# Navbar hidden on the landing page so it stays a clean marketing-style intro #}
-    {% if not is_landing %}
+    {# Navbar hidden in the intro view so it stays a clean marketing-style page #}
+    {% if not is_intro %}
     <nav class="navbar navbar-dark bg-dark fixed-top app-navbar">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Australia Explorer</a>
+            <a class="navbar-brand" href="{{ url_for('home_intro') }}">Australia Explorer</a>
 
 
             <div class="app-navbar-right">
-                {# small home icon — takes anyone back to the landing page.
+                {# small home icon — takes anyone back to the home page.
                    Shown on every page (login, signup, map, profile, etc.) so users
                    can always get back to the start. #}
-                <a href="{{ url_for('home_landing') }}" class="app-navbar-home" aria-label="Home" title="Home">
+                <a href="{{ url_for('home_intro') }}" class="app-navbar-home" aria-label="Home" title="Home">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-5h-2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                     </svg>

@@ -1,13 +1,13 @@
 /* ============================================================
-   landing.css — styles only used by landing.html
-   Loaded via {% block styles %} in the landing template,
+   home.css — styles only used by index.html
+   Loaded via {% block styles %} in the home template,
    not in base.html, so other pages don't pay for these rules.
    ============================================================ */
 
 /* ============================================================
    Hero wrapper — full-bleed, full-viewport-height section
    ============================================================ */
-.landing-hero {
+.home-hero {
     position: relative;
     overflow: hidden;
     /* full viewport height minus the fixed navbar so the hero owns the whole screen */
@@ -24,7 +24,7 @@
 }
 
 /* two-column layout: hero text on the left, monitor mockup on the right */
-.landing-hero-grid {
+.home-hero-grid {
     display: grid;
     grid-template-columns: 1fr 1.05fr;
     gap: 4rem;
@@ -36,13 +36,13 @@
 
 /* mobile: stack vertically and re-center everything */
 @media (max-width: 900px) {
-    .landing-hero-grid {
+    .home-hero-grid {
         grid-template-columns: 1fr;
         gap: 3rem;
         text-align: center;
     }
-    .landing-hero-text .landing-cta,
-    .landing-hero-text .landing-categories {
+    .home-hero-text .home-cta,
+    .home-hero-text .home-categories {
         justify-content: center;
     }
 }
@@ -50,7 +50,7 @@
 /* ============================================================
    Hero text column — badge / title / subtitle / buttons / pills
    ============================================================ */
-.landing-badge {
+.home-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -69,7 +69,7 @@
 /* Pulsing red dot — the "live" indicator inside the badge.
    Two layers of motion: gentle scale + a radiating ring shadow that fades out.
    Loops forever so it always feels live. */
-.landing-live-dot {
+.home-live-dot {
     width: 0.55rem;
     height: 0.55rem;
     border-radius: 50%;
@@ -94,7 +94,7 @@
     }
 }
 
-.landing-title {
+.home-title {
     font-family: 'Space Grotesk', sans-serif;
     font-size: clamp(2rem, 4.2vw, 3.5rem);
     font-weight: 700;
@@ -104,14 +104,14 @@
     color: #1e293b;
 }
 
-.landing-title-accent {
+.home-title-accent {
     background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.landing-subtitle {
+.home-subtitle {
     font-size: 1.05rem;
     line-height: 1.55;
     color: #64748b;
@@ -119,7 +119,7 @@
     margin: 0 0 1.75rem;
 }
 
-.landing-cta {
+.home-cta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.65rem;
@@ -127,7 +127,7 @@
 }
 
 /* base sizing for all 3 CTA buttons */
-.landing-btn {
+.home-btn {
     padding: 0.78rem 1.55rem;
     font-weight: 600;
     font-size: 0.95rem;
@@ -137,16 +137,16 @@
 }
 
 /* Start as guest — same outline + gradient-hover as Log in and Sign up,
-   so all three landing CTAs are visually one design family */
-.landing-btn.btn-primary {
+   so all three home CTAs are visually one design family */
+.home-btn.btn-primary {
     background: transparent;
     border: 1.5px solid #4f46e5;
     color: #4f46e5;
     box-shadow: none;
 }
 
-.landing-btn.btn-primary:hover,
-.landing-btn.btn-primary:focus {
+.home-btn.btn-primary:hover,
+.home-btn.btn-primary:focus {
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
     border-color: transparent;
     color: #fff;
@@ -155,14 +155,14 @@
 }
 
 /* Log in — same outline + gradient hover as Start as guest and Sign up */
-.landing-btn.btn-outline-primary {
+.home-btn.btn-outline-primary {
     background: transparent;
     border: 1.5px solid #4f46e5;
     color: #4f46e5;
 }
 
-.landing-btn.btn-outline-primary:hover,
-.landing-btn.btn-outline-primary:focus {
+.home-btn.btn-outline-primary:hover,
+.home-btn.btn-outline-primary:focus {
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
     border-color: transparent;
     color: #fff;
@@ -171,15 +171,15 @@
 }
 
 /* Sign up — same outline + gradient hover as Log in, so secondary CTAs share one design */
-.landing-btn.btn-light {
+.home-btn.btn-light {
     background: transparent;
     border: 1.5px solid #4f46e5;
     color: #4f46e5;
     box-shadow: none;
 }
 
-.landing-btn.btn-light:hover,
-.landing-btn.btn-light:focus {
+.home-btn.btn-light:hover,
+.home-btn.btn-light:focus {
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
     border-color: transparent;
     color: #fff;
@@ -190,15 +190,15 @@
 
 /* ============================================================
    Category pills — colored border + colored text, fill on hover
-   `--cat` is set inline per pill in landing.html
+   `--cat` is set inline per pill in index.html
    ============================================================ */
-.landing-categories {
+.home-categories {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
 }
 
-.landing-cat {
+.home-cat {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -218,7 +218,7 @@
     cursor: default;
 }
 
-.landing-cat:hover {
+.home-cat:hover {
     /* on hover the gradient deepens — category colour fades to a darker shade of itself */
     background: linear-gradient(135deg, var(--cat) 0%, color-mix(in srgb, var(--cat) 75%, black) 100%);
     color: #fff;
@@ -227,13 +227,13 @@
 }
 
 /* "Coming soon" placeholder pill — muted slate, dashed border, no hover lift */
-.landing-cat-soon {
+.home-cat-soon {
     border-style: dashed !important;
     font-style: italic;
     font-weight: 500;
 }
 
-.landing-cat-soon:hover {
+.home-cat-soon:hover {
     background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
     color: var(--cat);
     transform: none;
@@ -245,13 +245,13 @@
 /* ============================================================
    Desktop monitor mockup — pure SVG, no images
    ============================================================ */
-.landing-illustration-wrap {
+.home-illustration-wrap {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.landing-illustration {
+.home-illustration {
     width: 100%;
     max-width: 620px;
     height: auto;
@@ -262,7 +262,7 @@
      1. one-time slide-in from its assigned direction (left/right/top/bottom)
      2. continuous gentle bob — keeps the cards moving forever after they arrive
    Both target `transform`; the bob takes over after the slide-in finishes via delay. */
-.landing-row {
+.home-row {
     transform-box: fill-box;
     transform-origin: center;
     opacity: 0;
@@ -273,19 +273,19 @@
 }
 
 /* Each direction class supplies its own slide-in name + the shared bob name */
-.landing-row-from-left   { animation-name: slideFromLeft,   bobY; }
-.landing-row-from-right  { animation-name: slideFromRight,  bobY; }
-.landing-row-from-top    { animation-name: slideFromTop,    bobY; }
-.landing-row-from-bottom { animation-name: slideFromBottom, bobY; }
+.home-row-from-left   { animation-name: slideFromLeft,   bobY; }
+.home-row-from-right  { animation-name: slideFromRight,  bobY; }
+.home-row-from-top    { animation-name: slideFromTop,    bobY; }
+.home-row-from-bottom { animation-name: slideFromBottom, bobY; }
 
 /* Two delays per card: the slide-in stagger, then when the bob kicks in.
    Different bob delays = cards bob out of sync, scene feels alive not robotic. */
-.landing-row-1 { animation-delay: 0.15s, 0.9s; }
-.landing-row-2 { animation-delay: 0.40s, 1.4s; }
-.landing-row-3 { animation-delay: 0.65s, 1.9s; }
-.landing-row-4 { animation-delay: 0.30s, 1.1s; }
-.landing-row-5 { animation-delay: 0.55s, 1.6s; }
-.landing-row-6 { animation-delay: 0.80s, 2.1s; }
+.home-row-1 { animation-delay: 0.15s, 0.9s; }
+.home-row-2 { animation-delay: 0.40s, 1.4s; }
+.home-row-3 { animation-delay: 0.65s, 1.9s; }
+.home-row-4 { animation-delay: 0.30s, 1.1s; }
+.home-row-5 { animation-delay: 0.55s, 1.6s; }
+.home-row-6 { animation-delay: 0.80s, 2.1s; }
 
 @keyframes slideFromLeft {
     0%   { opacity: 0; transform: translateX(-18px); }

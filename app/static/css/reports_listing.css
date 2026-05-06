@@ -280,7 +280,7 @@
     font-weight: 500;
 }
 
-/* category badge — same gradient-shaded pill as the landing page categories.
+/* category badge — same gradient-shaded pill as the home page categories.
    White-to-tint gradient + colored border + colored text */
 .listing-item-badge {
     display: inline-block;

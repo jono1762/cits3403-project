@@ -39,10 +39,8 @@ def _media_type_for(filename):
 
 @app.route('/')
 def index():
-    # Home page — same template for everyone now. Guests get the marketing-
-    # style chrome (no navbar/sidebar) via the is_landing toggle in base.html;
-    # logged-in users get the full app shell. The map lives at /map.
-    return render_template('index.html')
+    # / is just an alias for /intro — keep one canonical URL for the home page.
+    return redirect(url_for('home_intro'))
 
 # single source of truth for the category-name → emoji map.
 # Injected into every template via the context processor below so the same
@@ -536,7 +534,7 @@ def settings_delete_account():
 
     logout_user()
     flash('Your account and all your data have been deleted.', 'success')
-    return redirect(url_for('home_landing'))
+    return redirect(url_for('home_intro'))
 
 
 # /help — static FAQ page, public
@@ -552,7 +550,7 @@ def about_page():
 
 @app.route('/map')
 def map_page():
-    # public map view — used by the "Start as guest" button on the landing page
+    # public map view — used by the "Start as guest" button on the home page
     return render_template('map.html', **_map_page_context())
 
 
@@ -589,12 +587,14 @@ def _map_page_context():
         'top_category': top_category,
     }
 
-# /landing — same content as / but always rendered in the marketing/intro
+
+# /intro — same content as / but always rendered in the marketing/intro
 # style (no navbar / sidebar). Lets logged-in users revisit the public-facing
-# home page (linked from the navbar brand + home icon).
-@app.route('/landing')
-def home_landing():
+# home page (linked from the navbar home icon).
+@app.route('/intro')
+def home_intro():
     return render_template('index.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

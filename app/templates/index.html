@@ -1,68 +1,68 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="landing-hero">
-    <div class="landing-hero-grid">
+<section class="home-hero">
+    <div class="home-hero-grid">
         {# ---------- left column: hero text + buttons ---------- #}
-        <div class="landing-hero-text">
-            <span class="landing-badge">
-                <span class="landing-live-dot" aria-hidden="true"></span>
+        <div class="home-hero-text">
+            <span class="home-badge">
+                <span class="home-live-dot" aria-hidden="true"></span>
                 LIVE · AUSTRALIA
             </span>
 
             {% if current_user.is_authenticated %}
                 {# Logged-in version — personal greeting, single "open the map" CTA #}
-                <h1 class="landing-title">
+                <h1 class="home-title">
                     Welcome back,<br>
-                    <span class="landing-title-accent">{{ current_user.username }}.</span>
+                    <span class="home-title-accent">{{ current_user.username }}.</span>
                 </h1>
 
-                <p class="landing-subtitle">
+                <p class="home-subtitle">
                     Here's what's happening across Australia today. Pick up where you left off,
                     or jump straight onto the map.
                 </p>
 
-                <div class="landing-cta">
-                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Open the map</a>
-                    <a href="{{ url_for('reports_page') }}" class="btn btn-outline-primary btn-lg landing-btn">Submit a report</a>
+                <div class="home-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg home-btn">Open the map</a>
+                    <a href="{{ url_for('reports_page') }}" class="btn btn-outline-primary btn-lg home-btn">Submit a report</a>
                 </div>
             {% else %}
                 {# Logged-out / guest version — original public CTAs #}
-                <h1 class="landing-title">
+                <h1 class="home-title">
                     Know what's happening<br>
-                    <span class="landing-title-accent">in your city.</span>
+                    <span class="home-title-accent">in your city.</span>
                 </h1>
 
-                <p class="landing-subtitle">
+                <p class="home-subtitle">
                     Real-time community reports — weather, hazards, traffic, noise, and emergencies.
                     Posted by your neighbours, verified by your community.
                 </p>
 
-                <div class="landing-cta">
-                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg landing-btn">Start as guest</a>
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg landing-btn">Log in</a>
-                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg landing-btn">Sign up</a>
+                <div class="home-cta">
+                    <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg home-btn">Start as guest</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg home-btn">Log in</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg home-btn">Sign up</a>
                 </div>
             {% endif %}
 
-            <div class="landing-categories">
-                <span class="landing-cat" style="--cat:#3498db">☁️ Weather</span>
-                <span class="landing-cat" style="--cat:#9b59b6">🔊 Noisiness</span>
-                <span class="landing-cat" style="--cat:#e67e22">⚠️ Hazards</span>
-                <span class="landing-cat" style="--cat:#f1c40f">🚦 Traffic</span>
-                <span class="landing-cat" style="--cat:#e74c3c">🚨 Emergency</span>
+            <div class="home-categories">
+                <span class="home-cat" style="--cat:#3498db">☁️ Weather</span>
+                <span class="home-cat" style="--cat:#9b59b6">🔊 Noisiness</span>
+                <span class="home-cat" style="--cat:#e67e22">⚠️ Hazards</span>
+                <span class="home-cat" style="--cat:#f1c40f">🚦 Traffic</span>
+                <span class="home-cat" style="--cat:#e74c3c">🚨 Emergency</span>
                 {# coming-soon placeholder — single muted pill teasing future categories #}
-                <span class="landing-cat landing-cat-soon" style="--cat:#94a3b8">+ More categories coming soon</span>
+                <span class="home-cat home-cat-soon" style="--cat:#94a3b8">+ More categories coming soon</span>
             </div>
         </div>
 
         {# ---------- right column: desktop monitor showing the app ---------- #}
-        <div class="landing-illustration-wrap">
-            <svg class="landing-illustration" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <div class="home-illustration-wrap">
+            <svg class="home-illustration" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <defs>
                     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.4"/>
@@ -86,7 +86,7 @@
                 {# magnifier glyph + the city name; both updated by JS as the city cycles #}
                 <text x="324" y="53" font-size="9" fill="rgba(255,255,255,0.55)"
                       font-family="Inter, system-ui, sans-serif">⌕</text>
-                <text id="landing-search-text" x="366" y="53" font-size="8.5" fill="rgba(255,255,255,0.85)" text-anchor="middle"
+                <text id="home-search-text" x="366" y="53" font-size="8.5" fill="rgba(255,255,255,0.85)" text-anchor="middle"
                       font-family="Inter, system-ui, sans-serif">Sydney</text>
                 <circle cx="438" cy="49" r="9" fill="#4f46e5"/>
 
@@ -117,14 +117,14 @@
 
                 {# Each card now has TWO nested <g> elements:
                    - outer <g transform="translate(...)"> handles POSITIONING (SVG attribute)
-                   - inner <g class="landing-row ..."> handles ANIMATION (CSS transform)
+                   - inner <g class="home-row ..."> handles ANIMATION (CSS transform)
                    Without this nesting, the CSS transform overrides the SVG transform attribute,
                    which is why every card was sliding in from (0,0) — the top-left of the SVG. #}
 
                 {# --- LEFT COLUMN --- #}
                 {# 1. WEATHER — slides in from LEFT #}
                 <g transform="translate(146, 110)">
-                    <g class="landing-row landing-row-from-left landing-row-1">
+                    <g class="home-row home-row-from-left home-row-1">
                         <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
                         <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
                         <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
@@ -140,7 +140,7 @@
 
                 {# 2. HAZARDS — slides in from BELOW #}
                 <g transform="translate(146, 180)">
-                    <g class="landing-row landing-row-from-bottom landing-row-2">
+                    <g class="home-row home-row-from-bottom home-row-2">
                         <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
                         <rect x="8" y="8" width="60" height="15" rx="7.5" fill="#e67e22"/>
                         <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
@@ -156,7 +156,7 @@
 
                 {# 3. TRAFFIC — slides in from LEFT #}
                 <g transform="translate(146, 250)">
-                    <g class="landing-row landing-row-from-left landing-row-3">
+                    <g class="home-row home-row-from-left home-row-3">
                         <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
                         <rect x="8" y="8" width="58" height="15" rx="7.5" fill="#f1c40f"/>
                         <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
@@ -173,7 +173,7 @@
                 {# --- RIGHT COLUMN --- #}
                 {# 4. EMERGENCY — slides in from RIGHT #}
                 <g transform="translate(308, 110)">
-                    <g class="landing-row landing-row-from-right landing-row-4">
+                    <g class="home-row home-row-from-right home-row-4">
                         <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
                         <rect x="8" y="8" width="76" height="15" rx="7.5" fill="#e74c3c"/>
                         <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
@@ -189,7 +189,7 @@
 
                 {# 5. NOISINESS — slides in from TOP #}
                 <g transform="translate(308, 180)">
-                    <g class="landing-row landing-row-from-top landing-row-5">
+                    <g class="home-row home-row-from-top home-row-5">
                         <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
                         <rect x="8" y="8" width="68" height="15" rx="7.5" fill="#9b59b6"/>
                         <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
@@ -205,7 +205,7 @@
 
                 {# 6. WEATHER (storm) — slides in from RIGHT #}
                 <g transform="translate(308, 250)">
-                    <g class="landing-row landing-row-from-right landing-row-6">
+                    <g class="home-row home-row-from-right home-row-6">
                         <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
                         <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
                         <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
@@ -243,8 +243,8 @@
     const times = ['2m ago', '5m ago', '8m ago', '12m ago', '18m ago', '24m ago'];
 
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-    const cards   = () => document.querySelectorAll('.landing-illustration .landing-row');
-    const search  = () => document.getElementById('landing-search-text');
+    const cards   = () => document.querySelectorAll('.home-illustration .home-row');
+    const search  = () => document.getElementById('home-search-text');
 
     // type / delete one character at a time — the typewriter effect on the search bar
     async function deleteText(el) {
