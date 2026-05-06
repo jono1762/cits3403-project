@@ -7,9 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Italiana&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css', v='2') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='4') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css', v='3') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css', v='2') }}">
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -53,6 +53,15 @@
                         <span class="app-navbar-message-dot navbar-unread-dot"
                               {% if not unread_message_count %}hidden{% endif %}></span>
                     </a>
+                    {# settings cog — quick access to /settings from anywhere.
+                       Replaces the sidebar Settings link. #}
+                    <a href="{{ url_for('settings_page') }}" class="app-navbar-settings"
+                       aria-label="Settings" title="Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </a>
                     {# username links straight to the profile page now that the dropdown is gone #}
                     <a href="{{ url_for('profile_page') }}" class="app-account-toggle">{{ current_user.username }}</a>
                 {% elif is_guest %}
@@ -92,6 +101,9 @@
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Top Reports</a>
+                    {% if not is_guest %}
+                        <a href="{{ url_for('listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_following_page') else '' }}" data-bs-dismiss="offcanvas">From Following</a>
+                    {% endif %}
 
                     <div class="app-sidebar-group-header">Favourites</div>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}" data-bs-dismiss="offcanvas">Locations</a>
@@ -104,13 +116,7 @@
                     {% else %}
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
-                        <a href="{{ url_for('messages_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('messages_page') else '' }}" data-bs-dismiss="offcanvas">
-                            <span>Messages</span>
-                            <span class="app-sidebar-badge sidebar-unread-badge"
-                                  {% if not unread_message_count %}hidden{% endif %}>{{ unread_message_count if unread_message_count and unread_message_count < 10 else ('9+' if unread_message_count else '') }}</span>
-                        </a>
                     {% endif %}
-                    <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}" data-bs-dismiss="offcanvas">Help</a>
@@ -161,6 +167,9 @@
                     <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
                     <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
                     <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}">Top Reports</a>
+                    {% if not is_guest %}
+                        <a href="{{ url_for('listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_following_page') else '' }}">From Following</a>
+                    {% endif %}
 
                     <div class="app-sidebar-group-header">Favourites</div>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
@@ -173,13 +182,7 @@
                     {% else %}
                         <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
-                        <a href="{{ url_for('messages_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('messages_page') else '' }}">
-                            <span>Messages</span>
-                            <span class="app-sidebar-badge sidebar-unread-badge"
-                                  {% if not unread_message_count %}hidden{% endif %}>{{ unread_message_count if unread_message_count and unread_message_count < 10 else ('9+' if unread_message_count else '') }}</span>
-                        </a>
                     {% endif %}
-                    <a href="{{ url_for('settings_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('settings_page') else '' }}">Settings</a>
 
                     <div class="app-sidebar-group-header">Support</div>
                     <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>

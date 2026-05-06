@@ -124,6 +124,28 @@
     display: none;
 }
 
+/* Settings cog (auth-only) — same hit-target + hover treatment as the home
+   and message icons so the navbar feels like a single icon row. */
+.app-navbar-settings {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.app-navbar-settings:hover,
+.app-navbar-settings:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: scale(1.05);
+}
+
 .app-account-toggle:hover,
 .app-account-toggle:focus {
     color: #fff;
