@@ -295,6 +295,22 @@
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
+/* Top-trending-in-city badge — orange gradient pill, sits next to the
+   category badge. Awarded to one report per city based on the engagement
+   score (verifies − disputes − days_old). */
+.listing-item-trending {
+    display: inline-block;
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+    border: 1.5px solid #f97316;
+    color: #9a3412;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 2px rgba(249, 115, 22, 0.18);
+}
+
 .listing-item-author {
     color: #94a3b8;
     font-size: 0.85rem;
@@ -493,10 +509,11 @@
     box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
 }
 
-/* small filled count chip on the right side of each button */
+/* small filled count chip on the right side of each button. Tinted
+   green/red by default so the count is legible at a glance without the
+   user having to vote first. The .is-active overrides further down keep
+   their translucent-white-on-color treatment when the user has voted. */
 .vote-count {
-    background: #f1f5f9;
-    color: #475569;
     font-size: 0.72rem;
     font-weight: 700;
     padding: 0.1rem 0.45rem;
@@ -504,6 +521,16 @@
     min-width: 1.2rem;
     text-align: center;
     transition: background 0.18s ease, color 0.18s ease;
+}
+
+.vote-verify .vote-count {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.vote-dispute .vote-count {
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
 /* ----- Verify (green) ----- */

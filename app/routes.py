@@ -1041,11 +1041,14 @@ def view_report(token):
             user_id=current_user.id,
             report_id=report.id,
         ).first() is not None
+    # is this report currently in the global Trending top 10?
+    is_trending = report.id in _trending_report_ids()
     return render_template(
         'report_view.html',
         report=report,
         comment_max_length=COMMENT_MAX_LENGTH,
         is_report_favourited=is_report_favourited,
+        is_trending=is_trending,
     )
 
 
@@ -1204,6 +1207,31 @@ def edit_report_page(report_id):
         cities_by_state=cities_by_state,
     )
 
+TRENDING_LIMIT = 10
+
+
+def _trending_report_ids():
+    """Return the set of report IDs currently in the global Trending top N.
+    Matches the Trending page's query exactly so the 🔥 badge on a report
+    means the same thing on every page: this report is currently on Trending."""
+    from sqlalchemy import case
+    verify_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
+    dispute_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
+    days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
+    score_expr = (verify_sum - dispute_sum - days_old).label('score')
+    rows = (
+        db.session.query(Report.id)
+        .outerjoin(Verification, Verification.report_id == Report.id)
+        .group_by(Report.id)
+        .order_by(score_expr.desc(), Report.created_at.desc())
+        .limit(TRENDING_LIMIT)
+        .all()
+    )
+    return {row[0] for row in rows}
+
+
 # /listing — list all reports.
 # Default sort = newest first. ?sort=top is the Trending page, gated to
 # logged-in users whose accounts are at least 1 day old (anti-spam).
@@ -1268,7 +1296,23 @@ def listing_page():
         )
     else:
         query = query.order_by(Report.created_at.desc())
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+
+    # Trending is capped to a hard top 10 — no pagination, no scroll-forever.
+    # Regular listing keeps the standard 20-per-page pagination.
+    if sort == 'top':
+        items = query.limit(TRENDING_LIMIT).all()
+        class _SinglePagePagination:
+            def __init__(self, items):
+                self.items = items
+                self.has_prev = False
+                self.has_next = False
+                self.page = 1
+                self.pages = 1
+            def iter_pages(self, **kwargs):
+                return [1]
+        pagination = _SinglePagePagination(items)
+    else:
+        pagination = query.paginate(page=page, per_page=20, error_out=False)
 
     states = State.query.order_by(State.name).all()
     cities_by_state = {
@@ -1284,6 +1328,11 @@ def listing_page():
             for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
         ]
 
+    # 🔥 fire badge: each city's top-scored report (one per city). Shown on
+    # both Trending and View Reports so users can spot the trending pick
+    # for their city at a glance.
+    trending_ids = _trending_report_ids()
+
     return render_template(
         'reports_listing.html',
         pagination=pagination,
@@ -1295,6 +1344,7 @@ def listing_page():
         selected_category_id=category_id,
         sort=sort,
         fav_report_ids=fav_report_ids,
+        trending_ids=trending_ids,
     )
 
 # /reports — page where a logged-in user fills out and submits a report

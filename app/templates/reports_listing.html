@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports_listing.css', v='4') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports_listing.css', v='6') }}">
 {% endblock %}
 
 {% block content %}
@@ -161,6 +161,13 @@
                         <div class="listing-item-top">
                             <div class="listing-item-meta">
                                 <span class="listing-item-badge">{{ r.category.name }}</span>
+                                {# 🔥 fire on Trending (every visible report) AND on View Reports
+                                   for the per-city top scoring reports. Once a report drops out
+                                   of the top spot in its city, the next page render won't show
+                                   the badge — recomputed live every request. #}
+                                {% if sort == 'top' or r.id in trending_ids %}
+                                    <span class="listing-item-trending" title="Trending report">🔥 Trending</span>
+                                {% endif %}
                                 <span>{{ r.city.name }}, {{ r.city.state.code }}</span>
                                 <span class="listing-item-author">— by
                                     <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>

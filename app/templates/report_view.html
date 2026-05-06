@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='12') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='14') }}">
 {% endblock %}
 
 {% block content %}
@@ -14,6 +14,9 @@
             <span class="report-view-badge">
                 {{ CATEGORY_EMOJI.get(report.category.name, '') }} {{ report.category.name }}
             </span>
+            {% if is_trending %}
+                <span class="report-view-trending" title="Currently in the Trending top 10">🔥 Trending</span>
+            {% endif %}
             <div class="report-view-header-right">
                 {% if current_user.is_authenticated %}
                     <button type="button"
