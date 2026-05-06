@@ -17,25 +17,29 @@
         {% endif %}
     </header>
 
-    {# Filter UI is only on the regular listing — Trending is a global ranking
-       across every state/city/category, so filters don't apply there. #}
+    {# Regular listing has full state/city/category filters. Trending has a
+       narrower filter set — only cities + categories that actually appear in
+       the current top 10 (so users can't filter to an empty set). #}
     {% if sort != 'top' %}
-        {# Location filter (form) — state + city selectors. Carries the current
-           category through a hidden input so the chip selection survives a re-filter. #}
+        {# Location filter — state + city selectors auto-submit on change so
+           the user never has to hit Apply. Picking a state submits with just
+           state_id (city wipes); picking a city submits state_id + city_id.
+           Category chips stay separate (they're already auto-navigating links). #}
         <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
             <div class="row g-2 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <label class="form-label">State</label>
-                    <select name="state_id" id="filter-state" class="form-select form-select-sm">
+                    <select name="state_id" id="filter-state" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All states</option>
                         {% for s in states %}
                             <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <label class="form-label">City</label>
                     <select name="city_id" id="filter-city" class="form-select form-select-sm"
+                            onchange="this.form.submit()"
                             {% if not selected_state_id %}disabled{% endif %}>
                         <option value="">All cities</option>
                         {% if selected_state_id %}
@@ -45,12 +49,11 @@
                         {% endif %}
                     </select>
                 </div>
-                <div class="col-md-4 listing-filter-actions mt-2">
-                    <button type="submit" class="listing-filter-apply">Apply</button>
+                <div class="col-md-2 listing-filter-actions mt-2">
                     <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
                 </div>
             </div>
-            {# preserve the category selection across location-filter Applies #}
+            {# preserve the category chip selection across state/city changes #}
             {% if selected_category_id %}
                 <input type="hidden" name="category_id" value="{{ selected_category_id }}">
             {% endif %}
@@ -71,24 +74,43 @@
                 </a>
             {% endfor %}
         </div>
+    {% else %}
+        {# Trending filters — only options that actually appear in the current
+           top 10. Auto-submits on change. Hidden if every report is in the same
+           city / category (nothing to narrow down). #}
+        {% if trending_filter_cities or trending_filter_categories %}
+            <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
+                <input type="hidden" name="sort" value="top">
+                <div class="row g-2 align-items-end">
+                    {% if trending_filter_cities %}
+                        <div class="col-md-5">
+                            <label class="form-label">Filter by city</label>
+                            <select name="city_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All trending cities</option>
+                                {% for c in trending_filter_cities %}
+                                    <option value="{{ c.id }}" {% if selected_city_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    {% if trending_filter_categories %}
+                        <div class="col-md-5">
+                            <label class="form-label">Filter by category</label>
+                            <select name="category_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All trending categories</option>
+                                {% for cat in trending_filter_categories %}
+                                    <option value="{{ cat.id }}" {% if selected_category_id == cat.id %}selected{% endif %}>{{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    <div class="col-md-2 listing-filter-actions mt-2">
+                        <a href="{{ url_for('listing_page', sort='top') }}" class="listing-filter-clear">Clear</a>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
     {% endif %}
-
-    <script>
-    const CITIES_BY_STATE = {{ cities_by_state | tojson }};
-    const filterState = document.getElementById('filter-state');
-    const filterCity = document.getElementById('filter-city');
-    filterState.addEventListener('change', () => {
-        const list = CITIES_BY_STATE[filterState.value] || [];
-        filterCity.innerHTML = '<option value="">All cities</option>';
-        for (const city of list) {
-            const opt = document.createElement('option');
-            opt.value = city.id;
-            opt.textContent = city.name;
-            filterCity.appendChild(opt);
-        }
-        filterCity.disabled = !filterState.value;
-    });
-    </script>
 
     {% if current_user.is_authenticated %}
     <script>

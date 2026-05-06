@@ -18,8 +18,8 @@
 			{% set trending_state = city_to_state.get(top_city.name) %}
 			{% set trending_flag = state_flag_url.get(trending_state) %}
 			<a class="stat-card stat-card-trending"
-			   href="{{ url_for('listing_page', city_id=city_ids_by_name.get(top_city.name)) }}"
-			   aria-label="View reports for {{ top_city.name }}">
+			   href="{{ url_for('listing_page', sort='top', city_id=city_ids_by_name.get(top_city.name)) }}"
+			   aria-label="View trending reports in {{ top_city.name }}">
 				<div class="stat-label">Top trending cities</div>
 				<div class="stat-num">
 					{% if trending_flag %}
@@ -44,8 +44,8 @@
 		{# Top trending categories — also from server-side aggregation #}
 		{% if top_category %}
 			<a class="stat-card stat-card-trending-cat"
-			   href="{{ url_for('listing_page', category_id=category_ids_by_name.get(top_category.name)) }}"
-			   aria-label="View reports for {{ top_category.name }}">
+			   href="{{ url_for('listing_page', sort='top', category_id=category_ids_by_name.get(top_category.name)) }}"
+			   aria-label="View trending reports in {{ top_category.name }}">
 				<div class="stat-label">Top trending categories</div>
 				<div class="stat-num">
 					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_category.name, '') }}</span>

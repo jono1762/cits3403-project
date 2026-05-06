@@ -1297,8 +1297,11 @@ def listing_page():
             state_id = selected_city.state_id
 
     query = Report.query
-    # Trending shows the global top across every category and city — filters
-    # don't apply. The regular listing keeps state/city/category filtering.
+    # Trending filter options surface only cities / categories that actually
+    # appear in the current top 10. Empty until we compute them below.
+    trending_filter_cities = []
+    trending_filter_categories = []
+
     if sort != 'top':
         # state filter has to go through City because Report only stores city_id, not state_id
         if state_id:
@@ -1308,11 +1311,49 @@ def listing_page():
         if category_id:
             query = query.filter(Report.category_id == category_id)
     else:
-        # zero out the "selected" values so the template's filter UI (now hidden
-        # on Trending anyway) doesn't reflect stale selections
+        # On Trending we narrow by city / category WITHIN the top-10 set.
+        # State filter doesn't apply (would be redundant with city).
         state_id = None
-        city_id = None
-        category_id = None
+        trending_ids_set = _trending_report_ids()
+        if not trending_ids_set:
+            query = query.filter(False)
+            top_reports = []
+        else:
+            query = query.filter(Report.id.in_(trending_ids_set))
+            top_reports = Report.query.filter(Report.id.in_(trending_ids_set)).all()
+
+        # Drop a stale selection that isn't anywhere in the trending set —
+        # avoids confusing "no results" for a filter that doesn't apply.
+        global_city_ids = {r.city_id for r in top_reports}
+        global_category_ids = {r.category_id for r in top_reports}
+        if city_id and city_id not in global_city_ids:
+            city_id = None
+        if category_id and category_id not in global_category_ids:
+            category_id = None
+
+        # Context-aware dropdown options. If you've picked a category, the city
+        # dropdown only lists cities that have a trending report in that
+        # category — and vice versa. Avoids showing combos with zero results.
+        cities_visible = top_reports
+        if category_id:
+            cities_visible = [r for r in top_reports if r.category_id == category_id]
+        cats_visible = top_reports
+        if city_id:
+            cats_visible = [r for r in top_reports if r.city_id == city_id]
+        trending_filter_cities = (
+            City.query.filter(City.id.in_({r.city_id for r in cities_visible}))
+                       .order_by(City.name).all()
+        )
+        trending_filter_categories = (
+            Category.query.filter(Category.id.in_({r.category_id for r in cats_visible}))
+                          .order_by(Category.name).all()
+        )
+
+        # Apply the (now-validated) filters to the listing query
+        if city_id:
+            query = query.filter(Report.city_id == city_id)
+        if category_id:
+            query = query.filter(Report.category_id == category_id)
 
     if sort == 'top':
         # Trending score = verifies − disputes − days_old. Reports get one point
@@ -1382,6 +1423,8 @@ def listing_page():
         sort=sort,
         fav_report_ids=fav_report_ids,
         trending_ids=trending_ids,
+        trending_filter_cities=trending_filter_cities,
+        trending_filter_categories=trending_filter_categories,
     )
 
 # /reports — page where a logged-in user fills out and submits a report
