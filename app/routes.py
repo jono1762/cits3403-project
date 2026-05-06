@@ -92,6 +92,34 @@ STATE_FLAG_URL = {
     'nt':  '/static/images/flags/nt.png',
 }
 
+# Lat/lng for every city in the DB. Single source of truth — fed to the
+# map JS via the template so adding a city only means editing this dict
+# (until we eventually move these onto the City model itself).
+CITY_COORDS = {
+    'Sydney':         (-33.8688, 151.2093),
+    'Newcastle':      (-32.9283, 151.7817),
+    'Wollongong':     (-34.4278, 150.8931),
+    'Central Coast':  (-33.4248, 151.3408),
+    'Melbourne':      (-37.8136, 144.9631),
+    'Geelong':        (-38.1499, 144.3617),
+    'Ballarat':       (-37.5622, 143.8503),
+    'Brisbane':       (-27.4698, 153.0251),
+    'Gold Coast':     (-28.0167, 153.4000),
+    'Sunshine Coast': (-26.6500, 153.0667),
+    'Cairns':         (-16.9203, 145.7710),
+    'Townsville':     (-19.2589, 146.8169),
+    'Perth':          (-31.9523, 115.8613),
+    'Mandurah':       (-32.5269, 115.7217),
+    'Bunbury':        (-33.3267, 115.6411),
+    'Adelaide':       (-34.9285, 138.6007),
+    'Mount Gambier':  (-37.8281, 140.7822),
+    'Hobart':         (-42.8821, 147.3272),
+    'Launceston':     (-41.4391, 147.1358),
+    'Canberra':       (-35.2809, 149.1300),
+    'Darwin':         (-12.4634, 130.8456),
+    'Alice Springs':  (-23.6980, 133.8807),
+}
+
 
 @app.route('/favourites')
 @app.route('/favourites/locations')
@@ -621,6 +649,25 @@ def _map_page_context():
     # None for guests / users with no saves; the template shows a stub then.
     top_pinned_report = _top_pinned_report_for(current_user)
 
+    # Build the map-pin list from the DB cities, joined with our hardcoded
+    # CITY_COORDS lookup. Cities missing from CITY_COORDS just don't get a
+    # pin (rather than crashing the map).
+    db_cities = City.query.order_by(City.name).all()
+    map_cities = []
+    for c in db_cities:
+        coords = CITY_COORDS.get(c.name)
+        if not coords:
+            continue
+        state_name = c.state.name if c.state else ''
+        map_cities.append({
+            'id': c.id,
+            'name': f'{c.name}, {state_name}' if state_name else c.name,
+            'short_name': c.name,
+            'state': state_name,
+            'lat': coords[0],
+            'lng': coords[1],
+        })
+
     return {
         'city_ids_by_name': city_ids,
         'category_ids_by_name': category_ids,
@@ -629,6 +676,7 @@ def _map_page_context():
         'top_city': top_city,
         'top_category': top_category,
         'top_pinned_report': top_pinned_report,
+        'map_cities': map_cities,
     }
 
 
