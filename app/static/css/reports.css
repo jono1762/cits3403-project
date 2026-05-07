@@ -9,7 +9,7 @@
     padding: 0 1rem;
 }
 
-/* frosted card holding the form — same family as the auth + landing cards */
+/* frosted card holding the form — same family as the auth + home cards */
 .report-card {
     background: rgba(255, 255, 255, 0.94);
     -webkit-backdrop-filter: blur(10px);

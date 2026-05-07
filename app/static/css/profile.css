@@ -564,8 +564,6 @@
 }
 
 .profile-post-card .vote-count {
-    background: #f1f5f9;
-    color: #475569;
     font-size: 0.7rem;
     font-weight: 700;
     padding: 0.08rem 0.4rem;
@@ -573,6 +571,18 @@
     min-width: 1.15rem;
     text-align: center;
     transition: background 0.18s ease, color 0.18s ease;
+}
+
+/* Green/red tints visible at rest — the user shouldn't have to vote to
+   tell verify counts from dispute counts at a glance. */
+.profile-post-card .vote-verify .vote-count {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.profile-post-card .vote-dispute .vote-count {
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
 .profile-post-card .vote-verify:hover:not(:disabled) {

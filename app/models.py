@@ -17,6 +17,10 @@ class User(UserMixin, db.Model):
     # Optional free-text bio shown on the public profile. Length capped at the
     # form layer (500 chars). Plain text — Jinja auto-escapes on render.
     bio = db.Column(db.Text, nullable=True)
+    # Account creation time — drives anti-gaming on the Trending leaderboard:
+    # only verifies / disputes from accounts older than the configured min
+    # age count toward a report's trending score.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Whether the user's "Following" list is visible to other users.
     # The owner always sees their own list regardless of this flag.
     # server_default='1' so existing rows get backfilled when the column

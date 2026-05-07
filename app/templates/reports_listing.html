@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports_listing.css', v='4') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports_listing.css', v='6') }}">
 {% endblock %}
 
 {% block content %}
@@ -12,7 +12,7 @@
             {% if feed_mode == 'following' %}
                 {{ 'Top from Following' if sort == 'top' else 'From Following' }}
             {% else %}
-                {{ 'Top Reports' if sort == 'top' else 'All Reports' }}
+                {{ 'Trending' if sort == 'top' else 'All Reports' }}
             {% endif %}
         </h1>
         {% if current_user.is_authenticated %}
@@ -23,79 +23,100 @@
         {% endif %}
     </header>
 
-    {# Location filter (form) — state + city selectors. Carries the current
-       category through a hidden input so the chip selection survives a re-filter. #}
-    <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">State</label>
-                <select name="state_id" id="filter-state" class="form-select form-select-sm">
-                    <option value="">All states</option>
-                    {% for s in states %}
-                        <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">City</label>
-                <select name="city_id" id="filter-city" class="form-select form-select-sm"
-                        {% if not selected_state_id %}disabled{% endif %}>
-                    <option value="">All cities</option>
-                    {% if selected_state_id %}
-                        {% for city in cities_by_state.get(selected_state_id, []) %}
-                            <option value="{{ city.id }}" {% if selected_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+    {# Regular listing has full state/city/category filters. Trending has a
+       narrower filter set — only cities + categories that actually appear in
+       the current top 10 (so users can't filter to an empty set). #}
+    {% if sort != 'top' %}
+        {# Location filter — state + city selectors auto-submit on change so
+           the user never has to hit Apply. Picking a state submits with just
+           state_id (city wipes); picking a city submits state_id + city_id.
+           Category chips stay separate (they're already auto-navigating links). #}
+        <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">State</label>
+                    <select name="state_id" id="filter-state" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All states</option>
+                        {% for s in states %}
+                            <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
                         {% endfor %}
-                    {% endif %}
-                </select>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">City</label>
+                    <select name="city_id" id="filter-city" class="form-select form-select-sm"
+                            onchange="this.form.submit()"
+                            {% if not selected_state_id %}disabled{% endif %}>
+                        <option value="">All cities</option>
+                        {% if selected_state_id %}
+                            {% for city in cities_by_state.get(selected_state_id, []) %}
+                                <option value="{{ city.id }}" {% if selected_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-2 listing-filter-actions mt-2">
+                    <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
+                </div>
             </div>
-            <div class="col-md-4 listing-filter-actions mt-2">
-                <button type="submit" class="listing-filter-apply">Apply</button>
-                <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
-            </div>
-        </div>
-        {# preserve the category selection across location-filter Applies #}
-        {% if selected_category_id %}
-            <input type="hidden" name="category_id" value="{{ selected_category_id }}">
-        {% endif %}
-        {# preserve the sort mode (top vs recent) when applying location filters #}
-        {% if sort and sort != 'recent' %}
-            <input type="hidden" name="sort" value="{{ sort }}">
-        {% endif %}
-    </form>
+            {# preserve the category chip selection across state/city changes #}
+            {% if selected_category_id %}
+                <input type="hidden" name="category_id" value="{{ selected_category_id }}">
+            {% endif %}
+        </form>
 
-    {# Category chips — click any one to filter. Each link carries the current
-       state/city so users don't lose those filters when changing category. #}
-    {% set keep_sort = sort if sort != 'recent' else None %}
-    <div class="listing-categories">
-        <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id, sort=keep_sort) }}"
-           class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
-            🌏 All categories
-        </a>
-        {% for cat in categories %}
-            <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id, sort=keep_sort) }}"
-               class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
-               style="--cat: {{ cat.marker_color }};">
-                {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
+        {# Category chips — click any one to filter. Each link carries the current
+           state/city so users don't lose those filters when changing category. #}
+        <div class="listing-categories">
+            <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id) }}"
+               class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
+                🌏 All categories
             </a>
-        {% endfor %}
-    </div>
-
-    <script>
-    const CITIES_BY_STATE = {{ cities_by_state | tojson }};
-    const filterState = document.getElementById('filter-state');
-    const filterCity = document.getElementById('filter-city');
-    filterState.addEventListener('change', () => {
-        const list = CITIES_BY_STATE[filterState.value] || [];
-        filterCity.innerHTML = '<option value="">All cities</option>';
-        for (const city of list) {
-            const opt = document.createElement('option');
-            opt.value = city.id;
-            opt.textContent = city.name;
-            filterCity.appendChild(opt);
-        }
-        filterCity.disabled = !filterState.value;
-    });
-    </script>
+            {% for cat in categories %}
+                <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id) }}"
+                   class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
+                   style="--cat: {{ cat.marker_color }};">
+                    {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        {# Trending filters — only options that actually appear in the current
+           top 10. Auto-submits on change. Hidden if every report is in the same
+           city / category (nothing to narrow down). #}
+        {% if trending_filter_cities or trending_filter_categories %}
+            <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
+                <input type="hidden" name="sort" value="top">
+                <div class="row g-2 align-items-end">
+                    {% if trending_filter_cities %}
+                        <div class="col-md-5">
+                            <label class="form-label">Filter by city</label>
+                            <select name="city_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All trending cities</option>
+                                {% for c in trending_filter_cities %}
+                                    <option value="{{ c.id }}" {% if selected_city_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    {% if trending_filter_categories %}
+                        <div class="col-md-5">
+                            <label class="form-label">Filter by category</label>
+                            <select name="category_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All trending categories</option>
+                                {% for cat in trending_filter_categories %}
+                                    <option value="{{ cat.id }}" {% if selected_category_id == cat.id %}selected{% endif %}>{{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    <div class="col-md-2 listing-filter-actions mt-2">
+                        <a href="{{ url_for('listing_page', sort='top') }}" class="listing-filter-clear">Clear</a>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+    {% endif %}
 
     {% if current_user.is_authenticated %}
     <script>
@@ -168,6 +189,13 @@
                         <div class="listing-item-top">
                             <div class="listing-item-meta">
                                 <span class="listing-item-badge">{{ r.category.name }}</span>
+                                {# 🔥 fire on Trending (every visible report) AND on View Reports
+                                   for the per-city top scoring reports. Once a report drops out
+                                   of the top spot in its city, the next page render won't show
+                                   the badge — recomputed live every request. #}
+                                {% if sort == 'top' or r.id in trending_ids %}
+                                    <span class="listing-item-trending" title="Trending report">🔥 Trending</span>
+                                {% endif %}
                                 <span>{{ r.city.name }}, {{ r.city.state.code }}</span>
                                 <span class="listing-item-author">— by
                                     <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
