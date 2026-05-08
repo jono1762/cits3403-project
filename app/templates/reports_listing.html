@@ -58,7 +58,8 @@
                 <div class="col-md-3">
                     <label class="form-label">Sort by</label>
                     <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="recent" {% if sort not in ['verifies', 'disputes', 'comments'] %}selected{% endif %}>Recent</option>
+                        <option value="recent" {% if sort not in ['verifies', 'disputes', 'comments', 'oldest'] %}selected{% endif %}>Newest first</option>
+                        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
                         <option value="verifies" {% if sort == 'verifies' %}selected{% endif %}>Most verified</option>
                         <option value="disputes" {% if sort == 'disputes' %}selected{% endif %}>Most disputed</option>
                         <option value="comments" {% if sort == 'comments' %}selected{% endif %}>Most commented</option>

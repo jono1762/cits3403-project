@@ -1633,6 +1633,10 @@ def _build_listing_response(base_query, feed_mode=None):
                  .group_by(Report.id)
                  .order_by(comment_count.desc(), Report.created_at.desc())
         )
+    elif sort == 'oldest':
+        # Oldest first — inverse of the default Recent sort. Useful for users
+        # who want to scroll back through historical reports in order.
+        query = query.order_by(Report.created_at.asc())
     else:
         query = query.order_by(Report.created_at.desc())
 
