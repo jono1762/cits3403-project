@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-
+ 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reports_listing.css', v='6') }}">
 {% endblock %}
-
+ 
 {% block content %}
 <section class="listing-page">
     <header class="listing-header">
@@ -22,7 +22,7 @@
             <a href="{{ url_for('signup') }}" class="listing-new-btn">Sign up to post</a>
         {% endif %}
     </header>
-
+ 
     {# Regular listing has full state/city/category filters. Trending has a
        narrower filter set — only cities + categories that actually appear in
        the current top 10 (so users can't filter to an empty set). #}
@@ -33,7 +33,7 @@
            Category chips stay separate (they're already auto-navigating links). #}
         <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
             <div class="row g-2 align-items-end">
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <label class="form-label">State</label>
                     <select name="state_id" id="filter-state" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All states</option>
@@ -42,7 +42,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <label class="form-label">City</label>
                     <select name="city_id" id="filter-city" class="form-select form-select-sm"
                             onchange="this.form.submit()"
@@ -55,7 +55,17 @@
                         {% endif %}
                     </select>
                 </div>
-                <div class="col-md-2 listing-filter-actions mt-2">
+                <div class="col-md-3">
+                    <label class="form-label">Sort by</label>
+                    <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="recent" {% if sort not in ['verifies', 'disputes', 'comments', 'oldest'] %}selected{% endif %}>Newest first</option>
+                        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+                        <option value="verifies" {% if sort == 'verifies' %}selected{% endif %}>Most verified</option>
+                        <option value="disputes" {% if sort == 'disputes' %}selected{% endif %}>Most disputed</option>
+                        <option value="comments" {% if sort == 'comments' %}selected{% endif %}>Most commented</option>
+                    </select>
+                </div>
+                <div class="col-md-3 listing-filter-actions mt-2">
                     <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
                 </div>
             </div>
@@ -64,7 +74,7 @@
                 <input type="hidden" name="category_id" value="{{ selected_category_id }}">
             {% endif %}
         </form>
-
+ 
         {# Category chips — click any one to filter. Each link carries the current
            state/city so users don't lose those filters when changing category. #}
         <div class="listing-categories">
@@ -117,7 +127,7 @@
             </form>
         {% endif %}
     {% endif %}
-
+ 
     {% if current_user.is_authenticated %}
     <script>
     document.addEventListener('click', async (event) => {
@@ -144,7 +154,7 @@
     });
     </script>
     {% endif %}
-
+ 
     {# Vote (verify/dispute) AJAX handler — auth-only API, guests' buttons are disabled.
        Click a button → POST to /api/reports/<id>/vote → update counts + active state.
        Uses event delegation so it works regardless of where the script sits in the
@@ -174,7 +184,7 @@
         }
     });
     </script>
-
+ 
     {% if pagination.items %}
         <ul class="listing-feed">
             {% for r in pagination.items %}
@@ -185,7 +195,7 @@
                         <a class="listing-item-link"
                            href="{{ url_for('view_report', token=r.id|report_token) }}"
                            aria-label="View report"></a>
-
+ 
                         <div class="listing-item-top">
                             <div class="listing-item-meta">
                                 <span class="listing-item-badge">{{ r.category.name }}</span>
@@ -206,7 +216,7 @@
                         {% if r.address %}<p class="listing-item-address">{{ r.address }}</p>{% endif %}
                         {% if r.description %}<p class="listing-item-desc">{{ r.description }}</p>{% endif %}
                     </div>
-
+ 
                     {# Top-right corner — own reports show an "Your report" tag instead
                        of vote buttons (you can't vote on yourself). Everyone else gets
                        the verify / dispute bar; guests' buttons are disabled with a
@@ -261,7 +271,7 @@
                             </span>
                         </div>
                     {% endif %}
-
+ 
                     {# carousel for image/video attachments — same pattern as profile.html #}
                     {% if r.media %}
                         <div id="browse-carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
@@ -276,7 +286,7 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-
+ 
                             <div class="carousel-inner rounded border" style="background-color: #000;">
                                 {% for m in r.media %}
                                     <div class="carousel-item {{ 'active' if loop.first else '' }}">
@@ -294,7 +304,7 @@
                                     </div>
                                 {% endfor %}
                             </div>
-
+ 
                             {% if r.media | length > 1 %}
                                 <button class="carousel-control-prev" type="button"
                                         data-bs-target="#browse-carousel-{{ r.id }}" data-bs-slide="prev">
@@ -312,7 +322,7 @@
                 </li>
             {% endfor %}
         </ul>
-
+ 
         {% if pagination.pages > 1 %}
             <nav class="listing-pagination" aria-label="Reports pagination">
                 <ul class="pagination justify-content-center">
@@ -342,3 +352,4 @@
     {% endif %}
 </section>
 {% endblock %}
+ 
