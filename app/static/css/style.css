@@ -22,7 +22,7 @@
 
 /* ============================================================
    2. Page background + aurora gradient blobs
-   Same vibe as the landing hero, but layered behind every page
+   Same vibe as the home hero, but layered behind every page
    so the whole site feels cohesive. Blobs are fixed-position so
    they stay in view as the user scrolls.
    ============================================================ */
@@ -221,4 +221,35 @@ body::after {
 .report-expiry.is-urgent {
     background: #ffedd5;
     color: #9a3412;
+}
+
+/* ============================================================
+   4. App modal — softer corners and tidier header/footer dividers,
+   so confirm prompts (delete/unfollow/block/etc.) feel deliberate
+   instead of looking like raw Bootstrap. Used everywhere a modal
+   appears in the app.
+   ============================================================ */
+.delete-modal-content {
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.delete-modal-content .modal-header {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.delete-modal-content .modal-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.delete-modal-content .modal-body {
+    color: #475569;
+    line-height: 1.55;
+}
+
+.delete-modal-content .modal-footer {
+    border-top: 1px solid #f1f5f9;
 }

@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime, timedelta
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport
+from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, BlockedUser
 from .forms import LoginForm, EmailLoginForm, SignupForm
 
 
@@ -95,12 +95,8 @@ def _media_type_for(filename):
 
 @app.route('/')
 def index():
-    if not current_user.is_authenticated:
-        return render_template('landing.html')
-    return render_template(
-        'index.html',
-        **_map_page_context(),
-    )
+    # / is just an alias for /intro — keep one canonical URL for the home page.
+    return redirect(url_for('home_intro'))
 
 # single source of truth for the category-name → emoji map.
 # Injected into every template via the context processor below so the same
@@ -167,6 +163,34 @@ STATE_FLAG_URL = {
     'tas': '/static/images/flags/tas.png',
     'act': '/static/images/flags/act.png',
     'nt':  '/static/images/flags/nt.png',
+}
+
+# Lat/lng for every city in the DB. Single source of truth — fed to the
+# map JS via the template so adding a city only means editing this dict
+# (until we eventually move these onto the City model itself).
+CITY_COORDS = {
+    'Sydney':         (-33.8688, 151.2093),
+    'Newcastle':      (-32.9283, 151.7817),
+    'Wollongong':     (-34.4278, 150.8931),
+    'Central Coast':  (-33.4248, 151.3408),
+    'Melbourne':      (-37.8136, 144.9631),
+    'Geelong':        (-38.1499, 144.3617),
+    'Ballarat':       (-37.5622, 143.8503),
+    'Brisbane':       (-27.4698, 153.0251),
+    'Gold Coast':     (-28.0167, 153.4000),
+    'Sunshine Coast': (-26.6500, 153.0667),
+    'Cairns':         (-16.9203, 145.7710),
+    'Townsville':     (-19.2589, 146.8169),
+    'Perth':          (-31.9523, 115.8613),
+    'Mandurah':       (-32.5269, 115.7217),
+    'Bunbury':        (-33.3267, 115.6411),
+    'Adelaide':       (-34.9285, 138.6007),
+    'Mount Gambier':  (-37.8281, 140.7822),
+    'Hobart':         (-42.8821, 147.3272),
+    'Launceston':     (-41.4391, 147.1358),
+    'Canberra':       (-35.2809, 149.1300),
+    'Darwin':         (-12.4634, 130.8456),
+    'Alice Springs':  (-23.6980, 133.8807),
 }
 
 
@@ -597,7 +621,7 @@ def settings_delete_account():
 
     logout_user()
     flash('Your account and all your data have been deleted.', 'success')
-    return redirect(url_for('home_landing'))
+    return redirect(url_for('home_intro'))
 
 
 # /help — static FAQ page, public
@@ -613,8 +637,8 @@ def about_page():
 
 @app.route('/map')
 def map_page():
-    # public map view — used by the "Start as guest" button on the landing page
-    return render_template('index.html', **_map_page_context())
+    # public map view — used by the "Start as guest" button on the home page
+    return render_template('map.html', **_map_page_context())
 
 
 def _map_page_context():
@@ -622,27 +646,89 @@ def _map_page_context():
     category_ids = {c.name: c.id for c in Category.query.all()}
     now = datetime.utcnow()
 
-    # real top-trending city = city with the most non-expired reports
-    top_city_row = (
-        db.session.query(City.name, db.func.count(Report.id))
-        .join(Report, Report.city_id == City.id)
+    # Top trending city / category derived from the global Trending top N.
+    # Group the top-N reports by city (or category), and rank groups by:
+    #   1. how many of the top-N are in that city (descending)
+    #   2. the highest-scoring single report within that city (tiebreaker)
+    # Only non-expired reports are considered (Report.expires_at > now).
+    from sqlalchemy import case
+    verify_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
+    dispute_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
+    days_old_expr = db.func.julianday('now') - db.func.julianday(Report.created_at)
+    score_expr = (verify_sum - dispute_sum - days_old_expr).label('score')
+    trending_rows = (
+        db.session.query(
+            Report.id, Report.city_id, Report.category_id, score_expr,
+        )
         .filter(Report.expires_at > now)
-        .group_by(City.id)
-        .order_by(db.func.count(Report.id).desc())
-        .first()
+        .outerjoin(Verification, Verification.report_id == Report.id)
+        .group_by(Report.id)
+        .order_by(score_expr.desc(), Report.created_at.desc())
+        .limit(TRENDING_LIMIT)
+        .all()
     )
-    top_city = {'name': top_city_row[0], 'count': top_city_row[1]} if top_city_row else None
+    total_in_top = len(trending_rows)
 
-    # real top-trending category = category with the most non-expired reports
-    top_cat_row = (
-        db.session.query(Category.name, db.func.count(Report.id))
-        .join(Report, Report.category_id == Category.id)
-        .filter(Report.expires_at > now)
-        .group_by(Category.id)
-        .order_by(db.func.count(Report.id).desc())
-        .first()
-    )
-    top_category = {'name': top_cat_row[0], 'count': top_cat_row[1]} if top_cat_row else None
+    def _top_group(get_key):
+        """For each report in the trending top-N, bucket by `get_key(row)`,
+        track count and best score per bucket, then pick the bucket with the
+        highest count (tiebreak by best score)."""
+        buckets = {}  # key -> {'count': int, 'best_score': float}
+        for row in trending_rows:
+            key = get_key(row)
+            if key is None:
+                continue
+            b = buckets.setdefault(key, {'count': 0, 'best_score': float('-inf')})
+            b['count'] += 1
+            if row.score > b['best_score']:
+                b['best_score'] = row.score
+        if not buckets:
+            return None
+        winner_key = max(buckets, key=lambda k: (buckets[k]['count'], buckets[k]['best_score']))
+        return winner_key, buckets[winner_key]['count']
+
+    top_city = None
+    city_pick = _top_group(lambda r: r.city_id)
+    if city_pick:
+        cid, cnt = city_pick
+        c = City.query.get(cid)
+        if c:
+            top_city = {'name': c.name, 'count': cnt, 'total': total_in_top}
+
+    top_category = None
+    cat_pick = _top_group(lambda r: r.category_id)
+    if cat_pick:
+        cat_id, cnt = cat_pick
+        cat = Category.query.get(cat_id)
+        if cat:
+            top_category = {'name': cat.name, 'count': cnt, 'total': total_in_top}
+
+    # Third bubble — the user's "most important" pinned report, picked from
+    # everything they've saved (favourited reports + reports in favourited
+    # cities). Highest engagement score across that pool wins. Falls back to
+    # None for guests / users with no saves; the template shows a stub then.
+    top_pinned_report = _top_pinned_report_for(current_user)
+
+    # Build the map-pin list from the DB cities, joined with our hardcoded
+    # CITY_COORDS lookup. Cities missing from CITY_COORDS just don't get a
+    # pin (rather than crashing the map).
+    db_cities = City.query.order_by(City.name).all()
+    map_cities = []
+    for c in db_cities:
+        coords = CITY_COORDS.get(c.name)
+        if not coords:
+            continue
+        state_name = c.state.name if c.state else ''
+        map_cities.append({
+            'id': c.id,
+            'name': f'{c.name}, {state_name}' if state_name else c.name,
+            'short_name': c.name,
+            'state': state_name,
+            'lat': coords[0],
+            'lng': coords[1],
+        })
 
     return {
         'city_ids_by_name': city_ids,
@@ -651,13 +737,51 @@ def _map_page_context():
         'state_flag_url': STATE_FLAG_URL,
         'top_city': top_city,
         'top_category': top_category,
+        'top_pinned_report': top_pinned_report,
+        'map_cities': map_cities,
     }
 
-# /landing — always renders the landing/intro page regardless of auth state.
-# Lets logged-in users revisit the public-facing home if they want.
-@app.route('/landing')
-def home_landing():
-    return render_template('landing.html')
+
+def _top_pinned_report_for(user):
+    """Highest-scoring report across the user's saved reports + reports in
+    their saved cities. Returns the Report object or None."""
+    if not getattr(user, 'is_authenticated', False):
+        return None
+    fav_report_ids = {row.report_id for row in FavouriteReport.query.filter_by(user_id=user.id).all()}
+    fav_city_ids = {row.city_id for row in FavouriteLocation.query.filter_by(user_id=user.id).all()}
+    candidate_ids = set(fav_report_ids)
+    if fav_city_ids:
+        candidate_ids.update(
+            r.id for r in Report.query.filter(Report.city_id.in_(fav_city_ids)).all()
+        )
+    if not candidate_ids:
+        return None
+
+    from sqlalchemy import case
+    verify_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
+    dispute_sum = db.func.coalesce(
+        db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
+    days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
+    score_expr = (verify_sum - dispute_sum - days_old).label('score')
+    row = (
+        db.session.query(Report.id)
+        .filter(Report.id.in_(candidate_ids))
+        .outerjoin(Verification, Verification.report_id == Report.id)
+        .group_by(Report.id)
+        .order_by(score_expr.desc(), Report.created_at.desc())
+        .first()
+    )
+    return Report.query.get(row[0]) if row else None
+
+
+# /intro — same content as / but always rendered in the marketing/intro
+# style (no navbar / sidebar). Lets logged-in users revisit the public-facing
+# home page (linked from the navbar home icon).
+@app.route('/intro')
+def home_intro():
+    return render_template('index.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -711,6 +835,29 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+def _following_users_for(user):
+    """Return the User rows this profile-user follows (newest follow first)."""
+    rows = (
+        Follow.query
+        .filter_by(follower_id=user.id)
+        .order_by(Follow.created_at.desc())
+        .all()
+    )
+    # Resolve each Follow row to the actual followed-User object
+    return [User.query.get(r.followed_id) for r in rows if User.query.get(r.followed_id)]
+
+
+def _follower_users_for(user):
+    """Return the User rows that follow this profile-user (newest follow first)."""
+    rows = (
+        Follow.query
+        .filter_by(followed_id=user.id)
+        .order_by(Follow.created_at.desc())
+        .all()
+    )
+    return [User.query.get(r.follower_id) for r in rows if User.query.get(r.follower_id)]
+
+
 # /profile — show the logged-in user's own basic info
 @app.route('/profile')
 @login_required
@@ -727,6 +874,8 @@ def profile_page():
         user=current_user,
         recent_reports=recent_reports,
         is_own_profile=True,
+        following_users=_following_users_for(current_user),
+        follower_users=_follower_users_for(current_user),
     )
 
 # /users/<username> — view someone else's profile (read-only, no edit buttons)
@@ -746,7 +895,30 @@ def user_profile_page(username):
         user=user,
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
+        following_users=_following_users_for(user),
+        follower_users=_follower_users_for(user),
     )
+
+
+@app.route('/profile/following-privacy', methods=['POST'])
+@login_required
+def profile_toggle_following_privacy():
+    """Flip the visibility of the current user's Following list. Only the
+    profile owner can toggle their own setting (enforced by current_user).
+    Redirects with #following so the JS keeps the user on the Following tab."""
+    current_user.following_list_public = not current_user.following_list_public
+    db.session.commit()
+    return redirect(url_for('profile_page') + '#following')
+
+
+@app.route('/profile/followers-privacy', methods=['POST'])
+@login_required
+def profile_toggle_followers_privacy():
+    """Flip the visibility of the current user's Followers list. Same shape
+    as the Following privacy toggle — owner-only, redirects with #followers."""
+    current_user.followers_list_public = not current_user.followers_list_public
+    db.session.commit()
+    return redirect(url_for('profile_page') + '#followers')
 
 # /search — find users by username substring (case-insensitive)
 @app.route('/search')
@@ -775,13 +947,16 @@ def api_search_users():
     users = (
         User.query
         .filter(User.username.ilike(f'%{q}%'))
+        .filter(User.id != current_user.id)   # don't surface self in chat search
         .order_by(User.username)
         .limit(10)
         .all()
     )
     return jsonify([
         {
+            'user_id': u.id,
             'username': u.username,
+            'avatar_initial': u.username[:1].upper(),
             'profile_url': url_for('user_profile_page', username=u.username),
         }
         for u in users
@@ -826,6 +1001,70 @@ def api_unfollow_user(user_id):
         'follower_count': target.follower_count,
         'following_count': target.following_count,
     })
+
+
+# ---------------- Block / Unblock (chat-only) ----------------
+# When user A blocks user B:
+#   - B can no longer send messages to A (server returns 403 in api_send_message)
+#   - B's existing conversations with A are filtered out of A's inbox
+#   - B can still see A's posts / comments / profile — this is chat-only
+# Block button appears on the OTHER user's profile page (next to Follow / Message).
+
+def _is_blocked(blocker_id, blocked_id):
+    """True if blocker_id has blocked blocked_id (chat-wise)."""
+    return BlockedUser.query.filter_by(
+        blocker_id=blocker_id, blocked_id=blocked_id
+    ).first() is not None
+
+
+@app.route('/api/block/<int:user_id>', methods=['POST'])
+@login_required
+def api_block_user(user_id):
+    if user_id == current_user.id:
+        return jsonify({'error': "You can't block yourself."}), 400
+    target = User.query.get_or_404(user_id)
+    if not _is_blocked(current_user.id, target.id):
+        db.session.add(BlockedUser(blocker_id=current_user.id, blocked_id=target.id))
+        db.session.commit()
+    return jsonify({'is_blocked': True})
+
+
+@app.route('/api/blocked-users')
+@login_required
+def api_list_blocked_users():
+    """List the users the current user has blocked, newest-first.
+    Powers the 'manage blocked' modal in the chat sidebar."""
+    rows = (
+        BlockedUser.query
+        .filter_by(blocker_id=current_user.id)
+        .order_by(BlockedUser.created_at.desc())
+        .all()
+    )
+    out = []
+    for row in rows:
+        u = User.query.get(row.blocked_id)
+        if not u:
+            continue
+        out.append({
+            'user_id': u.id,
+            'username': u.username,
+            'avatar_initial': u.username[:1].upper(),
+            'profile_url': url_for('user_profile_page', username=u.username),
+        })
+    return jsonify(out)
+
+
+@app.route('/api/block/<int:user_id>', methods=['DELETE'])
+@login_required
+def api_unblock_user(user_id):
+    target = User.query.get_or_404(user_id)
+    row = BlockedUser.query.filter_by(
+        blocker_id=current_user.id, blocked_id=target.id
+    ).first()
+    if row:
+        db.session.delete(row)
+        db.session.commit()
+    return jsonify({'is_blocked': False})
 
 
 # ---------------- Chat ----------------
@@ -905,13 +1144,20 @@ def api_user_brief(user_id):
         'avatar_url': (url_for('static', filename=f'uploads/{u.avatar_filename}')
                        if u.avatar_filename else None),
         'profile_url': url_for('user_profile_page', username=u.username),
+        'is_blocked': _is_blocked(current_user.id, u.id),
     })
 
 
 @app.route('/api/conversations')
 @login_required
 def api_list_conversations():
-    """Return chats and requests as two separate lists, both newest-first."""
+    """Return chats and requests as two separate lists, both newest-first.
+    Conversations with users I've blocked are filtered out of both lists —
+    they reappear in the inbox if I unblock the user later."""
+    blocked_ids = {
+        row.blocked_id
+        for row in BlockedUser.query.filter_by(blocker_id=current_user.id).all()
+    }
     convs = Conversation.query.filter(
         db.or_(Conversation.user_a_id == current_user.id,
                Conversation.user_b_id == current_user.id)
@@ -920,6 +1166,9 @@ def api_list_conversations():
     chats = []
     requests_list = []
     for conv in convs:
+        other = conv.other(current_user)
+        if other.id in blocked_ids:
+            continue  # hide conversations with blocked users
         item = _serialize_conversation_summary(conv, current_user)
         if conv.is_request_for(current_user):
             requests_list.append(item)
@@ -941,7 +1190,10 @@ def api_get_messages(user_id):
     me, them = sorted([current_user.id, other.id])
     conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
     if conv is None:
-        return jsonify({'messages': [], 'accepted': False, 'is_request': False})
+        return jsonify({
+            'messages': [], 'accepted': False, 'is_request': False,
+            'is_blocked': _is_blocked(current_user.id, other.id),
+        })
 
     since = request.args.get('since')
     q = ChatMessage.query.filter_by(conversation_id=conv.id)
@@ -956,6 +1208,7 @@ def api_get_messages(user_id):
     return jsonify({
         'accepted': conv.accepted,
         'is_request': conv.is_request_for(current_user),
+        'is_blocked': _is_blocked(current_user.id, other.id),
         'messages': [{
             'id': m.id,
             'body': m.body,
@@ -983,6 +1236,12 @@ def api_send_message(user_id):
     if user_id == current_user.id:
         return jsonify({'error': "You can't message yourself."}), 400
     recipient = User.query.get_or_404(user_id)
+
+    # Block check — recipient may have blocked the current user from messaging.
+    # Show a generic "can't reach this user" message rather than confirming
+    # the block (avoids leaking the recipient's privacy choice).
+    if _is_blocked(blocker_id=recipient.id, blocked_id=current_user.id):
+        return jsonify({'error': "This user isn't accepting messages from you."}), 403
 
     if request.content_type and 'multipart/form-data' in request.content_type:
         body = (request.form.get('body') or '').strip()
@@ -1108,11 +1367,14 @@ def view_report(token):
             user_id=current_user.id,
             report_id=report.id,
         ).first() is not None
+    # is this report currently in the global Trending top 10?
+    is_trending = report.id in _trending_report_ids()
     return render_template(
         'report_view.html',
         report=report,
         comment_max_length=COMMENT_MAX_LENGTH,
         is_report_favourited=is_report_favourited,
+        is_trending=is_trending,
     )
 
 
@@ -1271,13 +1533,57 @@ def edit_report_page(report_id):
         cities_by_state=cities_by_state,
     )
 
+TRENDING_LIMIT = 10
+# Anti-gaming — only verifies / disputes from accounts at least this many
+# days old count toward the trending score. The displayed verify_count /
+# dispute_count on each card stays unchanged (still totals every vote);
+# this only affects which reports rank in the top N.
+TRENDING_VOTER_MIN_AGE_DAYS = 7
+
+
+def _trending_score_components():
+    """SQLAlchemy expressions for the trending score, factored out so
+    _trending_report_ids() and the listing page sort agree on the formula.
+    Counts only verifies / disputes from accounts older than the min age."""
+    from sqlalchemy import case
+    eligible = db.func.julianday('now') - db.func.julianday(User.created_at) >= TRENDING_VOTER_MIN_AGE_DAYS
+    verify_sum = db.func.coalesce(
+        db.func.sum(case(((Verification.status == 'verify') & eligible, 1), else_=0)), 0)
+    dispute_sum = db.func.coalesce(
+        db.func.sum(case(((Verification.status == 'dispute') & eligible, 1), else_=0)), 0)
+    days_old = db.func.julianday('now') - db.func.julianday(Report.created_at)
+    score_expr = (verify_sum - dispute_sum - days_old).label('score')
+    return verify_sum, dispute_sum, days_old, score_expr
+
+
+def _trending_report_ids():
+    """Return the set of report IDs currently in the global Trending top N.
+    Matches the Trending page's query exactly so the 🔥 badge on a report
+    means the same thing on every page: this report is currently on Trending."""
+    _, _, _, score_expr = _trending_score_components()
+    rows = (
+        db.session.query(Report.id)
+        .outerjoin(Verification, Verification.report_id == Report.id)
+        .outerjoin(User, User.id == Verification.user_id)
+        .group_by(Report.id)
+        .order_by(score_expr.desc(), Report.created_at.desc())
+        .limit(TRENDING_LIMIT)
+        .all()
+    )
+    return {row[0] for row in rows}
+
+
 # /listing — list all reports.
 # Public — guests can browse without an account.
-# Default sort = newest first; ?sort=top sorts by verification count (top reports).
-@app.route('/listing')
-def listing_page():
-    # Lazy cleanup — high-traffic public endpoint, throttled internally so
-    # most requests are no-ops and the rare one actually deletes expired rows.
+# Default sort = newest first. ?sort=top is the Trending page.
+def _build_listing_response(base_query, feed_mode=None):
+    """Shared listing-page handler. base_query is the starting Report.query
+    (already pre-filtered by /listing/following if applicable). feed_mode is
+    'following' for the From Following page, None for the regular listing —
+    template uses it to render the right title.
+
+    Also runs the throttled lazy cleanup of expired reports — this is the
+    main public listing endpoint so it's a natural place to garbage-collect."""
     _cleanup_expired_reports()
 
     page = request.args.get('page', 1, type=int)
@@ -1286,30 +1592,114 @@ def listing_page():
     category_id = request.args.get('category_id', type=int)
     sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
 
+    # Trending is auth-only — but anyone logged in can view it. The
+    # account-age requirement applies to whose VOTES count toward the
+    # ranking, not who can see the page (see _trending_score_components).
+    if sort == 'top' and not current_user.is_authenticated:
+        flash('Please log in to view the Trending page.', 'error')
+        return redirect(url_for('login'))
+
     if city_id and not state_id:
         selected_city = City.query.get(city_id)
         if selected_city:
             state_id = selected_city.state_id
 
-    query = _active_reports_q()
-    # state filter has to go through City because Report only stores city_id, not state_id
-    if state_id:
-        query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
-    if city_id:
-        query = query.filter(Report.city_id == city_id)
-    if category_id:
-        query = query.filter(Report.category_id == category_id)
+    # Wrap base_query with the active-reports filter so expired posts never
+    # show up on the listing (regardless of which feed it was called from).
+    query = base_query.filter(Report.expires_at > datetime.utcnow())
+    # Trending filter options surface only cities / categories that actually
+    # appear in the current top 10. Empty until we compute them below.
+    trending_filter_cities = []
+    trending_filter_categories = []
+
+    if sort != 'top':
+        # state filter has to go through City because Report only stores city_id, not state_id
+        if state_id:
+            query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
+        if city_id:
+            query = query.filter(Report.city_id == city_id)
+        if category_id:
+            query = query.filter(Report.category_id == category_id)
+    else:
+        # On Trending we narrow by city / category WITHIN the top-10 set.
+        # State filter doesn't apply (would be redundant with city).
+        state_id = None
+        trending_ids_set = _trending_report_ids()
+        if not trending_ids_set:
+            query = query.filter(False)
+            top_reports = []
+        else:
+            query = query.filter(Report.id.in_(trending_ids_set))
+            top_reports = (
+                base_query.filter(Report.expires_at > datetime.utcnow())
+                          .filter(Report.id.in_(trending_ids_set))
+                          .all()
+            )
+
+        # Drop a stale selection that isn't anywhere in the trending set —
+        # avoids confusing "no results" for a filter that doesn't apply.
+        global_city_ids = {r.city_id for r in top_reports}
+        global_category_ids = {r.category_id for r in top_reports}
+        if city_id and city_id not in global_city_ids:
+            city_id = None
+        if category_id and category_id not in global_category_ids:
+            category_id = None
+
+        # Context-aware dropdown options. If you've picked a category, the city
+        # dropdown only lists cities that have a trending report in that
+        # category — and vice versa. Avoids showing combos with zero results.
+        cities_visible = top_reports
+        if category_id:
+            cities_visible = [r for r in top_reports if r.category_id == category_id]
+        cats_visible = top_reports
+        if city_id:
+            cats_visible = [r for r in top_reports if r.city_id == city_id]
+        trending_filter_cities = (
+            City.query.filter(City.id.in_({r.city_id for r in cities_visible}))
+                       .order_by(City.name).all()
+        )
+        trending_filter_categories = (
+            Category.query.filter(Category.id.in_({r.category_id for r in cats_visible}))
+                          .order_by(Category.name).all()
+        )
+
+        # Apply the (now-validated) filters to the listing query
+        if city_id:
+            query = query.filter(Report.city_id == city_id)
+        if category_id:
+            query = query.filter(Report.category_id == category_id)
 
     if sort == 'top':
-        # outer-join + group + count so reports with zero verifications still appear
+        # Trending score = eligible_verifies − eligible_disputes − days_old.
+        # Only votes from accounts older than TRENDING_VOTER_MIN_AGE_DAYS
+        # count toward the score; the displayed verify/dispute counts on
+        # cards still show every vote.
+        _, _, _, score = _trending_score_components()
         query = (
             query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .outerjoin(User, User.id == Verification.user_id)
                  .group_by(Report.id)
-                 .order_by(db.func.count(Verification.id).desc(), Report.created_at.desc())
+                 .order_by(score.desc(), Report.created_at.desc())
         )
     else:
         query = query.order_by(Report.created_at.desc())
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+
+    # Trending is capped to a hard top 10 — no pagination, no scroll-forever.
+    # Regular listing keeps the standard 20-per-page pagination.
+    if sort == 'top':
+        items = query.limit(TRENDING_LIMIT).all()
+        class _SinglePagePagination:
+            def __init__(self, items):
+                self.items = items
+                self.has_prev = False
+                self.has_next = False
+                self.page = 1
+                self.pages = 1
+            def iter_pages(self, **kwargs):
+                return [1]
+        pagination = _SinglePagePagination(items)
+    else:
+        pagination = query.paginate(page=page, per_page=20, error_out=False)
 
     states = State.query.order_by(State.name).all()
     cities_by_state = {
@@ -1325,6 +1715,11 @@ def listing_page():
             for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
         ]
 
+    # 🔥 fire badge: each city's top-scored report (one per city). Shown on
+    # both Trending and View Reports so users can spot the trending pick
+    # for their city at a glance.
+    trending_ids = _trending_report_ids()
+
     return render_template(
         'reports_listing.html',
         pagination=pagination,
@@ -1336,7 +1731,34 @@ def listing_page():
         selected_category_id=category_id,
         sort=sort,
         fav_report_ids=fav_report_ids,
+        trending_ids=trending_ids,
+        trending_filter_cities=trending_filter_cities,
+        trending_filter_categories=trending_filter_categories,
+        feed_mode=feed_mode,
     )
+
+
+@app.route('/listing')
+def listing_page():
+    return _build_listing_response(Report.query)
+
+
+@app.route('/listing/following')
+@login_required
+def listing_following_page():
+    """From Following — only reports authored by users the current user follows.
+    State / city / category filters and sort still apply on top of this base."""
+    followed_ids = [
+        row.followed_id
+        for row in Follow.query.filter_by(follower_id=current_user.id).all()
+    ]
+    if not followed_ids:
+        # short-circuit to an empty pagination so the empty-state message renders
+        # without bothering with a follow-graph join that would return nothing anyway
+        base = Report.query.filter(db.literal(False))
+    else:
+        base = Report.query.filter(Report.user_id.in_(followed_ids))
+    return _build_listing_response(base, feed_mode='following')
 
 # /reports — page where a logged-in user fills out and submits a report
 @app.route('/reports')

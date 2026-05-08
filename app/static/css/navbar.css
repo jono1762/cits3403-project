@@ -65,7 +65,7 @@
     gap: 0.6rem;
 }
 
-/* Small home icon next to the username/guest label — takes anyone back to landing */
+/* Small home icon next to the username/guest label — takes anyone back to the home page */
 .app-navbar-home {
     display: inline-flex;
     align-items: center;
@@ -124,6 +124,28 @@
     display: none;
 }
 
+/* Settings cog (auth-only) — same hit-target + hover treatment as the home
+   and message icons so the navbar feels like a single icon row. */
+.app-navbar-settings {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.app-navbar-settings:hover,
+.app-navbar-settings:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: scale(1.05);
+}
+
 .app-account-toggle:hover,
 .app-account-toggle:focus {
     color: #fff;
@@ -163,10 +185,19 @@
 }
 
 .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     font-family: 'Italiana', serif;
     font-weight: 400;          /* Italiana only ships in 400 — looks best at regular weight */
     font-size: 1.6rem;
     letter-spacing: 0.04em;    /* slight extra tracking, typical for elegant serifs */
+}
+
+.navbar-logo {
+    height: 24px;
+    width: auto;
+    display: inline-block;
 }
 
 /* "Please log in" placeholder — sits in the same slot the username will fill after login */
@@ -210,7 +241,7 @@
     box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
 }
 
-/* Get started — gradient-filled by default, matching the landing's "Start as guest" CTA.
+/* Get started — gradient-filled by default, matching the home page's "Start as guest" CTA.
    Lifts and intensifies its glow on hover. */
 .app-navbar .btn-light {
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);

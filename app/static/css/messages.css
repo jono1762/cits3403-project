@@ -42,6 +42,179 @@
     padding: 1rem 1.15rem 0.6rem;
 }
 
+/* row holding the "Messages" title + the small "manage blocked" icon */
+.messages-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.messages-blocked-icon {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 50%;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.messages-blocked-icon:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+/* blocked-list modal — one row per blocked user, with an Unblock pill on the right */
+.blocked-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.blocked-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.blocked-list-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.blocked-list-name {
+    flex: 1;
+    color: #1e293b;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.blocked-list-name:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.blocked-list-unblock {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    color: #475569;
+    padding: 0.32rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.blocked-list-unblock:hover:not(:disabled) {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}
+
+.blocked-list-unblock:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.blocked-list-empty {
+    margin: 0.5rem 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* user-search input — sits below the title, above the tabs.
+   Magnifying-glass icon pinned left, clear-x pinned right. */
+.messages-search-wrap {
+    position: relative;
+    margin-top: 0.7rem;
+}
+
+.messages-search-icon {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.messages-search-input {
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 2.1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 0.88rem;
+    color: #1e293b;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.messages-search-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    outline: none;
+}
+
+.messages-search-input::-webkit-search-cancel-button {
+    /* hide native browser X — we render our own to match the design */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.messages-search-clear {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.messages-search-clear:hover {
+    background: #cbd5e1;
+    color: #1e293b;
+}
+
 .messages-title {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1.5rem;
@@ -339,6 +512,58 @@
 .messages-thread-status {
     color: #94a3b8;
     font-size: 0.78rem;
+}
+
+/* Block / Unblock button — sits at the right end of the thread header.
+   Quiet slate by default, red-tinted when the user is currently blocking. */
+.messages-thread-block-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    color: #64748b;
+    padding: 0.35rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.messages-thread-block-btn:hover:not(:disabled) {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.messages-thread-block-btn.is-blocked {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.messages-thread-block-btn.is-blocked:hover:not(:disabled) {
+    background: #ef4444;
+    color: #fff;
+}
+
+.messages-thread-block-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* "you've blocked this user" banner — sits between header and bubbles when
+   the current user has blocked the other party. Composer is hidden behind it. */
+.messages-blocked-banner {
+    margin: 0;
+    padding: 0.85rem 1.1rem;
+    background: #fef2f2;
+    border-bottom: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 0.88rem;
+    line-height: 1.5;
 }
 
 

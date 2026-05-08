@@ -564,8 +564,6 @@
 }
 
 .profile-post-card .vote-count {
-    background: #f1f5f9;
-    color: #475569;
     font-size: 0.7rem;
     font-weight: 700;
     padding: 0.08rem 0.4rem;
@@ -573,6 +571,18 @@
     min-width: 1.15rem;
     text-align: center;
     transition: background 0.18s ease, color 0.18s ease;
+}
+
+/* Green/red tints visible at rest — the user shouldn't have to vote to
+   tell verify counts from dispute counts at a glance. */
+.profile-post-card .vote-verify .vote-count {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.profile-post-card .vote-dispute .vote-count {
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
 .profile-post-card .vote-verify:hover:not(:disabled) {
@@ -764,4 +774,163 @@
     background: rgba(255, 255, 255, 0.85);
     border: 1.5px dashed #cbd5e1;
     border-radius: 12px;
+}
+
+
+/* ============================================================
+   Following tab — list of users this profile follows + privacy toggle
+   ============================================================ */
+.profile-tab-pane[hidden] { display: none; }
+
+/* privacy strip — owner-only. Two visual states make the current setting
+   readable at a glance: green when public, amber/orange when private. */
+.profile-following-privacy {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem;
+    margin: 0 0 1rem;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    border: 1px solid;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.profile-following-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.profile-following-status svg {
+    flex-shrink: 0;
+}
+
+.profile-following-status strong {
+    color: inherit;
+    margin-left: 0.15rem;
+}
+
+.profile-following-status-hint {
+    color: inherit;
+    opacity: 0.75;
+    font-size: 0.82rem;
+}
+
+/* PUBLIC state — green */
+.profile-following-privacy.is-public {
+    background: #ecfdf5;        /* emerald-50 */
+    border-color: #a7f3d0;       /* emerald-200 */
+    color: #047857;              /* emerald-700 */
+}
+
+.profile-following-privacy.is-public .profile-following-toggle-btn {
+    background: #fff;
+    border: 1.5px solid #a7f3d0;
+    color: #047857;
+}
+
+.profile-following-privacy.is-public .profile-following-toggle-btn:hover {
+    background: #047857;
+    border-color: #047857;
+    color: #fff;
+}
+
+/* PRIVATE state — amber/orange */
+.profile-following-privacy.is-private {
+    background: #fffbeb;        /* amber-50 */
+    border-color: #fde68a;       /* amber-200 */
+    color: #92400e;              /* amber-700 */
+}
+
+.profile-following-privacy.is-private .profile-following-toggle-btn {
+    background: #fff;
+    border: 1.5px solid #fde68a;
+    color: #92400e;
+}
+
+.profile-following-privacy.is-private .profile-following-toggle-btn:hover {
+    background: #92400e;
+    border-color: #92400e;
+    color: #fff;
+}
+
+.profile-following-toggle-btn {
+    padding: 0.35rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.profile-following-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.65rem;
+}
+
+.profile-following-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-following-item:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.profile-following-avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.profile-following-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.profile-following-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.92rem;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-following-name:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.profile-following-handle {
+    color: #94a3b8;
+    font-size: 0.78rem;
 }
