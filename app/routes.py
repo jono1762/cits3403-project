@@ -1623,6 +1623,15 @@ def _build_listing_response(base_query, feed_mode=None):
             query.outerjoin(Verification, Verification.report_id == Report.id)
                  .group_by(Report.id)
                  .order_by(dispute_count.desc(), Report.created_at.desc())
+        ) 
+    elif sort == 'comments':
+        # Most-discussed first — count of comments per report. outer-join so
+        # reports with zero comments still show up (just at the bottom).
+        comment_count = db.func.count(Comment.id)
+        query = (
+            query.outerjoin(Comment, Comment.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(comment_count.desc(), Report.created_at.desc())
         )
     else:
         query = query.order_by(Report.created_at.desc())
