@@ -1615,6 +1615,15 @@ def _build_listing_response(base_query, feed_mode=None):
                  .group_by(Report.id)
                  .order_by(verify_count.desc(), Report.created_at.desc())
         )
+    elif sort == 'disputes':
+        # Most-disputed first — same shape as verifies but counts dispute rows.
+        from sqlalchemy import case
+        dispute_count = db.func.count(case((Verification.status == 'dispute', 1)))
+        query = (
+            query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(dispute_count.desc(), Report.created_at.desc())
+        )
     else:
         query = query.order_by(Report.created_at.desc())
 
