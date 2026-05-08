@@ -33,7 +33,7 @@
            Category chips stay separate (they're already auto-navigating links). #}
         <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
             <div class="row g-2 align-items-end">
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <label class="form-label">State</label>
                     <select name="state_id" id="filter-state" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All states</option>
@@ -42,7 +42,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <label class="form-label">City</label>
                     <select name="city_id" id="filter-city" class="form-select form-select-sm"
                             onchange="this.form.submit()"
@@ -55,7 +55,14 @@
                         {% endif %}
                     </select>
                 </div>
-                <div class="col-md-2 listing-filter-actions mt-2">
+                <div class="col-md-3">
+                    <label class="form-label">Sort by</label>
+                    <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="recent" {% if sort != 'verifies' %}selected{% endif %}>Recent</option>
+                        <option value="verifies" {% if sort == 'verifies' %}selected{% endif %}>Most verified</option>
+                    </select>
+                </div>
+                <div class="col-md-3 listing-filter-actions mt-2">
                     <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
                 </div>
             </div>

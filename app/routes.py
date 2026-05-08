@@ -1605,6 +1605,16 @@ def _build_listing_response(base_query, feed_mode=None):
                  .group_by(Report.id)
                  .order_by(score.desc(), Report.created_at.desc())
         )
+    elif sort == 'verifies':
+        # Most-verified first — count of verify rows per report. outer-join so
+        # reports with zero verifies still appear (just at the bottom).
+        from sqlalchemy import case
+        verify_count = db.func.count(case((Verification.status == 'verify', 1)))
+        query = (
+            query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(verify_count.desc(), Report.created_at.desc())
+        )
     else:
         query = query.order_by(Report.created_at.desc())
 
