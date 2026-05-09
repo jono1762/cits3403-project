@@ -63,7 +63,16 @@
                 const condition = weather.condition || 'Unknown';
                 const wind = weather.wind_kph !== null ? `${Math.round(weather.wind_kph)} km/h ${weather.wind_direction}` : '—';
                 const precip = weather.precip_mm !== null ? `${weather.precip_mm.toFixed(1)} mm` : '—';
-                const fetched = new Date(weather.fetched_at).toLocaleTimeString();
+                const fetchedAt = new Date(weather.fetched_at);
+
+                function formatFreshness(timestamp) {
+                    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - timestamp.getTime()) / 1000));
+                    if (elapsedSeconds < 60) return 'just now';
+                    const minutes = Math.floor(elapsedSeconds / 60);
+                    if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`;
+                    const hours = Math.floor(minutes / 60);
+                    return `${hours} hr${hours === 1 ? '' : 's'} ago`;
+                }
                 
                 display.innerHTML = `
                     <div class="weather-data">
@@ -87,7 +96,7 @@
                             </div>
                         </div>
                         <div class="weather-footer">
-                            <small class="text-muted">Updated: ${fetched} | Data: Open‑Meteo</small>
+                            <small class="text-muted">Updated: ${formatFreshness(fetchedAt)} | Data: Open-Meteo</small>
                         </div>
                     </div>
                 `;

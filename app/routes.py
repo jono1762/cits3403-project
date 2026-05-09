@@ -1939,7 +1939,7 @@ def _fetch_weather_from_api(lat, lng):
             'wind_kph': wind_kph,
             'wind_direction': wind_cardinal,
             'precip_mm': precip_mm,
-            'fetched_at': datetime.utcnow().isoformat(),
+            'fetched_at': datetime.utcnow().isoformat() + 'Z',
         }
     except Exception as e:
         # Log silently; return None so frontend shows "unavailable"
