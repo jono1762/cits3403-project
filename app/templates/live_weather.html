@@ -44,7 +44,12 @@
     let suggestionsOpen = false;
 
     function setCity(cityObj) {
-        display.innerHTML = `<h2>${cityObj.name}</h2><p class="text-muted">Loading weather...</p>`;
+        display.innerHTML = `
+            <div class="weather-data">
+                <h2 class="weather-city">${cityObj.name}</h2>
+                <p class="text-muted mb-0">Loading weather...</p>
+            </div>
+        `;
         searchInput.value = cityObj.name;
         suggestionsList.innerHTML = '';
         suggestionsOpen = false;
