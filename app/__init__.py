@@ -4,6 +4,11 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from sqlalchemy import inspect
 from .models import db, User, Category, State, City, Report, Comment
+from .blueprints.auth import bp as auth_bp
+from .blueprints.reports import bp as reports_bp
+from .blueprints.users import bp as users_bp
+from .blueprints.api import bp as api_bp
+ 
 
 login_manager = LoginManager()
 # Schema-versioning helper. Tracks every model change as a script in
@@ -146,6 +151,13 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'login'
 
+    # Register the four route groups. Each blueprint owns one slice of
+    # the URL map (auth flows, report pages, user / profile pages, JSON API).
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(reports_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(api_bp)
+ 
     with app.app_context():
         from . import routes
         # Schema is owned by Flask-Migrate — fresh checkouts must run
