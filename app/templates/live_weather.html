@@ -2,6 +2,44 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+    <style>
+        .weather-search-wrapper {
+            position: relative;
+            max-width: 500px;
+            margin-bottom: 2rem;
+        }
+        .weather-search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .weather-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .weather-suggestions li {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .weather-suggestions li:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -11,47 +49,105 @@
         <p>Current conditions for Australian cities (preview).</p>
     </header>
 
-    <div class="live-weather-controls mb-4">
-        <label for="live-weather-city" class="form-label">Select city</label>
-        <select id="live-weather-city" class="form-select" aria-label="Select city for live weather">
-            {% for c in weather_cities %}
-                <option value="{{ c }}">{{ c }}</option>
-            {% endfor %}
-        </select>
+    <div class="weather-search-wrapper">
+        <label for="weather-search-city" class="form-label">Search city by name or state</label>
+        <input 
+            type="text" 
+            id="weather-search-city" 
+            class="weather-search-input" 
+            placeholder="Search for a city by name or its state..."
+            aria-label="Search for a city">
+        <ul id="weather-suggestions" class="weather-suggestions"></ul>
     </div>
 
     <div id="live-weather-widget" class="card p-3" aria-live="polite">
         <div id="live-weather-placeholder">
-            <p class="mb-0">Select a city to see live weather (integration coming next).</p>
+            <p class="mb-0">Search for a city to see live weather (integration coming next).</p>
         </div>
     </div>
 
 </section>
 
-<script>
-// Simple UI: persist selection and update placeholder text
-(function () {
-    const select = document.getElementById('live-weather-city');
-    const display = document.getElementById('live-weather-placeholder');
-    if (!select || !display) return;
+<script type="application/json" id="weather-cities-data">{{ weather_cities|tojson }}</script>
 
-    function setCity(city) {
-        display.innerHTML = `<h2>${city}</h2><p class="text-muted">Weather data will appear here.</p>`;
-        try { localStorage.setItem('liveWeatherCity', city); } catch (e) { }
+<script>
+(function () {
+    const WEATHER_CITIES = JSON.parse(document.getElementById("weather-cities-data").textContent);
+    const searchInput = document.getElementById('weather-search-city');
+    const suggestionsList = document.getElementById('weather-suggestions');
+    const display = document.getElementById('live-weather-placeholder');
+    if (!searchInput || !suggestionsList || !display) return;
+
+    let suggestionsOpen = false;
+
+    function setCity(cityObj) {
+        display.innerHTML = `<h2>${cityObj.name}</h2><p class="text-muted">Weather data will appear here.</p>`;
+        searchInput.value = cityObj.name;
+        suggestionsList.innerHTML = '';
+        suggestionsOpen = false;
+        try { localStorage.setItem('liveWeatherCity', cityObj.short_name); } catch (e) { }
+        // update URL without reload
+        window.history.replaceState({}, '', `?city=${encodeURIComponent(cityObj.short_name)}`);
     }
 
-    select.addEventListener('change', () => setCity(select.value));
-
-    try {
-        const saved = localStorage.getItem('liveWeatherCity');
-        if (saved) {
-            const opt = Array.from(select.options).find(o => o.value === saved);
-            if (opt) {
-                select.value = saved;
-                setCity(saved);
-            }
+    function search() {
+        const query = searchInput.value.toLowerCase().trim();
+        let filteredCities = [];
+        
+        if (query) {
+            // Only show suggestions if there's input
+            filteredCities = WEATHER_CITIES.filter((item) => (
+                item.name.toLowerCase().includes(query) || item.state.toLowerCase().includes(query)
+            ));
         }
-    } catch (e) { }
+
+        suggestionsList.innerHTML = '';
+        const toShow = filteredCities.slice(0, 5);
+        toShow.forEach(city => {
+            const li = document.createElement('li');
+            li.textContent = city.name;
+            li.addEventListener('click', () => setCity(city));
+            suggestionsList.appendChild(li);
+        });
+        suggestionsOpen = toShow.length > 0;
+    }
+
+    function clearSuggestions() {
+        suggestionsList.innerHTML = '';
+        suggestionsOpen = false;
+    }
+
+    searchInput.addEventListener('input', search);
+
+    searchInput.addEventListener('focus', () => {
+        const query = searchInput.value.toLowerCase().trim();
+        let filteredCities = [];
+        
+        if (!query) {
+            // Show first 5 when empty and focused
+            filteredCities = WEATHER_CITIES.slice(0, 5);
+        } else {
+            filteredCities = WEATHER_CITIES.filter((item) => (
+                item.name.toLowerCase().includes(query) || item.state.toLowerCase().includes(query)
+            ));
+        }
+
+        suggestionsList.innerHTML = '';
+        const toShow = filteredCities.slice(0, 5);
+        toShow.forEach(city => {
+            const li = document.createElement('li');
+            li.textContent = city.name;
+            li.addEventListener('click', () => setCity(city));
+            suggestionsList.appendChild(li);
+        });
+        suggestionsOpen = toShow.length > 0;
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.weather-search-wrapper')) {
+            clearSuggestions();
+        }
+    });
 })();
 </script>
 

@@ -1814,12 +1814,34 @@ def reports_page():
 
 @app.route('/reports/weather')
 def live_weather_page():
-    """Public Live Weather page — shows a city selector and (future) live data."""
-    weather_cities = sorted(CITY_COORDS.keys())
+    """Public Live Weather page — shows a city search and (future) live data."""
+    # Build city list with state info (same structure as map_cities)
+    db_cities = City.query.order_by(City.name).all()
+    weather_cities_data = []
+    for c in db_cities:
+        coords = CITY_COORDS.get(c.name)
+        if not coords:
+            continue
+        state_name = c.state.name if c.state else ''
+        weather_cities_data.append({
+            'id': c.id,
+            'name': f'{c.name}, {state_name}' if state_name else c.name,
+            'short_name': c.name,
+            'state': state_name,
+            'lat': coords[0],
+            'lng': coords[1],
+        })
+    
     # prefer a requested city from the querystring if it exists in our list
     req_city = (request.args.get('city') or '').strip()
-    selected_city = req_city if req_city in weather_cities else None
-    return render_template('live_weather.html', weather_cities=weather_cities, selected_city=selected_city)
+    selected_city = None
+    if req_city:
+        # match against short_name
+        match = next((c for c in weather_cities_data if c['short_name'] == req_city), None)
+        if match:
+            selected_city = match
+    
+    return render_template('live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
 
 # POST /api/reports — logged-in user submits a report via AJAX
 # accepts either JSON (no files) or multipart/form-data (with optional image/video files)
