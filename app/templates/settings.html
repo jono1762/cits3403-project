@@ -21,7 +21,7 @@
     {# Account info — username + email. Both required + must stay unique.
        Profile picture lives on /profile/edit (public-facing identity stuff
        is separated from account / security settings). #}
-    <form method="POST" action="{{ url_for('auth.settings_update_account")') }}" class="settings-card">
+    <form method="POST" action="{{ url_for('auth.settings_update_account') }}" class="settings-card">
         <h2 class="settings-section-title">Account</h2>
         <div class="settings-field">
             <label for="settings-username" class="form-label">Username <span class="text-danger">*</span></label>
