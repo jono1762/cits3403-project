@@ -27,7 +27,7 @@
                         {{ 'Saved ✓' if is_report_favourited else 'Save report' }}
                     </button>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="report-fav-login-link">Log in to save</a>
+                    <a href="{{ url_for('auth.login') }}" class="report-fav-login-link">Log in to save</a>
                 {% endif %}
             </div>
         </header>
@@ -280,7 +280,7 @@
                 </form>
             {% else %}
                 <p class="comment-login-prompt">
-                    <a href="{{ url_for('login') }}">Log in</a> to add a comment.
+                    <a href="{{ url_for('auth.login') }}">Log in</a> to add a comment.
                 </p>
             {% endif %}
         </section>

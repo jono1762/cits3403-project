@@ -30,10 +30,10 @@
         </form>
 
         <p class="text-center mt-3">
-            <a href="{{ url_for('login') }}">Log in with username instead</a>
+            <a href="{{ url_for('auth.login') }}">Log in with username instead</a>
         </p>
         <p class="text-center">
-            Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a>
+            Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a>
         </p>
         <p class="text-center auth-guest">
             or <a href="{{ url_for('map_page') }}">continue as a guest</a>

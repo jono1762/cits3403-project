@@ -19,7 +19,7 @@
             <a href="{{ url_for('reports_page') }}" class="listing-new-btn">+ New Report</a>
         {% else %}
             {# guest — point at signup so they can join and post #}
-            <a href="{{ url_for('signup') }}" class="listing-new-btn">Sign up to post</a>
+            <a href="{{ url_for('auth.signup') }}" class="listing-new-btn">Sign up to post</a>
         {% endif %}
     </header>
  
