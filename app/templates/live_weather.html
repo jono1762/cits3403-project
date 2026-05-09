@@ -41,6 +41,12 @@
     const display = document.getElementById('weatherDisplay');
     if (!searchInput || !suggestionsList || !display) return;
 
+    const initialCity = {{ selected_city|tojson }};
+
+    if (initialCity) {
+        searchInput.value = initialCity.name;
+    }
+
     let suggestionsOpen = false;
 
     function setCity(cityObj) {
@@ -142,6 +148,10 @@
     function clearSuggestions() {
         suggestionsList.innerHTML = '';
         suggestionsOpen = false;
+    }
+
+    if (initialCity) {
+        setCity(initialCity);
     }
 
     searchInput.addEventListener('input', search);
