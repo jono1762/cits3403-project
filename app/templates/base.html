@@ -99,11 +99,11 @@
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
-                    <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
-                    <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
+                    <a href="{{ url_for('reports.reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports.reports_page') else '' }}">Create Report</a>
+                    <a href="{{ url_for('reports.listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
                     {% if not is_guest %}
-                        <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Trending</a>
-                        <a href="{{ url_for('listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_following_page') else '' }}" data-bs-dismiss="offcanvas">From Following</a>
+                        <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Trending</a>
+                        <a href="{{ url_for('reports.listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_following_page') else '' }}" data-bs-dismiss="offcanvas">From Following</a>
                     {% endif %}
 
                     <div class="app-sidebar-group-header">Favourites</div>
@@ -165,11 +165,11 @@
                     <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
 
                     <div class="app-sidebar-group-header">Reports</div>
-                    <a href="{{ url_for('reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports_page') else '' }}">Create Report</a>
-                    <a href="{{ url_for('listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
+                    <a href="{{ url_for('reports.reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports.reports_page') else '' }}">Create Report</a>
+                    <a href="{{ url_for('reports.listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
                     {% if not is_guest %}
-                        <a href="{{ url_for('listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_page') and request.args.get('sort') == 'top' else '' }}">Trending</a>
-                        <a href="{{ url_for('listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('listing_following_page') else '' }}">From Following</a>
+                        <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}">Trending</a>
+                        <a href="{{ url_for('reports.listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_following_page') else '' }}">From Following</a>
                     {% endif %}
 
                     <div class="app-sidebar-group-header">Favourites</div>

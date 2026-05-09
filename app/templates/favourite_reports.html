@@ -26,7 +26,7 @@
                         <p class="fav-report-where">{{ r.description[:120] }}{% if r.description|length > 120 %}...{% endif %}</p>
                     {% endif %}
                     <div class="fav-panel-actions">
-                        <a class="btn btn-ghost" href="{{ url_for('view_report', token=r.token) }}">View Report</a>
+                        <a class="btn btn-ghost" href="{{ url_for('reports.view_report', token=r.token) }}">View Report</a>
                     </div>
                 </li>
             {% endfor %}
