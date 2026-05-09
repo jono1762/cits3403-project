@@ -1,7 +1,16 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
+
+# Reports auto-expire this many days after creation. Authors can extend by
+# clicking "Post it again" before expiry.
+REPORT_LIFETIME_DAYS = 7
+
+
+def _default_report_expiry():
+    """Default `expires_at` for a freshly-created report."""
+    return datetime.utcnow() + timedelta(days=REPORT_LIFETIME_DAYS)
 
 db = SQLAlchemy()
 
@@ -160,13 +169,19 @@ class FavouriteReport(db.Model):
 class Report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # nullable so that deleting the author's account doesn't wipe their reports —
+    # the author column is set to NULL and the byline renders as "deleted_user"
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
     # optional free-text for extra detail like street name or landmark
     address = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Auto-expiry — after this datetime the report is hidden from public lists
+    # and gets deleted by the next cleanup pass. Authors can reset it via the
+    # "Post it again" button before it lapses.
+    expires_at = db.Column(db.DateTime, default=_default_report_expiry, nullable=True)
 
     verifications = db.relationship('Verification', backref='report', lazy=True)
     # cascade so deleting a report also deletes its attached images/videos
@@ -185,6 +200,36 @@ class Report(db.Model):
     @property
     def comment_count(self):
         return len(self.comments)
+
+    @property
+    def hours_until_expiry(self):
+        """Whole hours until the report expires. Negative if already expired,
+        None if no expiry set."""
+        if not self.expires_at:
+            return None
+        delta = self.expires_at - datetime.utcnow()
+        return int(delta.total_seconds() // 3600)
+
+    @property
+    def is_expiring_soon(self):
+        """True when the report will expire in the next 24 hours (and isn't
+        already expired). Used to drive the orange banner + button styling."""
+        h = self.hours_until_expiry
+        return h is not None and 0 <= h < 24
+
+    @property
+    def expiry_label(self):
+        """Short human label for the countdown badge — '7 days left',
+        '1 day left', '<1 day left'. Returns None if no expiry set."""
+        h = self.hours_until_expiry
+        if h is None:
+            return None
+        if h < 0:
+            return 'expired'
+        if h < 24:
+            return '<1 day left'
+        days = h // 24
+        return f'{days} day{"s" if days != 1 else ""} left'
 
     def vote_by(self, user):
         """Return the given user's vote on this report — 'verify', 'dispute', or None."""
@@ -218,7 +263,8 @@ class Comment(db.Model):
     __tablename__ = 'comments'
     id = db.Column(db.Integer, primary_key=True)
     report_id = db.Column(db.Integer, db.ForeignKey('reports.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # nullable so deleting the author keeps the comment but anonymises it
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     # plain text only — Jinja auto-escapes on render so HTML/script tags become
     # inert. body is capped at the route layer (2000 chars) to keep abuse manageable.
     # body can be empty if the comment carries media instead — server enforces

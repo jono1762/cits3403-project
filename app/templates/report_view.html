@@ -40,8 +40,16 @@
 
         <p class="report-view-author">
             Posted by
-            <a href="{{ url_for('user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
+            {% if report.author %}
+                <a href="{{ url_for('user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
+            {% else %}
+                <span class="deleted-user">deleted_user</span>
+            {% endif %}
             on {{ report.created_at.strftime('%d %b %Y · %H:%M') }}
+            {% if report.expires_at %}
+                <span class="report-expiry {{ 'is-urgent' if report.is_expiring_soon else '' }}"
+                      data-expires-at="{{ report.expires_at.isoformat() }}Z">⏰ …</span>
+            {% endif %}
         </p>
 
         {% if report.description %}
@@ -169,16 +177,24 @@
                     {% set my_cv = c.vote_by(current_user) %}
                     {% set is_own_c = current_user.is_authenticated and c.user_id == current_user.id %}
                     <li class="comment-item" data-comment-id="{{ c.id }}">
-                        <a class="comment-avatar" href="{{ url_for('user_profile_page', username=c.author.username) }}" aria-hidden="true">
-                            {% if c.author.avatar_filename %}
-                                <img src="{{ url_for('static', filename='uploads/' + c.author.avatar_filename) }}" alt="">
-                            {% else %}
-                                {{ c.author.username[0]|upper }}
-                            {% endif %}
-                        </a>
+                        {% if c.author %}
+                            <a class="comment-avatar" href="{{ url_for('user_profile_page', username=c.author.username) }}" aria-hidden="true">
+                                {% if c.author.avatar_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + c.author.avatar_filename) }}" alt="">
+                                {% else %}
+                                    {{ c.author.username[0]|upper }}
+                                {% endif %}
+                            </a>
+                        {% else %}
+                            <span class="comment-avatar comment-avatar-deleted" aria-hidden="true">?</span>
+                        {% endif %}
                         <div class="comment-body">
                             <div class="comment-meta">
-                                <a class="comment-author" href="{{ url_for('user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
+                                {% if c.author %}
+                                    <a class="comment-author" href="{{ url_for('user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
+                                {% else %}
+                                    <span class="comment-author deleted-user">deleted_user</span>
+                                {% endif %}
                                 <span class="comment-time">· {{ c.created_at.strftime('%d %b %Y, %H:%M') }}</span>
                             </div>
                             {% if c.body %}
@@ -396,9 +412,10 @@
         li.className = 'comment-item';
         li.dataset.commentId = c.id;
 
-        const avatar = document.createElement('a');
-        avatar.className = 'comment-avatar';
-        avatar.href = c.author_url;
+        // author may be null (deleted account) — render as a non-linked span instead
+        const avatar = document.createElement(c.author_url ? 'a' : 'span');
+        avatar.className = c.author_url ? 'comment-avatar' : 'comment-avatar comment-avatar-deleted';
+        if (c.author_url) avatar.href = c.author_url;
         avatar.setAttribute('aria-hidden', 'true');
         if (c.author_avatar_url) {
             const img = document.createElement('img');
@@ -414,9 +431,9 @@
 
         const meta = document.createElement('div');
         meta.className = 'comment-meta';
-        const author = document.createElement('a');
-        author.className = 'comment-author';
-        author.href = c.author_url;
+        const author = document.createElement(c.author_url ? 'a' : 'span');
+        author.className = c.author_url ? 'comment-author' : 'comment-author deleted-user';
+        if (c.author_url) author.href = c.author_url;
         author.textContent = c.author_username;
         const time = document.createElement('span');
         time.className = 'comment-time';

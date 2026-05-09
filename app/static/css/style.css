@@ -130,6 +130,98 @@ body::after {
     border: 0;
 }
 
+/* Author byline shown when a user account has been deleted but their
+   reports / comments are still on the page. Non-clickable, muted grey,
+   slightly italic so it's clearly different from a live username. */
+.deleted-user {
+    color: #94a3b8;
+    font-style: italic;
+    font-weight: 500;
+}
+
+.comment-avatar-deleted {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: default;
+}
+
+/* ============================================================
+   Expiring-soon flash — shown on every page when the user has
+   one or more of their own reports lapsing in the next 24 h.
+   ============================================================ */
+.expiring-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border: 1px solid #fdba74;
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    color: #9a3412;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.expiring-banner-text {
+    flex: 1;
+}
+
+.expiring-banner-action {
+    flex-shrink: 0;
+    background: #9a3412;
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.28rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.18s ease;
+}
+
+.expiring-banner-action:hover {
+    background: #7c2d12;
+    color: #fff;
+}
+
+.expiring-banner-close {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #9a3412;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0.1rem 0.45rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.expiring-banner-close:hover {
+    background: rgba(154, 52, 18, 0.12);
+}
+
+/* ============================================================
+   Countdown badge on report cards — small grey pill ("5 days
+   left"). Turns orange when ≤24 h to flag the report's about
+   to be auto-deleted.
+   ============================================================ */
+.report-expiry {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.report-expiry.is-urgent {
+    background: #ffedd5;
+    color: #9a3412;
+}
 
 /* ============================================================
    4. App modal — softer corners and tidier header/footer dividers,

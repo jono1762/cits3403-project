@@ -33,7 +33,6 @@ def seed_categories():
     db.session.commit()
 
 # 8 AU states/territories + a handful of major cities per state
-# team can add more cities later — this is enough to demo the dropdown
 DEFAULT_LOCATIONS = {
     ('NSW', 'New South Wales'):       ['Sydney', 'Newcastle', 'Wollongong', 'Central Coast'],
     ('VIC', 'Victoria'):              ['Melbourne', 'Geelong', 'Ballarat'],

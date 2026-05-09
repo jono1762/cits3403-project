@@ -5,9 +5,65 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
-from datetime import datetime
+from datetime import datetime, timedelta
 from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, BlockedUser
 from .forms import LoginForm, EmailLoginForm, SignupForm
+
+
+def _active_reports_q():
+    """Base query for reports still within their expiry window. Use this
+    everywhere reports are rendered to a guest or non-author audience so
+    expired stuff doesn't leak."""
+    return Report.query.filter(Report.expires_at > datetime.utcnow())
+
+
+# Track when the lazy cleanup last ran so we don't hammer the DB on every
+# listing render. Module-level (per-process) state — fine for single-worker
+# dev / a single gunicorn process. For multi-worker prod we'd promote this
+# into the DB or a cron job.
+_LAST_REPORT_CLEANUP = None
+_REPORT_CLEANUP_INTERVAL_MIN = 5
+
+
+def _cleanup_expired_reports():
+    """Hard-delete reports whose expiry has lapsed (plus their on-disk media).
+    Throttled so a burst of listing-page hits doesn't run this every request."""
+    global _LAST_REPORT_CLEANUP
+    now = datetime.utcnow()
+    if _LAST_REPORT_CLEANUP and (now - _LAST_REPORT_CLEANUP) < timedelta(minutes=_REPORT_CLEANUP_INTERVAL_MIN):
+        return
+    _LAST_REPORT_CLEANUP = now
+
+    expired = Report.query.filter(Report.expires_at <= now).all()
+    if not expired:
+        return
+
+    upload_dir = app.config['UPLOAD_FOLDER']
+    files_to_remove = set()
+    for report in expired:
+        for m in report.media:
+            files_to_remove.add(m.filename)
+        for c in report.comments:
+            for m in c.media:
+                files_to_remove.add(m.filename)
+
+    # other users' votes / comment-votes don't cascade, so clear them first
+    expired_ids = [r.id for r in expired]
+    Verification.query.filter(Verification.report_id.in_(expired_ids)).delete(synchronize_session=False)
+    comment_ids = [c.id for r in expired for c in r.comments]
+    if comment_ids:
+        CommentVote.query.filter(CommentVote.comment_id.in_(comment_ids)).delete(synchronize_session=False)
+    FavouriteReport.query.filter(FavouriteReport.report_id.in_(expired_ids)).delete(synchronize_session=False)
+
+    for report in expired:
+        db.session.delete(report)
+    db.session.commit()
+
+    for fname in files_to_remove:
+        try:
+            os.remove(os.path.join(upload_dir, fname))
+        except OSError:
+            pass
 
 # Encode/decode helpers for the public report URL.
 # Hides the integer DB id behind a signed token so visitors can't iterate
@@ -66,6 +122,23 @@ def inject_unread_messages():
     if current_user.is_authenticated:
         return {'unread_message_count': current_user.unread_message_count}
     return {'unread_message_count': 0}
+
+
+@app.context_processor
+def inject_expiring_reports():
+    """Surface the count of the user's own reports expiring in the next 24h
+    so base.html can render a single site-wide banner reminding them to
+    re-post the content if they want to keep it."""
+    if not current_user.is_authenticated:
+        return {'expiring_soon_count': 0}
+    now = datetime.utcnow()
+    soon = now + timedelta(hours=24)
+    count = Report.query.filter(
+        Report.user_id == current_user.id,
+        Report.expires_at > now,
+        Report.expires_at <= soon,
+    ).count()
+    return {'expiring_soon_count': count}
 
 
 # mapping each city to its state code (lowercase, used as the flag dictionary key)
@@ -132,10 +205,10 @@ def favourites_page():
         city = f.city
         if not city:
             continue
-        # small convenience stat: how many reports exist for this city
-        reports_today = Report.query.filter_by(city_id=city.id).count()
-        # latest report time (for "Last Update")
-        last_report = Report.query.filter_by(city_id=city.id).order_by(Report.created_at.desc()).first()
+        # small convenience stat: how many non-expired reports exist for this city
+        reports_today = _active_reports_q().filter(Report.city_id == city.id).count()
+        # latest non-expired report time (for "Last Update")
+        last_report = _active_reports_q().filter(Report.city_id == city.id).order_by(Report.created_at.desc()).first()
         if last_report and last_report.created_at:
             delta = datetime.utcnow() - last_report.created_at
             minutes = int(delta.total_seconds() // 60)
@@ -490,13 +563,10 @@ def api_verify_password():
 @login_required
 def settings_delete_account():
     """Permanent account deletion. Requires the user's password as a final
-    safety check, then wipes:
-      - their reports (cascade-deletes attached media DB rows + we remove
-        the on-disk files manually since SQLAlchemy doesn't know about them)
-      - their comments anywhere on the site (+ their media)
-      - their verifications, comment-votes, follow edges (both directions)
-      - every conversation they're part of (cascades messages + message media)
-      - the user row itself
+    safety check. Reports and comments authored by the user are KEPT so other
+    users' threads stay coherent — their author column is set to NULL and the
+    UI renders the byline as "deleted_user". The user-specific stuff (votes,
+    follows, conversations) still gets wiped.
     """
     if not current_user.check_password(request.form.get('password') or ''):
         flash('Incorrect password — account not deleted.', 'error')
@@ -505,19 +575,9 @@ def settings_delete_account():
     user = current_user._get_current_object()
     upload_dir = app.config['UPLOAD_FOLDER']
 
-    # collect every on-disk file we'll need to remove (reports' media,
-    # comments' media on others' reports, chat message media)
+    # only chat-message media gets removed from disk — reports' / comments'
+    # media stays because the parent rows stay too (just anonymised)
     files_to_remove = set()
-    for report in list(user.reports):
-        for m in report.media:
-            files_to_remove.add(m.filename)
-        for c in report.comments:
-            for m in c.media:
-                files_to_remove.add(m.filename)
-    other_comments = Comment.query.filter_by(user_id=user.id).all()
-    for c in other_comments:
-        for m in c.media:
-            files_to_remove.add(m.filename)
     convs = Conversation.query.filter(
         db.or_(Conversation.user_a_id == user.id,
                Conversation.user_b_id == user.id)
@@ -533,18 +593,17 @@ def settings_delete_account():
         db.or_(Follow.follower_id == user.id, Follow.followed_id == user.id)
     ).delete(synchronize_session=False)
     CommentVote.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    FavouriteLocation.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    FavouriteReport.query.filter_by(user_id=user.id).delete(synchronize_session=False)
 
-    # delete user's comments on other people's reports (cascade kills media DB rows)
-    for c in other_comments:
-        db.session.delete(c)
-
-    # delete user's reports — but first clear other users' votes/comment-votes
-    # on those reports (no cascade for Verification / CommentVote)
-    for report in list(user.reports):
-        Verification.query.filter_by(report_id=report.id).delete(synchronize_session=False)
-        for c in report.comments:
-            CommentVote.query.filter_by(comment_id=c.id).delete(synchronize_session=False)
-        db.session.delete(report)
+    # anonymise the user's posts instead of deleting them — keeps comment
+    # threads readable for everyone else, byline becomes "deleted_user"
+    Report.query.filter_by(user_id=user.id).update(
+        {Report.user_id: None}, synchronize_session=False
+    )
+    Comment.query.filter_by(user_id=user.id).update(
+        {Comment.user_id: None}, synchronize_session=False
+    )
 
     # delete conversations involving this user (cascades messages + message-media DB rows)
     for conv in convs:
@@ -553,7 +612,7 @@ def settings_delete_account():
     db.session.delete(user)
     db.session.commit()
 
-    # wipe disk files after the DB transaction succeeds
+    # wipe disk files (chat media) after the DB transaction succeeds
     for fname in files_to_remove:
         try:
             os.remove(os.path.join(upload_dir, fname))
@@ -585,11 +644,13 @@ def map_page():
 def _map_page_context():
     city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
+    now = datetime.utcnow()
 
     # Top trending city / category derived from the global Trending top N.
     # Group the top-N reports by city (or category), and rank groups by:
     #   1. how many of the top-N are in that city (descending)
     #   2. the highest-scoring single report within that city (tiebreaker)
+    # Only non-expired reports are considered (Report.expires_at > now).
     from sqlalchemy import case
     verify_sum = db.func.coalesce(
         db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
@@ -601,6 +662,7 @@ def _map_page_context():
         db.session.query(
             Report.id, Report.city_id, Report.category_id, score_expr,
         )
+        .filter(Report.expires_at > now)
         .outerjoin(Verification, Verification.report_id == Report.id)
         .group_by(Report.id)
         .order_by(score_expr.desc(), Report.created_at.desc())
@@ -1295,6 +1357,10 @@ def view_report(token):
     except BadSignature:
         abort(404)
     report = Report.query.get_or_404(report_id)
+    # expired reports get hidden until cleanup deletes them — 404 the URL too
+    # so direct links don't leak content scheduled for deletion
+    if report.expires_at and report.expires_at <= datetime.utcnow():
+        abort(404)
     is_report_favourited = False
     if current_user.is_authenticated:
         is_report_favourited = FavouriteReport.query.filter_by(
@@ -1351,15 +1417,17 @@ def api_vote_report(report_id):
     # Author-level aggregates so the profile UI can update credibility live
     # without a page reload. trust_score is None when the author has no votes
     # at all — JSON-encoded as null so the frontend can show "—".
+    # Author is None when the report's owner has deleted their account; the
+    # report stays visible but the credibility update has nothing to attach to.
     author = report.author
     return jsonify({
         'verify_count': Verification.query.filter_by(report_id=report.id, status='verify').count(),
         'dispute_count': Verification.query.filter_by(report_id=report.id, status='dispute').count(),
         'user_vote': user_vote,
-        'author_id': author.id,
-        'author_verify_total': author.verifications_received,
-        'author_dispute_total': author.disputes_received,
-        'author_credibility': author.trust_score,
+        'author_id': author.id if author else None,
+        'author_verify_total': author.verifications_received if author else 0,
+        'author_dispute_total': author.disputes_received if author else 0,
+        'author_credibility': author.trust_score if author else None,
     })
 
 
@@ -1509,13 +1577,17 @@ def _trending_report_ids():
 
 # /listing — list all reports.
 # Public — guests can browse without an account.
-# Default sort = newest first. ?sort=top is the Trending page, gated to
-# logged-in users whose accounts are at least 1 day old (anti-spam).
+# Default sort = newest first. ?sort=top is the Trending page.
 def _build_listing_response(base_query, feed_mode=None):
     """Shared listing-page handler. base_query is the starting Report.query
     (already pre-filtered by /listing/following if applicable). feed_mode is
     'following' for the From Following page, None for the regular listing —
-    template uses it to render the right title."""
+    template uses it to render the right title.
+
+    Also runs the throttled lazy cleanup of expired reports — this is the
+    main public listing endpoint so it's a natural place to garbage-collect."""
+    _cleanup_expired_reports()
+
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     city_id = request.args.get('city_id', type=int)
@@ -1534,7 +1606,9 @@ def _build_listing_response(base_query, feed_mode=None):
         if selected_city:
             state_id = selected_city.state_id
 
-    query = base_query
+    # Wrap base_query with the active-reports filter so expired posts never
+    # show up on the listing (regardless of which feed it was called from).
+    query = base_query.filter(Report.expires_at > datetime.utcnow())
     # Trending filter options surface only cities / categories that actually
     # appear in the current top 10. Empty until we compute them below.
     trending_filter_cities = []
@@ -1558,7 +1632,11 @@ def _build_listing_response(base_query, feed_mode=None):
             top_reports = []
         else:
             query = query.filter(Report.id.in_(trending_ids_set))
-            top_reports = base_query.filter(Report.id.in_(trending_ids_set)).all()
+            top_reports = (
+                base_query.filter(Report.expires_at > datetime.utcnow())
+                          .filter(Report.id.in_(trending_ids_set))
+                          .all()
+            )
 
         # Drop a stale selection that isn't anywhere in the trending set —
         # avoids confusing "no results" for a filter that doesn't apply.
@@ -1885,14 +1963,15 @@ COMMENT_MAX_LENGTH = 2000
 
 def _serialize_comment(comment, current_user_id=None):
     """Shared comment-to-JSON shape for the create endpoint and any future list endpoint."""
+    author = comment.author
     return {
         'id': comment.id,
         'body': comment.body,
-        'author_username': comment.author.username,
-        'author_url': url_for('user_profile_page', username=comment.author.username),
-        'author_initial': comment.author.username[:1].upper(),
-        'author_avatar_url': (url_for('static', filename=f'uploads/{comment.author.avatar_filename}')
-                              if comment.author.avatar_filename else None),
+        'author_username': author.username if author else 'deleted_user',
+        'author_url': url_for('user_profile_page', username=author.username) if author else None,
+        'author_initial': (author.username[:1].upper() if author else '?'),
+        'author_avatar_url': (url_for('static', filename=f'uploads/{author.avatar_filename}')
+                              if author and author.avatar_filename else None),
         'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
         'is_own': comment.user_id == current_user_id,
         'verify_count': comment.verify_count,
