@@ -43,8 +43,9 @@
                             <div class="fav-trending">📈 Trending</div>
                         {% endif %}
 
-                        <div class="fav-panel-actions">
+                        <div class="fav-panel-actions d-flex flex-column gap-2">
                             <a class="btn btn-ghost" href="{{ url_for('listing_page') }}?city_id={{ s.id }}">View Reports</a>
+                            <a class="btn btn-ghost" href="{{ url_for('live_weather_page') }}?city={{ s.name | urlencode }}">View Weather</a>
                         </div>
                     </div>
                 </article>
