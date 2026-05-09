@@ -209,7 +209,7 @@
                                 <span>{{ r.city.name }}, {{ r.city.state.code }}</span>
                                 <span class="listing-item-author">— by
                                     {% if r.author %}
-                                        <a href="{{ url_for('user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
+                                        <a href="{{ url_for(users.user_profile_page', username=r.author.username) }}">{{ r.author.username }}</a>
                                     {% else %}
                                         <span class="deleted-user">deleted_user</span>
                                     {% endif %}

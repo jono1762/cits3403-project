@@ -64,7 +64,7 @@
                         </svg>
                     </a>
                     {# username links straight to the profile page now that the dropdown is gone #}
-                    <a href="{{ url_for('profile_page') }}" class="app-account-toggle">{{ current_user.username }}</a>
+                    <a href="{{ url_for(users.profile_page') }}" class="app-account-toggle">{{ current_user.username }}</a>
                 {% elif is_guest %}
                     {# guest viewing the public map — visually shows they're not signed in #}
                     <span class="app-account-toggle app-account-guest">Guest</span>
@@ -115,7 +115,7 @@
                         <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile." data-bs-dismiss="offcanvas">Profile</a>
                         <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to search for users." data-bs-dismiss="offcanvas">Search Users</a>
                     {% else %}
-                        <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                        <a href="{{ url_for(users.profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for(users.profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
 
@@ -181,7 +181,7 @@
                         <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile.">Profile</a>
                         <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to search for users.">Search Users</a>
                     {% else %}
-                        <a href="{{ url_for('profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('profile_page') else '' }}">Profile</a>
+                        <a href="{{ url_for(users.profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for(users.profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
 
@@ -245,7 +245,7 @@
                             <span class="expiring-banner-text">
                                 ⏰ {{ expiring_soon_count }} of your report{{ 's' if expiring_soon_count != 1 else '' }} will be removed soon. If you want to keep the content, please create a new report for it.
                             </span>
-                            <a href="{{ url_for('profile_page') }}" class="expiring-banner-action">View on profile</a>
+                            <a href="{{ url_for(users.profile_page') }}" class="expiring-banner-action">View on profile</a>
                             <button type="button" class="expiring-banner-close" id="expiring-banner-close" aria-label="Dismiss">×</button>
                         </div>
                     {% endif %}

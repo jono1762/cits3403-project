@@ -5,7 +5,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, a
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from .models import db, User, Category, Report, State, City, ReportMedia, Verification, Comment, CommentMedia, CommentVote, Follow, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, BlockedUser
+from .models import db, User, Category, Report, City, Verification, Comment, CommentMedia, CommentVote, Conversation, ChatMessage, ChatMessageMedia, FavouriteLocation, FavouriteReport, BlockedUser
 # Report-related helpers live in the reports blueprint now. The remaining
 # routes in this file (favourites, comments, chat) still need a few of them,
 # so we re-import here rather than duplicating the logic.
@@ -17,6 +17,8 @@ from .blueprints.reports import (
     TRENDING_LIMIT,
     COMMENT_MAX_LENGTH,
 )
+# Chat send/inbox endpoints still use the block-check helper from users.
+from .blueprints.users import _is_blocked
  
 @app.route('/')
 def index():
@@ -413,237 +415,7 @@ def home_intro():
  
  
 # login / signup / login_email / logout moved to app/blueprints/auth.py
- 
-def _following_users_for(user):
-    """Return the User rows this profile-user follows (newest follow first)."""
-    rows = (
-        Follow.query
-        .filter_by(follower_id=user.id)
-        .order_by(Follow.created_at.desc())
-        .all()
-    )
-    # Resolve each Follow row to the actual followed-User object
-    return [User.query.get(r.followed_id) for r in rows if User.query.get(r.followed_id)]
- 
- 
-def _follower_users_for(user):
-    """Return the User rows that follow this profile-user (newest follow first)."""
-    rows = (
-        Follow.query
-        .filter_by(followed_id=user.id)
-        .order_by(Follow.created_at.desc())
-        .all()
-    )
-    return [User.query.get(r.follower_id) for r in rows if User.query.get(r.follower_id)]
- 
- 
-# /profile — show the logged-in user's own basic info
-@app.route('/profile')
-@login_required
-def profile_page():
-    recent_reports = (
-        Report.query
-        .filter_by(user_id=current_user.id)
-        .order_by(Report.created_at.desc())
-        .limit(5)
-        .all()
-    )
-    return render_template(
-        'profile.html',
-        user=current_user,
-        recent_reports=recent_reports,
-        is_own_profile=True,
-        following_users=_following_users_for(current_user),
-        follower_users=_follower_users_for(current_user),
-    )
- 
-# /users/<username> — view someone else's profile (read-only, no edit buttons)
-@app.route('/users/<username>')
-@login_required
-def user_profile_page(username):
-    user = User.query.filter_by(username=username).first_or_404()
-    recent_reports = (
-        Report.query
-        .filter_by(user_id=user.id)
-        .order_by(Report.created_at.desc())
-        .limit(5)
-        .all()
-    )
-    return render_template(
-        'profile.html',
-        user=user,
-        recent_reports=recent_reports,
-        is_own_profile=(user.id == current_user.id),
-        following_users=_following_users_for(user),
-        follower_users=_follower_users_for(user),
-    )
- 
- 
-@app.route('/profile/following-privacy', methods=['POST'])
-@login_required
-def profile_toggle_following_privacy():
-    """Flip the visibility of the current user's Following list. Only the
-    profile owner can toggle their own setting (enforced by current_user).
-    Redirects with #following so the JS keeps the user on the Following tab."""
-    current_user.following_list_public = not current_user.following_list_public
-    db.session.commit()
-    return redirect(url_for('profile_page') + '#following')
- 
- 
-@app.route('/profile/followers-privacy', methods=['POST'])
-@login_required
-def profile_toggle_followers_privacy():
-    """Flip the visibility of the current user's Followers list. Same shape
-    as the Following privacy toggle — owner-only, redirects with #followers."""
-    current_user.followers_list_public = not current_user.followers_list_public
-    db.session.commit()
-    return redirect(url_for('profile_page') + '#followers')
- 
-# /search — find users by username substring (case-insensitive)
-@app.route('/search')
-@login_required
-def search_users_page():
-    q = (request.args.get('q') or '').strip()
-    users = []
-    if q:
-        users = (
-            User.query
-            .filter(User.username.ilike(f'%{q}%'))
-            .order_by(User.username)
-            .limit(20)
-            .all()
-        )
-    return render_template('search.html', q=q, users=users)
- 
-# /api/search-users — JSON endpoint for the sidebar search panel.
-# Returns top 10 username matches as you type, no full page reload needed.
-@app.route('/api/search-users')
-@login_required
-def api_search_users():
-    q = (request.args.get('q') or '').strip()
-    if not q:
-        return jsonify([])
-    users = (
-        User.query
-        .filter(User.username.ilike(f'%{q}%'))
-        .filter(User.id != current_user.id)   # don't surface self in chat search
-        .order_by(User.username)
-        .limit(10)
-        .all()
-    )
-    return jsonify([
-        {
-            'user_id': u.id,
-            'username': u.username,
-            'avatar_initial': u.username[:1].upper(),
-            'profile_url': url_for('user_profile_page', username=u.username),
-        }
-        for u in users
-    ])
- 
- 
-# ---------------- Follow / Unfollow ----------------
-# POST creates the edge (idempotent — re-following is a no-op).
-# DELETE removes it. Self-follow is rejected at the API; the UI hides the
-# button on own profiles, but defence-in-depth never hurts.
- 
-@app.route('/api/follow/<int:user_id>', methods=['POST'])
-@login_required
-def api_follow_user(user_id):
-    if user_id == current_user.id:
-        return jsonify({'error': "You can't follow yourself."}), 400
-    target = User.query.get_or_404(user_id)
-    existing = Follow.query.filter_by(
-        follower_id=current_user.id, followed_id=target.id
-    ).first()
-    if not existing:
-        db.session.add(Follow(follower_id=current_user.id, followed_id=target.id))
-        db.session.commit()
-    return jsonify({
-        'is_following': True,
-        'follower_count': target.follower_count,
-        'following_count': target.following_count,
-    })
- 
-@app.route('/api/follow/<int:user_id>', methods=['DELETE'])
-@login_required
-def api_unfollow_user(user_id):
-    target = User.query.get_or_404(user_id)
-    existing = Follow.query.filter_by(
-        follower_id=current_user.id, followed_id=target.id
-    ).first()
-    if existing:
-        db.session.delete(existing)
-        db.session.commit()
-    return jsonify({
-        'is_following': False,
-        'follower_count': target.follower_count,
-        'following_count': target.following_count,
-    })
- 
- 
-# ---------------- Block / Unblock (chat-only) ----------------
-# When user A blocks user B:
-#   - B can no longer send messages to A (server returns 403 in api_send_message)
-#   - B's existing conversations with A are filtered out of A's inbox
-#   - B can still see A's posts / comments / profile — this is chat-only
-# Block button appears on the OTHER user's profile page (next to Follow / Message).
- 
-def _is_blocked(blocker_id, blocked_id):
-    """True if blocker_id has blocked blocked_id (chat-wise)."""
-    return BlockedUser.query.filter_by(
-        blocker_id=blocker_id, blocked_id=blocked_id
-    ).first() is not None
- 
- 
-@app.route('/api/block/<int:user_id>', methods=['POST'])
-@login_required
-def api_block_user(user_id):
-    if user_id == current_user.id:
-        return jsonify({'error': "You can't block yourself."}), 400
-    target = User.query.get_or_404(user_id)
-    if not _is_blocked(current_user.id, target.id):
-        db.session.add(BlockedUser(blocker_id=current_user.id, blocked_id=target.id))
-        db.session.commit()
-    return jsonify({'is_blocked': True})
- 
- 
-@app.route('/api/blocked-users')
-@login_required
-def api_list_blocked_users():
-    """List the users the current user has blocked, newest-first.
-    Powers the 'manage blocked' modal in the chat sidebar."""
-    rows = (
-        BlockedUser.query
-        .filter_by(blocker_id=current_user.id)
-        .order_by(BlockedUser.created_at.desc())
-        .all()
-    )
-    out = []
-    for row in rows:
-        u = User.query.get(row.blocked_id)
-        if not u:
-            continue
-        out.append({
-            'user_id': u.id,
-            'username': u.username,
-            'avatar_initial': u.username[:1].upper(),
-            'profile_url': url_for('user_profile_page', username=u.username),
-        })
-    return jsonify(out)
- 
- 
-@app.route('/api/block/<int:user_id>', methods=['DELETE'])
-@login_required
-def api_unblock_user(user_id):
-    target = User.query.get_or_404(user_id)
-    row = BlockedUser.query.filter_by(
-        blocker_id=current_user.id, blocked_id=target.id
-    ).first()
-    if row:
-        db.session.delete(row)
-        db.session.commit()
-    return jsonify({'is_blocked': False})
+# profile / search / follow / block routes moved to app/blueprints/users.py
  
  
 # ---------------- Chat ----------------
@@ -691,7 +463,7 @@ def _serialize_conversation_summary(conv, viewer):
         'avatar_initial': other.username[:1].upper(),
         'avatar_url': (url_for('static', filename=f'uploads/{other.avatar_filename}')
                        if other.avatar_filename else None),
-        'profile_url': url_for('user_profile_page', username=other.username),
+        'profile_url': url_for('users.user_profile_page', username=other.username),
         'last_body': last.body if last else '',
         'last_at': conv.last_message_at.isoformat() if conv.last_message_at else None,
         'last_sender_is_me': bool(last and last.sender_id == viewer.id),
@@ -722,7 +494,7 @@ def api_user_brief(user_id):
         'avatar_initial': u.username[:1].upper(),
         'avatar_url': (url_for('static', filename=f'uploads/{u.avatar_filename}')
                        if u.avatar_filename else None),
-        'profile_url': url_for('user_profile_page', username=u.username),
+        'profile_url': url_for('users.user_profile_page', username=u.username),
         'is_blocked': _is_blocked(current_user.id, u.id),
     })
  
@@ -938,7 +710,7 @@ def _serialize_comment(comment, current_user_id=None):
         'id': comment.id,
         'body': comment.body,
         'author_username': author.username if author else 'deleted_user',
-        'author_url': url_for('user_profile_page', username=author.username) if author else None,
+        'author_url': url_for('users.user_profile_page', username=author.username) if author else None,
         'author_initial': (author.username[:1].upper() if author else '?'),
         'author_avatar_url': (url_for('static', filename=f'uploads/{author.avatar_filename}')
                               if author and author.avatar_filename else None),

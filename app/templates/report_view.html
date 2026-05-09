@@ -41,7 +41,7 @@
         <p class="report-view-author">
             Posted by
             {% if report.author %}
-                <a href="{{ url_for('user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
+                <a href="{{ url_for(users.user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
             {% else %}
                 <span class="deleted-user">deleted_user</span>
             {% endif %}
@@ -178,7 +178,7 @@
                     {% set is_own_c = current_user.is_authenticated and c.user_id == current_user.id %}
                     <li class="comment-item" data-comment-id="{{ c.id }}">
                         {% if c.author %}
-                            <a class="comment-avatar" href="{{ url_for('user_profile_page', username=c.author.username) }}" aria-hidden="true">
+                            <a class="comment-avatar" href="{{ url_for(users.user_profile_page', username=c.author.username) }}" aria-hidden="true">
                                 {% if c.author.avatar_filename %}
                                     <img src="{{ url_for('static', filename='uploads/' + c.author.avatar_filename) }}" alt="">
                                 {% else %}
@@ -191,7 +191,7 @@
                         <div class="comment-body">
                             <div class="comment-meta">
                                 {% if c.author %}
-                                    <a class="comment-author" href="{{ url_for('user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
+                                    <a class="comment-author" href="{{ url_for(users.user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
                                 {% else %}
                                     <span class="comment-author deleted-user">deleted_user</span>
                                 {% endif %}

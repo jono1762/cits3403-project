@@ -22,7 +22,7 @@
                         <strong>{{ u.username }}</strong>
                         <span class="text-muted ms-2">— {{ u.reports | length }} reports</span>
                     </span>
-                    <a href="{{ url_for('user_profile_page', username=u.username) }}" class="btn btn-sm btn-outline-primary">View Profile</a>
+                    <a href="{{ url_for(users.user_profile_page', username=u.username) }}" class="btn btn-sm btn-outline-primary">View Profile</a>
                 </li>
             {% endfor %}
         </ul>
