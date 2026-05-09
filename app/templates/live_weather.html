@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="live-weather-page">
+    <header class="live-weather-header">
+        <h1>Live Weather</h1>
+        <p>Current conditions for Australian cities (preview).</p>
+    </header>
+
+    <div class="live-weather-controls mb-4">
+        <label for="live-weather-city" class="form-label">Select city</label>
+        <select id="live-weather-city" class="form-select" aria-label="Select city for live weather">
+            {% for c in weather_cities %}
+                <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div id="live-weather-widget" class="card p-3" aria-live="polite">
+        <div id="live-weather-placeholder">
+            <p class="mb-0">Select a city to see live weather (integration coming next).</p>
+        </div>
+    </div>
+
+</section>
+
+<script>
+// Simple UI: persist selection and update placeholder text
+(function () {
+    const select = document.getElementById('live-weather-city');
+    const display = document.getElementById('live-weather-placeholder');
+    if (!select || !display) return;
+
+    function setCity(city) {
+        display.innerHTML = `<h2>${city}</h2><p class="text-muted">Weather data will appear here.</p>`;
+        try { localStorage.setItem('liveWeatherCity', city); } catch (e) { }
+    }
+
+    select.addEventListener('change', () => setCity(select.value));
+
+    try {
+        const saved = localStorage.getItem('liveWeatherCity');
+        if (saved) {
+            const opt = Array.from(select.options).find(o => o.value === saved);
+            if (opt) {
+                select.value = saved;
+                setCity(saved);
+            }
+        }
+    } catch (e) { }
+})();
+</script>
+
+{% endblock %}

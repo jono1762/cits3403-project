@@ -1811,6 +1811,13 @@ def reports_page():
         cities_by_state=cities_by_state,
     )
 
+
+@app.route('/reports/weather')
+def live_weather_page():
+    """Public Live Weather page — shows a city selector and (future) live data."""
+    weather_cities = sorted(CITY_COORDS.keys())
+    return render_template('live_weather.html', weather_cities=weather_cities)
+
 # POST /api/reports — logged-in user submits a report via AJAX
 # accepts either JSON (no files) or multipart/form-data (with optional image/video files)
 @app.route('/api/reports', methods=['POST'])
