@@ -31,7 +31,7 @@
            the user never has to hit Apply. Picking a state submits with just
            state_id (city wipes); picking a city submits state_id + city_id.
            Category chips stay separate (they're already auto-navigating links). #}
-        <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
+        <form method="get" action="{{ url_for('reports.listing_page') }}" class="listing-filters">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">State</label>
@@ -66,7 +66,7 @@
                     </select>
                 </div>
                 <div class="col-md-3 listing-filter-actions mt-2">
-                    <a href="{{ url_for('listing_page') }}" class="listing-filter-clear">Clear</a>
+                    <a href="{{ url_for('reports.listing_page') }}" class="listing-filter-clear">Clear</a>
                 </div>
             </div>
             {# preserve the category chip selection across state/city changes #}
@@ -78,12 +78,12 @@
         {# Category chips — click any one to filter. Each link carries the current
            state/city so users don't lose those filters when changing category. #}
         <div class="listing-categories">
-            <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id) }}"
+            <a href="{{ url_for('reports.listing_page', state_id=selected_state_id, city_id=selected_city_id) }}"
                class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
                 🌏 All categories
             </a>
             {% for cat in categories %}
-                <a href="{{ url_for('listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id) }}"
+                <a href="{{ url_for('reports.listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id) }}"
                    class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
                    style="--cat: {{ cat.marker_color }};">
                     {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
@@ -95,7 +95,7 @@
            top 10. Auto-submits on change. Hidden if every report is in the same
            city / category (nothing to narrow down). #}
         {% if trending_filter_cities or trending_filter_categories %}
-            <form method="get" action="{{ url_for('listing_page') }}" class="listing-filters">
+            <form method="get" action="{{ url_for('reports.listing_page') }}" class="listing-filters">
                 <input type="hidden" name="sort" value="top">
                 <div class="row g-2 align-items-end">
                     {% if trending_filter_cities %}
@@ -121,7 +121,7 @@
                         </div>
                     {% endif %}
                     <div class="col-md-2 listing-filter-actions mt-2">
-                        <a href="{{ url_for('listing_page', sort='top') }}" class="listing-filter-clear">Clear</a>
+                        <a href="{{ url_for('reports.listing_page', sort='top') }}" class="listing-filter-clear">Clear</a>
                     </div>
                 </div>
             </form>
@@ -338,19 +338,19 @@
                 <ul class="pagination justify-content-center">
                     {# carry filter ids through pagination — url_for omits None values #}
                     <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
-                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.prev_num, state_id=selected_state_id, city_id=selected_city_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_prev else '#' }}">Previous</a>
+                        <a class="page-link" href="{{ url_for('reports.listing_page', page=pagination.prev_num, state_id=selected_state_id, city_id=selected_city_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_prev else '#' }}">Previous</a>
                     </li>
                     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                         {% if p %}
                             <li class="page-item {{ 'active' if p == pagination.page else '' }}">
-                                <a class="page-link" href="{{ url_for('listing_page', page=p, state_id=selected_state_id, city_id=selected_city_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) }}">{{ p }}</a>
+                                <a class="page-link" href="{{ url_for('reports.listing_page', page=p, state_id=selected_state_id, city_id=selected_city_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) }}">{{ p }}</a>
                             </li>
                         {% else %}
                             <li class="page-item disabled"><span class="page-link">…</span></li>
                         {% endif %}
                     {% endfor %}
                     <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
-                        <a class="page-link" href="{{ url_for('listing_page', page=pagination.next_num, state_id=selected_state_id, city_id=selected_city_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_next else '#' }}">Next</a>
+                        <a class="page-link" href="{{ url_for('reports.listing_page', page=pagination.next_num, state_id=selected_state_id, city_id=selected_city_id, category_id=selected_category_id, sort=sort if sort != 'recent' else None) if pagination.has_next else '#' }}">Next</a>
                     </li>
                 </ul>
             </nav>
