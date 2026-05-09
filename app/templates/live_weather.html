@@ -1,71 +1,34 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
-    <style>
-        .weather-search-wrapper {
-            position: relative;
-            max-width: 500px;
-            margin-bottom: 2rem;
-        }
-        .weather-search-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-        .weather-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 4px 4px;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 100;
-        }
-        .weather-suggestions li {
-            padding: 0.5rem 0.75rem;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .weather-suggestions li:hover {
-            background-color: #f5f5f5;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/live_weather.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="live-weather-page">
-    <header class="live-weather-header">
-        <h1>Live Weather</h1>
-        <p>Current conditions for Australian cities (preview).</p>
-    </header>
+<section class="weather-page">
+    <div class="weather-card">
+        <header class="weather-header">
+            <h1 class="weather-title">Live Weather</h1>
+            <p class="weather-subtitle">Search for a city to view current weather conditions.</p>
+        </header>
 
-    <div class="weather-search-wrapper">
-        <label for="weather-search-city" class="form-label">Search city by name or state</label>
-        <input 
-            type="text" 
-            id="weather-search-city" 
-            class="weather-search-input" 
-            placeholder="Search for a city by name or its state..."
-            aria-label="Search for a city">
-        <ul id="weather-suggestions" class="weather-suggestions"></ul>
-    </div>
+        <div class="weather-search-section mb-4">
+            <div class="weather-search-wrapper">
+                <input
+                    id="weatherSearchInput"
+                    type="text"
+                    class="form-control weather-search-input"
+                    placeholder="Search for a city to see live weather"
+                    autocomplete="off"
+                />
+                <ul id="weatherSuggestions" class="weather-suggestions"></ul>
+            </div>
+        </div>
 
-    <div id="live-weather-widget" class="card p-3" aria-live="polite">
-        <div id="live-weather-placeholder">
-            <p class="mb-0">Search for a city to see live weather (integration coming next).</p>
+        <div id="weatherDisplay" class="weather-display text-center">
+            <p class="mb-0 text-muted">Select a city to view weather</p>
         </div>
     </div>
-
 </section>
 
 <script type="application/json" id="weather-cities-data">{{ weather_cities|tojson }}</script>
@@ -73,21 +36,70 @@
 <script>
 (function () {
     const WEATHER_CITIES = JSON.parse(document.getElementById("weather-cities-data").textContent);
-    const searchInput = document.getElementById('weather-search-city');
-    const suggestionsList = document.getElementById('weather-suggestions');
-    const display = document.getElementById('live-weather-placeholder');
+    const searchInput = document.getElementById('weatherSearchInput');
+    const suggestionsList = document.getElementById('weatherSuggestions');
+    const display = document.getElementById('weatherDisplay');
     if (!searchInput || !suggestionsList || !display) return;
 
     let suggestionsOpen = false;
 
     function setCity(cityObj) {
-        display.innerHTML = `<h2>${cityObj.name}</h2><p class="text-muted">Weather data will appear here.</p>`;
+        display.innerHTML = `<h2>${cityObj.name}</h2><p class="text-muted">Loading weather...</p>`;
         searchInput.value = cityObj.name;
         suggestionsList.innerHTML = '';
         suggestionsOpen = false;
         try { localStorage.setItem('liveWeatherCity', cityObj.short_name); } catch (e) { }
         // update URL without reload
         window.history.replaceState({}, '', `?city=${encodeURIComponent(cityObj.short_name)}`);
+        
+        // Fetch weather data from API
+        fetch(`/api/weather/${encodeURIComponent(cityObj.short_name)}`)
+            .then(r => {
+                if (!r.ok) throw new Error('Weather fetch failed');
+                return r.json();
+            })
+            .then(weather => {
+                const temp = weather.temp_c !== null ? Math.round(weather.temp_c) : '—';
+                const condition = weather.condition || 'Unknown';
+                const wind = weather.wind_kph !== null ? `${Math.round(weather.wind_kph)} km/h ${weather.wind_direction}` : '—';
+                const precip = weather.precip_mm !== null ? `${weather.precip_mm.toFixed(1)} mm` : '—';
+                const fetched = new Date(weather.fetched_at).toLocaleTimeString();
+                
+                display.innerHTML = `
+                    <div class="weather-data">
+                        <h2 class="weather-city">${cityObj.name}</h2>
+                        <div class="weather-grid">
+                            <div class="weather-item">
+                                <div class="weather-label">Temperature</div>
+                                <div class="weather-value">${temp}°C</div>
+                            </div>
+                            <div class="weather-item">
+                                <div class="weather-label">Condition</div>
+                                <div class="weather-value">${condition}</div>
+                            </div>
+                            <div class="weather-item">
+                                <div class="weather-label">Wind</div>
+                                <div class="weather-value">${wind}</div>
+                            </div>
+                            <div class="weather-item">
+                                <div class="weather-label">Precipitation</div>
+                                <div class="weather-value">${precip}</div>
+                            </div>
+                        </div>
+                        <div class="weather-footer">
+                            <small class="text-muted">Updated: ${fetched} | Data: Open‑Meteo</small>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(err => {
+                display.innerHTML = `
+                    <div class="weather-data">
+                        <h2 class="weather-city">${cityObj.name}</h2>
+                        <p class="text-muted">Weather data unavailable. Please try again later.</p>
+                    </div>
+                `;
+            });
     }
 
     function search() {
@@ -105,6 +117,7 @@
         const toShow = filteredCities.slice(0, 5);
         toShow.forEach(city => {
             const li = document.createElement('li');
+            li.className = 'suggestion-item';
             li.textContent = city.name;
             li.addEventListener('click', () => setCity(city));
             suggestionsList.appendChild(li);
@@ -136,6 +149,7 @@
         const toShow = filteredCities.slice(0, 5);
         toShow.forEach(city => {
             const li = document.createElement('li');
+            li.className = 'suggestion-item';
             li.textContent = city.name;
             li.addEventListener('click', () => setCity(city));
             suggestionsList.appendChild(li);
@@ -152,3 +166,4 @@
 </script>
 
 {% endblock %}
+
