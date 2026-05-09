@@ -1,5 +1,6 @@
+import requests
 from flask import current_app as app
-from flask import render_template, redirect, url_for
+from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime
 from .models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport
@@ -337,5 +338,162 @@ def home_intro():
 def messages_page():
     # ?user=<id> → JS auto-opens that conversation on page load
     return render_template('messages.html')
- 
- 
+
+
+@app.route('/reports/weather')
+def live_weather_page():
+    """Public Live Weather page — shows a city search and (future) live data."""
+    # Build city list with state info (same structure as map_cities)
+    db_cities = City.query.order_by(City.name).all()
+    weather_cities_data = []
+    for c in db_cities:
+        coords = CITY_COORDS.get(c.name)
+        if not coords:
+            continue
+        state_name = c.state.name if c.state else ''
+        weather_cities_data.append({
+            'id': c.id,
+            'name': f'{c.name}, {state_name}' if state_name else c.name,
+            'short_name': c.name,
+            'state': state_name,
+            'lat': coords[0],
+            'lng': coords[1],
+        })
+    
+    # prefer a requested city from the querystring if it exists in our list
+    req_city = (request.args.get('city') or '').strip()
+    selected_city = None
+    if req_city:
+        # match against short_name
+        match = next((c for c in weather_cities_data if c['short_name'] == req_city), None)
+        if match:
+            selected_city = match
+    
+    return render_template('live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
+
+
+# ---- Weather API Caching ----
+# Simple in-memory cache with 10-minute TTL per city
+_WEATHER_CACHE = {}  # {city_name: {'data': {...}, 'cached_at': datetime, ...}}
+_WEATHER_CACHE_TTL_MIN = 10
+
+
+def _get_cached_weather(city_name):
+    """Return cached weather data if it exists and is fresh (< TTL), else None."""
+    if city_name not in _WEATHER_CACHE:
+        return None
+    cache_entry = _WEATHER_CACHE[city_name]
+    age = (datetime.utcnow() - cache_entry['cached_at']).total_seconds() / 60
+    if age < _WEATHER_CACHE_TTL_MIN:
+        return cache_entry['data']
+    return None
+
+
+def _set_cached_weather(city_name, data):
+    """Store weather data in cache with current timestamp."""
+    _WEATHER_CACHE[city_name] = {
+        'data': data,
+        'cached_at': datetime.utcnow(),
+    }
+
+
+def _fetch_weather_from_api(lat, lng):
+    """Call Open-Meteo API for current weather at (lat, lng).
+    Returns dict with temp_c, condition_text, wind_kph, wind_direction,
+    precip_mm; or None if the request fails."""
+    try:
+        url = 'https://api.open-meteo.com/v1/forecast'
+        params = {
+            'latitude': lat,
+            'longitude': lng,
+            'current': 'temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation',
+        }
+        resp = requests.get(url, params=params, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        current = data.get('current', {})
+        temp_c = current.get('temperature_2m')
+        weather_code = current.get('weather_code')
+        wind_kph = current.get('wind_speed_10m')
+        wind_dir = current.get('wind_direction_10m')
+        precip_mm = current.get('precipitation')
+        
+        # WMO Weather interpretation codes
+        # (simplified mapping for Australian context)
+        code_to_text = {
+            0: 'Clear sky',
+            1: 'Mainly clear',
+            2: 'Partly cloudy',
+            3: 'Overcast',
+            45: 'Foggy',
+            48: 'Depositing rime fog',
+            51: 'Light drizzle',
+            53: 'Moderate drizzle',
+            55: 'Dense drizzle',
+            61: 'Slight rain',
+            63: 'Moderate rain',
+            65: 'Heavy rain',
+            71: 'Slight snow',
+            73: 'Moderate snow',
+            75: 'Heavy snow',
+            77: 'Snow grains',
+            80: 'Slight rain showers',
+            81: 'Moderate rain showers',
+            82: 'Violent rain showers',
+            85: 'Slight snow showers',
+            86: 'Heavy snow showers',
+            95: 'Thunderstorm',
+            96: 'Thunderstorm with slight hail',
+            99: 'Thunderstorm with heavy hail',
+        }
+        condition_text = code_to_text.get(weather_code, 'Unknown')
+        
+        # Cardinal direction from degrees
+        def deg_to_cardinal(deg):
+            if deg is None:
+                return 'N'
+            dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+                    'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+            ix = int((deg + 11.25) / 22.5) % 16
+            return dirs[ix]
+        
+        wind_cardinal = deg_to_cardinal(wind_dir)
+        
+        return {
+            'temp_c': temp_c,
+            'condition': condition_text,
+            'wind_kph': wind_kph,
+            'wind_direction': wind_cardinal,
+            'precip_mm': precip_mm,
+            'fetched_at': datetime.utcnow().isoformat() + 'Z',
+        }
+    except Exception as e:
+        # Log silently; return None so frontend shows "unavailable"
+        return None
+
+
+@app.route('/api/weather/<city>')
+def api_get_weather(city):
+    """Fetch current weather for a city by name (short name like 'Sydney').
+    Returns cached data if available and fresh; otherwise fetches from Open-Meteo.
+    Public endpoint (no auth required)."""
+    # Validate city name is in our list
+    if city not in CITY_COORDS:
+        return jsonify({'error': 'City not found.'}), 404
+    
+    # Check cache first
+    cached = _get_cached_weather(city)
+    if cached:
+        return jsonify(cached)
+    
+    # Fetch from API
+    lat, lng = CITY_COORDS[city]
+    weather_data = _fetch_weather_from_api(lat, lng)
+    
+    if weather_data is None:
+        return jsonify({'error': 'Unable to fetch weather data.'}), 503
+    
+    # Cache and return
+    _set_cached_weather(city, weather_data)
+    return jsonify(weather_data)

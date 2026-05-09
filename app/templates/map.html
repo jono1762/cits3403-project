@@ -128,6 +128,7 @@
 
 <script>
 	const CITY_IDS_BY_NAME = JSON.parse(document.getElementById("city-ids-data").textContent);
+	const LIVE_WEATHER_URL = "{{ url_for('live_weather_page') }}";
 	const cityData = JSON.parse(document.getElementById("map-cities-data").textContent);
 	const searchBar = document.getElementById("searchBar");
 	const searchButton = document.getElementById("searchButton");
@@ -192,6 +193,7 @@
 					<div class="popup-state">${city.state}</div>
 					<div class="popup-actions">
 						<a href="${listingHref}" class="popup-action">View reports for ${shortName} →</a>
+						<a href="${LIVE_WEATHER_URL}?city=${encodeURIComponent(shortName)}" class="popup-action">View weather for ${shortName} →</a>
 						${popupSaveButton}
 					</div>
 				</div>

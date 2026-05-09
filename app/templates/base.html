@@ -100,6 +100,7 @@
 
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports.reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports.reports_page') else '' }}">Create Report</a>
+                    <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}" data-bs-dismiss="offcanvas">Live Weather</a>
                     <a href="{{ url_for('reports.listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
                     {% if not is_guest %}
                         <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Trending</a>
@@ -171,6 +172,7 @@
                         <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}">Trending</a>
                         <a href="{{ url_for('reports.listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_following_page') else '' }}">From Following</a>
                     {% endif %}
+                    <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}">Live Weather</a>
 
                     <div class="app-sidebar-group-header">Favourites</div>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
