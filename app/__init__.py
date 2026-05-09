@@ -149,7 +149,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'auth.login'
 
     # Register the four route groups. Each blueprint owns one slice of
     # the URL map (auth flows, report pages, user / profile pages, JSON API).
