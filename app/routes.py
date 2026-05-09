@@ -1417,15 +1417,17 @@ def api_vote_report(report_id):
     # Author-level aggregates so the profile UI can update credibility live
     # without a page reload. trust_score is None when the author has no votes
     # at all — JSON-encoded as null so the frontend can show "—".
+    # Author is None when the report's owner has deleted their account; the
+    # report stays visible but the credibility update has nothing to attach to.
     author = report.author
     return jsonify({
         'verify_count': Verification.query.filter_by(report_id=report.id, status='verify').count(),
         'dispute_count': Verification.query.filter_by(report_id=report.id, status='dispute').count(),
         'user_vote': user_vote,
-        'author_id': author.id,
-        'author_verify_total': author.verifications_received,
-        'author_dispute_total': author.disputes_received,
-        'author_credibility': author.trust_score,
+        'author_id': author.id if author else None,
+        'author_verify_total': author.verifications_received if author else 0,
+        'author_dispute_total': author.disputes_received if author else 0,
+        'author_credibility': author.trust_score if author else None,
     })
 
 
