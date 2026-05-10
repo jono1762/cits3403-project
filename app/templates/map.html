@@ -18,7 +18,7 @@
 			{% set trending_state = city_to_state.get(top_city.name) %}
 			{% set trending_flag = state_flag_url.get(trending_state) %}
 			<a class="stat-card stat-card-trending"
-			   href="{{ url_for('listing_page', sort='top', city_id=city_ids_by_name.get(top_city.name)) }}"
+			   href="{{ url_for('reports.listing_page', sort='top', city_id=city_ids_by_name.get(top_city.name)) }}"
 			   aria-label="View trending reports in {{ top_city.name }}">
 				<div class="stat-label">Top trending cities</div>
 				<div class="stat-num">
@@ -44,7 +44,7 @@
 		{# Top trending categories — also from server-side aggregation #}
 		{% if top_category %}
 			<a class="stat-card stat-card-trending-cat"
-			   href="{{ url_for('listing_page', sort='top', category_id=category_ids_by_name.get(top_category.name)) }}"
+			   href="{{ url_for('reports.listing_page', sort='top', category_id=category_ids_by_name.get(top_category.name)) }}"
 			   aria-label="View trending reports in {{ top_category.name }}">
 				<div class="stat-label">Top trending categories</div>
 				<div class="stat-num">
@@ -68,7 +68,7 @@
 		   guests / users with no saves. #}
 		{% if top_pinned_report %}
 			<a class="stat-card stat-card-fav"
-			   href="{{ url_for('view_report', token=top_pinned_report.id|report_token) }}"
+			   href="{{ url_for('reports.view_report', token=top_pinned_report.id|report_token) }}"
 			   aria-label="Open your top pinned report">
 				<div class="stat-label">From your saves</div>
 				<div class="stat-num">
@@ -106,7 +106,7 @@
 		<div class="map-cta-text">
 			<h2 class="map-cta-title">Spotted something? Share it.</h2>
 		</div>
-		<a href="{{ url_for('reports_page') }}" class="map-cta-btn">+ Submit a report</a>
+		<a href="{{ url_for('reports.reports_page') }}" class="map-cta-btn">+ Submit a report</a>
 	</section>
 
 	<div class="map-wrapper">
@@ -180,8 +180,8 @@
 			// build the listing URL with the city filter if we know the id,
 			// otherwise fall back to the unfiltered listing
 			const listingHref = cityId
-				? `{{ url_for('listing_page') }}?city_id=${cityId}`
-				: `{{ url_for('listing_page') }}`;
+				? `{{ url_for('reports.listing_page') }}?city_id=${cityId}`
+				: `{{ url_for('reports.listing_page') }}`;
 
 			// If the city is already saved, render the button as disabled + Saved
 			const isSaved = cityId && (SAVED_CITY_IDS.has(String(cityId)) || SAVED_CITY_IDS.has(Number(cityId)));
@@ -344,8 +344,8 @@
 		const shortName = selectedCity.name.split(",")[0].trim();
 		const cityId = CITY_IDS_BY_NAME[shortName];
 		const url = cityId
-			? `{{ url_for('listing_page') }}?city_id=${cityId}`
-			: `{{ url_for('listing_page') }}`;
+			? `{{ url_for('reports.listing_page') }}?city_id=${cityId}`
+			: `{{ url_for('reports.listing_page') }}`;
 		window.location = url;
 	}
 

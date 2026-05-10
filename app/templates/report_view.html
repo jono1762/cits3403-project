@@ -7,7 +7,7 @@
 
 {% block content %}
 <section class="report-view-page">
-    <a href="{{ url_for('listing_page') }}" class="report-view-back">← Back to all reports</a>
+    <a href="{{ url_for('reports.listing_page') }}" class="report-view-back">← Back to all reports</a>
 
     <article class="report-view-card" style="--cat: {{ report.category.marker_color }};">
         <header class="report-view-header">
@@ -27,7 +27,7 @@
                         {{ 'Saved ✓' if is_report_favourited else 'Save report' }}
                     </button>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="report-fav-login-link">Log in to save</a>
+                    <a href="{{ url_for('auth.login') }}" class="report-fav-login-link">Log in to save</a>
                 {% endif %}
             </div>
         </header>
@@ -41,7 +41,7 @@
         <p class="report-view-author">
             Posted by
             {% if report.author %}
-                <a href="{{ url_for('user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
+                <a href="{{ url_for('users.user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
             {% else %}
                 <span class="deleted-user">deleted_user</span>
             {% endif %}
@@ -112,7 +112,7 @@
             {% if is_own %}
                 <div class="own-report-actions">
                     <span class="own-report-tag">Your report</span>
-                    <a href="{{ url_for('edit_report_page', report_id=report.id) }}" class="report-view-edit-btn">
+                    <a href="{{ url_for('reports.edit_report_page', report_id=report.id) }}" class="report-view-edit-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -178,7 +178,7 @@
                     {% set is_own_c = current_user.is_authenticated and c.user_id == current_user.id %}
                     <li class="comment-item" data-comment-id="{{ c.id }}">
                         {% if c.author %}
-                            <a class="comment-avatar" href="{{ url_for('user_profile_page', username=c.author.username) }}" aria-hidden="true">
+                            <a class="comment-avatar" href="{{ url_for('users.user_profile_page', username=c.author.username) }}" aria-hidden="true">
                                 {% if c.author.avatar_filename %}
                                     <img src="{{ url_for('static', filename='uploads/' + c.author.avatar_filename) }}" alt="">
                                 {% else %}
@@ -191,7 +191,7 @@
                         <div class="comment-body">
                             <div class="comment-meta">
                                 {% if c.author %}
-                                    <a class="comment-author" href="{{ url_for('user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
+                                    <a class="comment-author" href="{{ url_for('users.user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
                                 {% else %}
                                     <span class="comment-author deleted-user">deleted_user</span>
                                 {% endif %}
@@ -280,7 +280,7 @@
                 </form>
             {% else %}
                 <p class="comment-login-prompt">
-                    <a href="{{ url_for('login') }}">Log in</a> to add a comment.
+                    <a href="{{ url_for('auth.login') }}">Log in</a> to add a comment.
                 </p>
             {% endif %}
         </section>
@@ -322,7 +322,7 @@
         try {
             const res = await fetch(`/api/reports/${btn.dataset.reportId}`, {method: 'DELETE'});
             if (res.ok) {
-                window.location.href = "{{ url_for('listing_page') }}";
+                window.location.href = "{{ url_for('reports.listing_page') }}";
             } else {
                 btn.disabled = false;
                 alert('Could not delete the report. Please try again.');

@@ -9,7 +9,7 @@
     <header class="settings-header">
         <h1 class="settings-title">Settings</h1>
         <p class="settings-subtitle">Update your account details and security preferences.</p>
-        <a href="{{ url_for('profile_edit_page') }}" class="settings-profile-link">
+        <a href="{{ url_for('auth.profile_edit_page') }}" class="settings-profile-link">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -21,7 +21,7 @@
     {# Account info — username + email. Both required + must stay unique.
        Profile picture lives on /profile/edit (public-facing identity stuff
        is separated from account / security settings). #}
-    <form method="POST" action="{{ url_for('settings_update_account') }}" class="settings-card">
+    <form method="POST" action="{{ url_for('auth.settings_update_account') }}" class="settings-card">
         <h2 class="settings-section-title">Account</h2>
         <div class="settings-field">
             <label for="settings-username" class="form-label">Username <span class="text-danger">*</span></label>
@@ -39,7 +39,7 @@
     {# Password — current + new + confirm. The new + confirm fields are
        disabled until the current password is verified via AJAX. Server
        still re-checks on submit (defence in depth). #}
-    <form method="POST" action="{{ url_for('settings_update_password') }}" class="settings-card" id="password-form">
+    <form method="POST" action="{{ url_for('auth.settings_update_password') }}" class="settings-card" id="password-form">
         <h2 class="settings-section-title">Password</h2>
         <div class="settings-field">
             <label for="settings-current-pw" class="form-label">Current password <span class="text-danger">*</span></label>
@@ -83,7 +83,7 @@
      aria-labelledby="delete-account-modal-label" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content delete-modal-content">
-            <form method="POST" action="{{ url_for('settings_delete_account') }}">
+            <form method="POST" action="{{ url_for('auth.settings_delete_account') }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="delete-account-modal-label">Delete your account?</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

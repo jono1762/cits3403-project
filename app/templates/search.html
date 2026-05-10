@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Search Users</h1>
 
-<form method="get" action="{{ url_for('search_users_page') }}" class="mb-4">
+<form method="get" action="{{ url_for('users.search_users_page') }}" class="mb-4">
     <div class="input-group">
         <input type="text" name="q" class="form-control"
                placeholder="Search by username..."
@@ -22,7 +22,7 @@
                         <strong>{{ u.username }}</strong>
                         <span class="text-muted ms-2">— {{ u.reports | length }} reports</span>
                     </span>
-                    <a href="{{ url_for('user_profile_page', username=u.username) }}" class="btn btn-sm btn-outline-primary">View Profile</a>
+                    <a href="{{ url_for('users.user_profile_page', username=u.username) }}" class="btn btn-sm btn-outline-primary">View Profile</a>
                 </li>
             {% endfor %}
         </ul>

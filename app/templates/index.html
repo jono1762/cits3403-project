@@ -28,7 +28,7 @@
 
                 <div class="home-cta">
                     <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg home-btn">Open the map</a>
-                    <a href="{{ url_for('reports_page') }}" class="btn btn-outline-primary btn-lg home-btn">Submit a report</a>
+                    <a href="{{ url_for('reports.reports_page') }}" class="btn btn-outline-primary btn-lg home-btn">Submit a report</a>
                 </div>
             {% else %}
                 {# Logged-out / guest version — original public CTAs #}
@@ -44,8 +44,8 @@
 
                 <div class="home-cta">
                     <a href="{{ url_for('map_page') }}" class="btn btn-primary btn-lg home-btn">Start as guest</a>
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg home-btn">Log in</a>
-                    <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg home-btn">Sign up</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg home-btn">Log in</a>
+                    <a href="{{ url_for('auth.signup') }}" class="btn btn-light btn-lg home-btn">Sign up</a>
                 </div>
             {% endif %}
 
