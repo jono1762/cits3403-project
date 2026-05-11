@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
+from markupsafe import Markup
 from datetime import datetime, timedelta
  
 from ..models import (
@@ -419,8 +420,11 @@ def _build_listing_response(base_query, feed_mode=None):
     # account-age requirement applies to whose VOTES count toward the
     # ranking, not who can see the page (see _trending_score_components).
     if sort == 'top' and not current_user.is_authenticated:
-        flash('Please log in to view the Trending page.', 'error')
-        return redirect(url_for('auth.login'))
+        flash(
+            Markup(f'You need to <a href="{url_for("auth.login")}" class="alert-link">log in</a> to view the Trending page.'),
+            'warning'
+        )
+        return redirect(url_for('reports.listing_page'))
  
     if city_id and not state_id:
         selected_city = City.query.get(city_id)

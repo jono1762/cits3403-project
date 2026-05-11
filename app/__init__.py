@@ -1,7 +1,8 @@
 import os
-from flask import Flask
+from flask import Flask, flash, redirect, request, url_for, jsonify
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from markupsafe import Markup
 from sqlalchemy import inspect
 from .models import db, User, Category, State, City, Report, Comment
 from .blueprints.auth import bp as auth_bp
@@ -18,6 +19,26 @@ migrate = Migrate()
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+# Custom unauthorized handler — guests clicking a @login_required link get a
+# flash with an inline "log in" link and stay on the page they came from,
+# instead of being yanked off to /login (the default Flask-Login behaviour).
+# AJAX / JSON callers still get a clean 401 so frontend code can react.
+@login_manager.unauthorized_handler
+def _unauthorized():
+    wants_json = (
+        request.is_json
+        or 'application/json' in (request.headers.get('Accept') or '')
+        or request.path.startswith('/api/')
+    )
+    if wants_json:
+        return jsonify({'error': 'Login required.'}), 401
+    flash(
+        Markup(f'You need to <a href="{url_for("auth.login")}" class="alert-link">log in</a> to do that.'),
+        'warning'
+    )
+    return redirect(request.referrer or url_for('home_intro'))
  
 # the 5 report categories + marker colour for each
 DEFAULT_CATEGORIES = [
