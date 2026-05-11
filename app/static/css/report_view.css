@@ -147,6 +147,7 @@
     margin: 0 0 0.8rem;
     color: #64748b;
     font-size: 0.95rem;
+    overflow-wrap: anywhere;
 }
 
 .report-view-author {
@@ -171,6 +172,7 @@
     color: #1e293b;
     font-size: 1.05rem;
     line-height: 1.6;
+    overflow-wrap: anywhere;
 }
 
 
