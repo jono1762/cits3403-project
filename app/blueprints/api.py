@@ -14,7 +14,7 @@ from ..models import (
     Conversation, ChatMessage, ChatMessageMedia,
     FavouriteLocation, FavouriteReport, BlockedUser,
 )
-from .reports import _media_type_for, MAX_MEDIA_FILES, COMMENT_MAX_LENGTH
+from .reports import _sniff_media_type, MAX_MEDIA_FILES, COMMENT_MAX_LENGTH
 from .users import _is_blocked
  
 bp = Blueprint('api', __name__)
@@ -277,9 +277,13 @@ def api_send_message(user_id):
         return jsonify({'error': f'Message too long (max {CHAT_MESSAGE_MAX_LENGTH} characters).'}), 400
     if len(files) > MAX_MEDIA_FILES:
         return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
+    # magic-byte sniff so a renamed binary (evil.exe → evil.png) can't sneak through
+    sniffs = []
     for f in files:
-        if not _media_type_for(f.filename):
-            return jsonify({'error': f'Unsupported file type: {f.filename}'}), 400
+        s = _sniff_media_type(f.stream)
+        if not s:
+            return jsonify({'error': f'"{f.filename}" is not a valid image or video.'}), 400
+        sniffs.append(s)
  
     conv = _find_or_create_conversation(current_user, recipient)
     msg = ChatMessage(conversation_id=conv.id, sender_id=current_user.id, body=body)
@@ -289,8 +293,7 @@ def api_send_message(user_id):
     # save uploaded files to disk + DB; clean up disk on error
     saved_paths = []
     try:
-        for f in files:
-            ext = f.filename.rsplit('.', 1)[-1].lower()
+        for f, (media_type, ext) in zip(files, sniffs):
             stored_name = f'{uuid.uuid4().hex}.{ext}'
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
             f.save(save_path)
@@ -299,7 +302,7 @@ def api_send_message(user_id):
                 message_id=msg.id,
                 filename=stored_name,
                 original_name=secure_filename(f.filename) or stored_name,
-                media_type=_media_type_for(f.filename),
+                media_type=media_type,
             ))
         conv.last_message_at = datetime.utcnow()
         db.session.commit()
@@ -421,9 +424,13 @@ def api_create_comment(report_id):
         return jsonify({'error': f'Comment too long (max {COMMENT_MAX_LENGTH} characters).'}), 400
     if len(files) > MAX_MEDIA_FILES:
         return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
+    # magic-byte sniff so a renamed binary (evil.exe → evil.png) can't sneak through
+    sniffs = []
     for f in files:
-        if not _media_type_for(f.filename):
-            return jsonify({'error': f'Unsupported file type: {f.filename}'}), 400
+        s = _sniff_media_type(f.stream)
+        if not s:
+            return jsonify({'error': f'"{f.filename}" is not a valid image or video.'}), 400
+        sniffs.append(s)
  
     comment = Comment(report_id=report.id, user_id=current_user.id, body=body)
     db.session.add(comment)
@@ -432,8 +439,7 @@ def api_create_comment(report_id):
     # save each file to disk + DB; if anything fails halfway, clean up the disk files
     saved_paths = []
     try:
-        for f in files:
-            ext = f.filename.rsplit('.', 1)[-1].lower()
+        for f, (media_type, ext) in zip(files, sniffs):
             stored_name = f'{uuid.uuid4().hex}.{ext}'
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], stored_name)
             f.save(save_path)
@@ -442,7 +448,7 @@ def api_create_comment(report_id):
                 comment_id=comment.id,
                 filename=stored_name,
                 original_name=secure_filename(f.filename) or stored_name,
-                media_type=_media_type_for(f.filename),
+                media_type=media_type,
             ))
         db.session.commit()
     except Exception:

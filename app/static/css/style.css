@@ -114,6 +114,11 @@ body::after {
     color: var(--color-text-muted);
     font-size: 0.85rem;
     font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.file-attach-status.is-error {
+    color: #b91c1c;
 }
 
 /* native <input type=file> — visually hidden but still keyboard-focusable

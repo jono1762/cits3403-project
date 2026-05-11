@@ -21,9 +21,6 @@ bp = Blueprint('reports', __name__)
 # Constants
 # ============================================================
  
-# whitelist of file types the upload endpoint accepts
-ALLOWED_IMAGE_EXTS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
-ALLOWED_VIDEO_EXTS = {'mp4', 'webm', 'mov'}
 MAX_MEDIA_FILES = 5
  
 TRENDING_LIMIT = 10
@@ -110,15 +107,42 @@ def _encode_report_id(report_id):
     return _report_serializer().dumps(report_id)
  
  
-def _media_type_for(filename):
-    """Return 'image' / 'video' for a filename, or None if the extension is not allowed."""
-    if not filename or '.' not in filename:
-        return None
-    ext = filename.rsplit('.', 1)[-1].lower()
-    if ext in ALLOWED_IMAGE_EXTS:
-        return 'image'
-    if ext in ALLOWED_VIDEO_EXTS:
-        return 'video'
+# Magic-byte signatures for each accepted format. Used by _sniff_media_type so
+# renaming a binary (evil.exe → evil.png) can't fool the upload endpoints —
+# we inspect the actual file content, not the user-supplied extension.
+_IMAGE_MAGIC = (
+    (b'\x89PNG\r\n\x1a\n', 'png'),
+    (b'\xff\xd8\xff',      'jpg'),
+    (b'GIF87a',            'gif'),
+    (b'GIF89a',            'gif'),
+)
+
+
+def _sniff_media_type(stream):
+    """Return (media_type, ext) — e.g. ('image', 'png') or ('video', 'mp4') —
+    if the stream's first bytes match a whitelisted format, else None. Stream
+    position is restored so the caller can still save the file afterwards."""
+    pos = stream.tell()
+    head = stream.read(16)
+    stream.seek(pos)
+
+    for sig, kind in _IMAGE_MAGIC:
+        if head.startswith(sig):
+            return ('image', kind)
+    if head[:4] == b'RIFF' and head[8:12] == b'WEBP':
+        return ('image', 'webp')
+
+    # MP4 / MOV / M4V — ISO Base Media File Format. Box layout: 4-byte size,
+    # 4-byte type 'ftyp', 4-byte major brand. QuickTime brand 'qt  ' = .mov,
+    # everything else (isom, mp42, iso5, ...) maps to .mp4 for our purposes.
+    if len(head) >= 12 and head[4:8] == b'ftyp':
+        brand = head[8:12]
+        return ('video', 'mov' if brand == b'qt  ' else 'mp4')
+
+    # WebM / Matroska — EBML header
+    if head[:4] == b'\x1A\x45\xDF\xA3':
+        return ('video', 'webm')
+
     return None
  
  
@@ -293,13 +317,17 @@ def edit_report_page(report_id):
             errors['city_id'] = 'Invalid or missing location.'
         if address and len(address) > 200:
             errors['address'] = 'Address must be 200 characters or fewer.'
+        new_sniffs = []
         if remaining_after_delete + len(new_files) > MAX_MEDIA_FILES:
             errors['media'] = f'Too many attachments (max {MAX_MEDIA_FILES} total).'
         else:
+            # magic-byte sniff — extension whitelist alone would let evil.exe → evil.png through
             for f in new_files:
-                if not _media_type_for(f.filename):
-                    errors['media'] = f'Unsupported file type: {f.filename}'
+                s = _sniff_media_type(f.stream)
+                if not s:
+                    errors['media'] = f'"{f.filename}" is not a valid image or video.'
                     break
+                new_sniffs.append(s)
  
         if not errors:
             report.category_id = category_id
@@ -319,8 +347,7 @@ def edit_report_page(report_id):
             # save any new uploads (same pattern as the create endpoint)
             saved_paths = []
             try:
-                for f in new_files:
-                    ext = f.filename.rsplit('.', 1)[-1].lower()
+                for f, (media_type, ext) in zip(new_files, new_sniffs):
                     stored_name = f'{uuid.uuid4().hex}.{ext}'
                     save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], stored_name)
                     f.save(save_path)
@@ -329,7 +356,7 @@ def edit_report_page(report_id):
                         report_id=report.id,
                         filename=stored_name,
                         original_name=secure_filename(f.filename) or stored_name,
-                        media_type=_media_type_for(f.filename),
+                        media_type=media_type,
                     ))
                 db.session.commit()
             except Exception:
@@ -644,13 +671,17 @@ def api_create_report():
         errors['city_id'] = 'Invalid or missing location.'
     if address and len(address) > 200:
         errors['address'] = 'Address must be 200 characters or fewer.'
+    sniffs = []
     if len(files) > MAX_MEDIA_FILES:
         errors['media'] = f'Too many files (max {MAX_MEDIA_FILES}).'
     else:
+        # magic-byte sniff — extension whitelist alone would let evil.exe → evil.png through
         for f in files:
-            if not _media_type_for(f.filename):
-                errors['media'] = f'Unsupported file type: {f.filename}'
+            s = _sniff_media_type(f.stream)
+            if not s:
+                errors['media'] = f'"{f.filename}" is not a valid image or video.'
                 break
+            sniffs.append(s)
  
     if errors:
         return jsonify({'errors': errors}), 400
@@ -669,8 +700,7 @@ def api_create_report():
     # if anything fails halfway, clean up the disk files we already wrote so we don't leak
     saved_paths = []
     try:
-        for f in files:
-            ext = f.filename.rsplit('.', 1)[-1].lower()
+        for f, (media_type, ext) in zip(files, sniffs):
             stored_name = f'{uuid.uuid4().hex}.{ext}'
             save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], stored_name)
             f.save(save_path)
@@ -680,7 +710,7 @@ def api_create_report():
                 report_id=report.id,
                 filename=stored_name,
                 original_name=secure_filename(f.filename) or stored_name,
-                media_type=_media_type_for(f.filename),
+                media_type=media_type,
             ))
         db.session.commit()
     except Exception:
