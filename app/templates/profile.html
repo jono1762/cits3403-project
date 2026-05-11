@@ -173,7 +173,7 @@
                     <div class="profile-post-header">
                         <span class="profile-post-icon" aria-hidden="true">{{ CATEGORY_EMOJI.get(r.category.name, '📝') }}</span>
                         <div class="profile-post-titles">
-                            <h3 class="profile-post-title">{{ r.category.name }} in {{ r.city.name }}</h3>
+                            <h2 class="profile-post-title">{{ r.category.name }} in {{ r.city.name }}</h2>
                             <div class="profile-post-sub">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -463,11 +463,11 @@
    delete modals. Only rendered on someone else's profile when the viewer is
    logged in (the only case where the Follow button exists). #}
 {% if not is_own_profile and current_user.is_authenticated %}
-<div class="modal fade" id="unfollow-modal" tabindex="-1" aria-labelledby="unfollow-modal-label" aria-hidden="true">
+<div class="modal fade" id="unfollow-modal" tabindex="-1" aria-labelledby="unfollow-modal-label" aria-hidden="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content delete-modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="unfollow-modal-label">Unfollow {{ user.username }}?</h5>
+                <h4 class="modal-title" id="unfollow-modal-label">Unfollow {{ user.username }}?</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
