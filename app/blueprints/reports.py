@@ -145,6 +145,21 @@ def _sniff_media_type(stream):
         return ('video', 'webm')
 
     return None
+
+
+def _validate_uploads(files):
+    """Sniff each uploaded file via _sniff_media_type. Returns a 2-tuple:
+        (sniffs, None) on success — sniffs is a list of (media_type, ext)
+        (None, error)  on first failure — error is a user-facing string
+    Lets each caller pick its own error-reporting style (JSON return vs
+    errors-dict)."""
+    sniffs = []
+    for f in files:
+        s = _sniff_media_type(f.stream)
+        if not s:
+            return None, f'"{f.filename}" is not a valid image or video.'
+        sniffs.append(s)
+    return sniffs, None
  
  
 def _trending_score_components():
@@ -322,13 +337,11 @@ def edit_report_page(report_id):
         if remaining_after_delete + len(new_files) > MAX_MEDIA_FILES:
             errors['media'] = f'Too many attachments (max {MAX_MEDIA_FILES} total).'
         else:
-            # magic-byte sniff — extension whitelist alone would let evil.exe → evil.png through
-            for f in new_files:
-                s = _sniff_media_type(f.stream)
-                if not s:
-                    errors['media'] = f'"{f.filename}" is not a valid image or video.'
-                    break
-                new_sniffs.append(s)
+            sniffs, err = _validate_uploads(new_files)
+            if err:
+                errors['media'] = err
+            else:
+                new_sniffs = sniffs
  
         if not errors:
             report.category_id = category_id
@@ -679,13 +692,11 @@ def api_create_report():
     if len(files) > MAX_MEDIA_FILES:
         errors['media'] = f'Too many files (max {MAX_MEDIA_FILES}).'
     else:
-        # magic-byte sniff — extension whitelist alone would let evil.exe → evil.png through
-        for f in files:
-            s = _sniff_media_type(f.stream)
-            if not s:
-                errors['media'] = f'"{f.filename}" is not a valid image or video.'
-                break
-            sniffs.append(s)
+        result, err = _validate_uploads(files)
+        if err:
+            errors['media'] = err
+        else:
+            sniffs = result
  
     if errors:
         return jsonify({'errors': errors}), 400

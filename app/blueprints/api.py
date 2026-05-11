@@ -14,7 +14,7 @@ from ..models import (
     Conversation, ChatMessage, ChatMessageMedia,
     FavouriteLocation, FavouriteReport, BlockedUser,
 )
-from .reports import _sniff_media_type, MAX_MEDIA_FILES, COMMENT_MAX_LENGTH
+from .reports import _validate_uploads, MAX_MEDIA_FILES, COMMENT_MAX_LENGTH
 from .users import _is_blocked
  
 bp = Blueprint('api', __name__)
@@ -277,13 +277,9 @@ def api_send_message(user_id):
         return jsonify({'error': f'Message too long (max {CHAT_MESSAGE_MAX_LENGTH} characters).'}), 400
     if len(files) > MAX_MEDIA_FILES:
         return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
-    # magic-byte sniff so a renamed binary (evil.exe → evil.png) can't sneak through
-    sniffs = []
-    for f in files:
-        s = _sniff_media_type(f.stream)
-        if not s:
-            return jsonify({'error': f'"{f.filename}" is not a valid image or video.'}), 400
-        sniffs.append(s)
+    sniffs, err = _validate_uploads(files)
+    if err:
+        return jsonify({'error': err}), 400
  
     conv = _find_or_create_conversation(current_user, recipient)
     msg = ChatMessage(conversation_id=conv.id, sender_id=current_user.id, body=body)
@@ -424,13 +420,9 @@ def api_create_comment(report_id):
         return jsonify({'error': f'Comment too long (max {COMMENT_MAX_LENGTH} characters).'}), 400
     if len(files) > MAX_MEDIA_FILES:
         return jsonify({'error': f'Too many files (max {MAX_MEDIA_FILES}).'}), 400
-    # magic-byte sniff so a renamed binary (evil.exe → evil.png) can't sneak through
-    sniffs = []
-    for f in files:
-        s = _sniff_media_type(f.stream)
-        if not s:
-            return jsonify({'error': f'"{f.filename}" is not a valid image or video.'}), 400
-        sniffs.append(s)
+    sniffs, err = _validate_uploads(files)
+    if err:
+        return jsonify({'error': err}), 400
  
     comment = Comment(report_id=report.id, user_id=current_user.id, body=body)
     db.session.add(comment)
