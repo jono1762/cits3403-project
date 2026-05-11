@@ -421,7 +421,7 @@ def _build_listing_response(base_query, feed_mode=None):
     # ranking, not who can see the page (see _trending_score_components).
     if sort == 'top' and not current_user.is_authenticated:
         flash(
-            Markup(f'You need to <a href="{url_for("auth.login")}" class="alert-link">log in</a> to view the Trending page.'),
+            Markup(f'<a href="{url_for("auth.login")}" class="alert-link">Log in</a> to view trending reports.'),
             'warning'
         )
         return redirect(url_for('reports.listing_page'))

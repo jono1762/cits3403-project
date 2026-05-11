@@ -24,7 +24,7 @@
 
     {# Show the full app shell (sidebar + navbar account stuff) for authenticated users
        AND for guests browsing public pages (map, listing). Intro stays a clean marketing-style page. #}
-    {% set guest_pages = ['map_page', 'reports.listing_page', 'live_weather_page'] %}
+    {% set guest_pages = ['map_page', 'reports.listing_page', 'live_weather_page', 'help_page', 'about_page'] %}
     {% set show_app = (current_user.is_authenticated or request.endpoint in guest_pages) and not is_intro %}
     {% set is_guest = show_app and not current_user.is_authenticated %}
 
@@ -107,21 +107,18 @@
                     <a href="{{ url_for('reports.reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports.reports_page') else '' }}">Create Report</a>
                     <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}" data-bs-dismiss="offcanvas">Live Weather</a>
                     <a href="{{ url_for('reports.listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
-                    {% if not is_guest %}
-                        <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Trending</a>
-                        <a href="{{ url_for('reports.listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_following_page') else '' }}" data-bs-dismiss="offcanvas">From Following</a>
-                    {% endif %}
+                    <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}" data-bs-dismiss="offcanvas">Trending</a>
+                    <a href="{{ url_for('reports.listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_following_page') else '' }}" data-bs-dismiss="offcanvas">From Following</a>
 
                     <div class="app-sidebar-group-header">Favourites</div>
                     <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}" data-bs-dismiss="offcanvas">Locations</a>
                     <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}" data-bs-dismiss="offcanvas">Reports</a>
 
                     <div class="app-sidebar-group-header">Account</div>
+                    <a href="{{ url_for('users.profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('users.profile_page') else '' }}">Profile</a>
                     {% if is_guest %}
-                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile." data-bs-dismiss="offcanvas">Profile</a>
-                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to search for users." data-bs-dismiss="offcanvas">Search Users</a>
+                        <a href="{{ url_for('users.search_users_page') }}" class="app-sidebar-link" data-bs-dismiss="offcanvas">Search Users</a>
                     {% else %}
-                        <a href="{{ url_for('users.profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('users.profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
 
@@ -173,10 +170,8 @@
                     <div class="app-sidebar-group-header">Reports</div>
                     <a href="{{ url_for('reports.reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports.reports_page') else '' }}">Create Report</a>
                     <a href="{{ url_for('reports.listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
-                    {% if not is_guest %}
-                        <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}">Trending</a>
-                        <a href="{{ url_for('reports.listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_following_page') else '' }}">From Following</a>
-                    {% endif %}
+                    <a href="{{ url_for('reports.listing_page', sort='top') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') == 'top' else '' }}">Trending</a>
+                    <a href="{{ url_for('reports.listing_following_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_following_page') else '' }}">From Following</a>
                     <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}">Live Weather</a>
 
                     <div class="app-sidebar-group-header">Favourites</div>
@@ -184,11 +179,10 @@
                     <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}">Reports</a>
 
                     <div class="app-sidebar-group-header">Account</div>
+                    <a href="{{ url_for('users.profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('users.profile_page') else '' }}">Profile</a>
                     {% if is_guest %}
-                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to view your profile.">Profile</a>
-                        <a href="#" class="app-sidebar-link app-stub-link" data-stub-message="You need to log in to search for users.">Search Users</a>
+                        <a href="{{ url_for('users.search_users_page') }}" class="app-sidebar-link">Search Users</a>
                     {% else %}
-                        <a href="{{ url_for('users.profile_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('users.profile_page') else '' }}">Profile</a>
                         <button type="button" class="app-sidebar-link app-sidebar-link-button" data-search-toggle>Search Users</button>
                     {% endif %}
 

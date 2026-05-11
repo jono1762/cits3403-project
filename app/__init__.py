@@ -21,6 +21,23 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+# Per-endpoint friendly labels for the unauthorized flash — names the action
+# the guest tried to take so the prompt reads naturally instead of generic.
+LOGIN_REQUIRED_ACTIONS = {
+    'reports.reports_page':            'create a report',
+    'reports.edit_report_page':        'edit a report',
+    'reports.listing_following_page':  'see reports from people you follow',
+    'users.profile_page':              'view your profile',
+    'users.user_profile_page':         "view this user's profile",
+    'users.search_users_page':         'search for users',
+    'auth.settings_page':              'open settings',
+    'auth.profile_edit_page':          'edit your profile',
+    'favourites_page':                 'view your saved locations',
+    'favourite_reports_page':          'view your saved reports',
+    'messages_page':                   'open your messages',
+}
+
+
 # Custom unauthorized handler — guests clicking a @login_required link get a
 # flash with an inline "log in" link and stay on the page they came from,
 # instead of being yanked off to /login (the default Flask-Login behaviour).
@@ -34,8 +51,9 @@ def _unauthorized():
     )
     if wants_json:
         return jsonify({'error': 'Login required.'}), 401
+    action = LOGIN_REQUIRED_ACTIONS.get(request.endpoint, 'do that')
     flash(
-        Markup(f'You need to <a href="{url_for("auth.login")}" class="alert-link">log in</a> to do that.'),
+        Markup(f'<a href="{url_for("auth.login")}" class="alert-link">Log in</a> to {action}.'),
         'warning'
     )
     return redirect(request.referrer or url_for('home_intro'))
