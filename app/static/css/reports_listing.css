@@ -358,6 +358,7 @@
     margin: 0.5rem 0 0;
     color: #94a3b8;
     font-size: 0.82rem;
+    overflow-wrap: anywhere;
 }
 
 .listing-item-desc {
@@ -365,6 +366,7 @@
     color: #1e293b;
     font-size: 0.95rem;
     line-height: 1.5;
+    overflow-wrap: anywhere;
 }
 
 

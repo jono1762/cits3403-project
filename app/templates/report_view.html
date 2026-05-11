@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='14') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='15') }}">
 {% endblock %}
 
 {% block content %}
@@ -512,12 +512,40 @@
         const defaultHint = hint ? hint.textContent : '';
 
         // mirror the native file-input's selection in our own visible label
+        const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
+        const MAX_FILE_SIZE = 20 * 1024 * 1024;
+        const MAX_FILES = 5;
+
+        function setAttachStatus(text, isError) {
+            if (!attachStatus) return;
+            attachStatus.textContent = text;
+            attachStatus.classList.toggle('is-error', !!isError);
+        }
+
         if (mediaInput && attachStatus) {
             mediaInput.addEventListener('change', () => {
-                const n = mediaInput.files ? mediaInput.files.length : 0;
-                if (n === 0) attachStatus.textContent = '';
-                else if (n === 1) attachStatus.textContent = '1 file selected';
-                else attachStatus.textContent = n + ' files selected';
+                const files = mediaInput.files ? Array.from(mediaInput.files) : [];
+                const n = files.length;
+                if (n === 0) { setAttachStatus('', false); return; }
+                if (n > MAX_FILES) {
+                    mediaInput.value = '';
+                    setAttachStatus(`Too many files — max ${MAX_FILES}.`, true);
+                    return;
+                }
+                for (const f of files) {
+                    const ext = (f.name.split('.').pop() || '').toLowerCase();
+                    if (!ALLOWED_EXTS.includes(ext)) {
+                        mediaInput.value = '';
+                        setAttachStatus(`"${f.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+                        return;
+                    }
+                    if (f.size > MAX_FILE_SIZE) {
+                        mediaInput.value = '';
+                        setAttachStatus(`"${f.name}" is too large — max 20 MB.`, true);
+                        return;
+                    }
+                }
+                setAttachStatus(n === 1 ? '1 file selected' : n + ' files selected', false);
             });
         }
 

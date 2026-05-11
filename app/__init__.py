@@ -1,7 +1,8 @@
 import os
-from flask import Flask
+from flask import Flask, flash, redirect, request, url_for, jsonify
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from markupsafe import Markup
 from sqlalchemy import inspect
 from .models import db, User, Category, State, City, Report, Comment
 from .blueprints.auth import bp as auth_bp
@@ -18,6 +19,44 @@ migrate = Migrate()
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+# Per-endpoint friendly labels for the unauthorized flash — names the action
+# the guest tried to take so the prompt reads naturally instead of generic.
+LOGIN_REQUIRED_ACTIONS = {
+    'reports.reports_page':            'create a report',
+    'reports.edit_report_page':        'edit a report',
+    'reports.listing_following_page':  'see reports from people you follow',
+    'users.profile_page':              'view your profile',
+    'users.user_profile_page':         "view this user's profile",
+    'users.search_users_page':         'search for users',
+    'auth.settings_page':              'open settings',
+    'auth.profile_edit_page':          'edit your profile',
+    'favourites_page':                 'view your saved locations',
+    'favourite_reports_page':          'view your saved reports',
+    'messages_page':                   'open your messages',
+}
+
+
+# Custom unauthorized handler — guests clicking a @login_required link get a
+# flash with an inline "log in" link and stay on the page they came from,
+# instead of being yanked off to /login (the default Flask-Login behaviour).
+# AJAX / JSON callers still get a clean 401 so frontend code can react.
+@login_manager.unauthorized_handler
+def _unauthorized():
+    wants_json = (
+        request.is_json
+        or 'application/json' in (request.headers.get('Accept') or '')
+        or request.path.startswith('/api/')
+    )
+    if wants_json:
+        return jsonify({'error': 'Login required.'}), 401
+    action = LOGIN_REQUIRED_ACTIONS.get(request.endpoint, 'do that')
+    flash(
+        Markup(f'<a href="{url_for("auth.login")}" class="alert-link">Log in</a> to {action}.'),
+        'warning'
+    )
+    return redirect(request.referrer or url_for('home_intro'))
  
 # the 5 report categories + marker colour for each
 DEFAULT_CATEGORIES = [

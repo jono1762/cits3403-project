@@ -752,6 +752,13 @@
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
     align-self: flex-start;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.messages-composer-attach-status.is-error {
+    color: #b91c1c;
+    background: #fee2e2;
 }
 
 .messages-composer-input {
