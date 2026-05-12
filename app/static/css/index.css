@@ -39,15 +39,12 @@
     color: transparent;
 }
 
-/* subtitle — small indigo accent bar on the left, like a side-quote */
-#mapPage > p {
-    margin: 0;
-    color: #475569;
-    font-size: 0.95rem;
-    font-weight: 500;
-    line-height: 1.4;
-    border-left: 3px solid #4f46e5;
-    padding-left: 0.7rem;
+/* subtitle — matches report page styling */
+#mapPage > p.report-subtitle {
+    margin: 0 0 1.25rem;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 
