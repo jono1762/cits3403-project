@@ -179,7 +179,7 @@ class Report(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Auto-expiry — after this datetime the report is hidden from public lists
     # and gets deleted by the next cleanup pass.
-    expires_at = db.Column(db.DateTime, default=_default_report_expiry, nullable=True)
+    expires_at = db.Column(db.DateTime, default=_default_report_expiry, nullable=False)
 
     verifications = db.relationship('Verification', backref='report', lazy=True)
     # cascade so deleting a report also deletes its attached images/videos
