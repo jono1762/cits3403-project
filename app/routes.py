@@ -98,15 +98,29 @@ CITY_COORDS = {
 def favourites_page():
     # load saved city favourites for the current user
     fav_rows = FavouriteLocation.query.filter_by(user_id=current_user.id).all()
+
+    # Pull every active report across all favourited cities in one query,
+    # then group by city in Python to avoid running 2 queries per city.
+    fav_city_ids = [f.city_id for f in fav_rows if f.city_id]
+    reports_by_city = {}
+    if fav_city_ids:
+        active_reports = (
+            _active_reports_q()
+            .filter(Report.city_id.in_(fav_city_ids))
+            .order_by(Report.created_at.desc())
+            .all()
+        )
+        for r in active_reports:
+            reports_by_city.setdefault(r.city_id, []).append(r)
+
     saved_cities = []
     for f in fav_rows:
         city = f.city
         if not city:
             continue
-        # small convenience stat: how many non-expired reports exist for this city
-        reports_today = _active_reports_q().filter(Report.city_id == city.id).count()
-        # latest non-expired report time (for "Last Update")
-        last_report = _active_reports_q().filter(Report.city_id == city.id).order_by(Report.created_at.desc()).first()
+        city_reports = reports_by_city.get(city.id, [])
+        reports_today = len(city_reports)
+        last_report = city_reports[0] if city_reports else None
         if last_report and last_report.created_at:
             delta = datetime.utcnow() - last_report.created_at
             minutes = int(delta.total_seconds() // 60)
