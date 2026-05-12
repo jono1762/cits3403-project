@@ -263,3 +263,92 @@
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(79, 70, 229, 0.55);
 }
+
+/* Search users input in the navbar — always visible for authenticated users */
+.app-navbar-search-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.app-navbar-search-input {
+    width: 150px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.875rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    transition: background 0.18s ease, border-color 0.18s ease;
+    margin-right: 0.6rem;
+}
+
+.app-navbar-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.app-navbar-search-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Results dropdown under search input */
+.app-navbar-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 4px;
+    padding: 0;
+    list-style: none;
+    background: #1a2332;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1060;
+}
+
+.app-navbar-search-results[aria-hidden="true"] {
+    display: none;
+}
+
+.app-navbar-search-results li {
+    padding: 0;
+    margin: 0;
+}
+
+.app-navbar-search-results a {
+    display: block;
+    padding: 0.6rem 0.8rem;
+    color: #a5b4fc;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-navbar-search-results a:hover,
+.app-navbar-search-results a:focus {
+    background: rgba(79, 70, 229, 0.2);
+    color: #fff;
+    outline: none;
+}
+
+.app-navbar-search-empty {
+    padding: 0.8rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 767.98px) {
+    .app-navbar-search-input {
+        width: 120px;
+    }
+
+    .app-navbar-search-results {
+        width: 160px;
+    }
+}
