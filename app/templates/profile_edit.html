@@ -71,7 +71,7 @@
                         </button>
                     </form>
                 {% endif %}
-                <p class="settings-field-hint">JPG, PNG, GIF, or WebP. Max 20MB.</p>
+                <p class="settings-field-hint">JPG, PNG, GIF, or WebP. Max 5MB.</p>
             </div>
         </div>
     </div>
@@ -168,6 +168,9 @@
     const uploadBtn = document.getElementById('avatar-modal-upload');
     if (!input || !form || !modalEl) return;
 
+    const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
     let lastObjectUrl = null;
     let uploading = false;  // set true when user clicks Upload so the modal-hidden handler doesn't clear the input mid-submit
 
@@ -188,9 +191,27 @@
         }
     }
 
+    function showError(text) {
+        input.value = '';
+        status.textContent = text;
+        status.classList.add('is-error');
+    }
+
     input.addEventListener('change', () => {
         const f = input.files && input.files[0];
         if (!f) return;
+        status.classList.remove('is-error');
+
+        const ext = (f.name.split('.').pop() || '').toLowerCase();
+        if (!ALLOWED_EXTS.includes(ext)) {
+            showError(`"${f.name}" is not allowed. Only JPG, PNG, GIF, or WebP.`);
+            return;
+        }
+        if (f.size > MAX_FILE_SIZE) {
+            showError(`"${f.name}" is too large — max 5 MB.`);
+            return;
+        }
+
         status.textContent = f.name;
 
         // build a preview URL for the picked file and show it inside the modal

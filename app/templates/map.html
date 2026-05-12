@@ -152,6 +152,9 @@
 	let suggestionsOpen = false;
 	// set of city_ids (strings) the current user has saved as favourites
 	let SAVED_CITY_IDS = new Set();
+	// Guest gate — used to render the popup "Save location" button as
+	// disabled (matches the verify/dispute pattern elsewhere).
+	const IS_GUEST = {{ (not current_user.is_authenticated) | tojson }};
 
 	// OpenStreetMap default tiles — colorful base (greens for land, blues for water)
 	// then we tint the whole pane via CSS filter to push the palette toward purple-green
@@ -183,9 +186,12 @@
 				? `{{ url_for('reports.listing_page') }}?city_id=${cityId}`
 				: `{{ url_for('reports.listing_page') }}`;
 
-			// If the city is already saved, render the button as disabled + Saved
+			// Guests see the button greyed out (matches verify/dispute pattern).
+			// Already-saved cities also show the disabled "Saved ✓" state.
 			const isSaved = cityId && (SAVED_CITY_IDS.has(String(cityId)) || SAVED_CITY_IDS.has(Number(cityId)));
-			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button" ${isSaved ? 'disabled' : ''}>${isSaved ? 'Saved ✓' : 'Save location'}</button>` : '';
+			const disabled = IS_GUEST || isSaved;
+			const guestTitle = IS_GUEST ? ' title="Please log in to save locations"' : '';
+			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button"${disabled ? ' disabled' : ''}${guestTitle}>${isSaved ? 'Saved ✓' : 'Save location'}</button>` : '';
 
 			marker.bindPopup(`
 				<div class="popup-content">

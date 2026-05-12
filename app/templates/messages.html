@@ -464,16 +464,50 @@
     const threadMediaInput = document.getElementById('thread-media');
     const attachStatus = document.getElementById('thread-attach-status');
 
-    // visible status next to the textarea — "1 file attached" / "3 files attached"
+    // allowed extensions / size mirror the server-side limits in the api blueprint
+    const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
+    const MAX_FILE_SIZE = 20 * 1024 * 1024;
+    const MAX_FILES = 5;
+
+    function showAttachStatus(text, isError) {
+        attachStatus.hidden = false;
+        attachStatus.textContent = text;
+        attachStatus.classList.toggle('is-error', !!isError);
+    }
+
+    function clearAttachStatus() {
+        attachStatus.hidden = true;
+        attachStatus.textContent = '';
+        attachStatus.classList.remove('is-error');
+    }
+
+    // visible status next to the textarea — "1 file attached" / "3 files attached" / error
     threadMediaInput.addEventListener('change', () => {
-        const n = threadMediaInput.files ? threadMediaInput.files.length : 0;
+        const files = threadMediaInput.files ? Array.from(threadMediaInput.files) : [];
+        const n = files.length;
         if (n === 0) {
-            attachStatus.hidden = true;
-            attachStatus.textContent = '';
-        } else {
-            attachStatus.hidden = false;
-            attachStatus.textContent = (n === 1 ? '1 file attached' : n + ' files attached');
+            clearAttachStatus();
+            return;
         }
+        if (n > MAX_FILES) {
+            threadMediaInput.value = '';
+            showAttachStatus(`Too many files — max ${MAX_FILES}.`, true);
+            return;
+        }
+        for (const f of files) {
+            const ext = (f.name.split('.').pop() || '').toLowerCase();
+            if (!ALLOWED_EXTS.includes(ext)) {
+                threadMediaInput.value = '';
+                showAttachStatus(`"${f.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+                return;
+            }
+            if (f.size > MAX_FILE_SIZE) {
+                threadMediaInput.value = '';
+                showAttachStatus(`"${f.name}" is too large — max 20 MB.`, true);
+                return;
+            }
+        }
+        showAttachStatus(n === 1 ? '1 file attached' : n + ' files attached', false);
     });
 
     threadComposer.addEventListener('submit', async (event) => {
