@@ -1,4 +1,7 @@
-# app.config values — kept out of __init__.py so create_app stays small
+# Single source of truth for Flask config. app/__init__.py wires this in via
+# app.config.from_object(Config). Anything that depends on the environment
+# (secrets, DB URL) reads from os.environ here; everything else stays a plain
+# Python constant.
 import os
 
 
@@ -7,7 +10,10 @@ class Config:
     # this module lives at the root of the app/ package.
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    SECRET_KEY = 'dev-secret-key-change-later'
+    # Pulled from .env (see .env.example). Falls back to an obvious dev
+    # placeholder so the app still boots without a real secret set —
+    # NEVER use the placeholder in production.
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-only-CHANGE-ME')
 
     SQLALCHEMY_DATABASE_URI = 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False

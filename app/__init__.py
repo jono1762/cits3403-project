@@ -1,15 +1,22 @@
 import os
+from dotenv import load_dotenv
+
+# Load .env BEFORE importing Config so os.environ.get inside Config sees the
+# values. Falls through silently if .env doesn't exist.
+load_dotenv()
+
 from flask import Flask, flash, redirect, request, url_for, jsonify
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from markupsafe import Markup
 from sqlalchemy import inspect
+from .config import Config
 from .models import db, User, Category, State, City, Report, Comment
 from .blueprints.auth import bp as auth_bp
 from .blueprints.reports import bp as reports_bp
 from .blueprints.users import bp as users_bp
 from .blueprints.api import bp as api_bp
- 
+
 login_manager = LoginManager()
 # Schema-versioning helper. Tracks every model change as a script in
 # migrations/versions/. Teammates run `flask db upgrade` after pulling
@@ -174,16 +181,11 @@ def seed_test_comments():
  
 def create_app():
     app = Flask(__name__)
- 
-    app.config['SECRET_KEY'] = 'dev-secret-key-change-later'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
- 
-    # media upload config
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
-    app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024   # 20 MB max per request
+
+    # All config lives in app/config.py — env vars feed into it from .env.
+    app.config.from_object(Config)
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
- 
+
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
