@@ -523,7 +523,7 @@
         // not following yet — follow immediately (Instagram-style, no confirm needed)
         followBtn.disabled = true;
         try {
-            const res = await fetch(`/api/follow/${userId}`, {method: 'POST'});
+            const res = await csrfFetch(`/api/follow/${userId}`, {method: 'POST'});
             if (res.ok) {
                 const data = await res.json();
                 setState(data.is_following, data.follower_count, data.following_count);
@@ -537,7 +537,7 @@
         confirmBtn.addEventListener('click', async () => {
             confirmBtn.disabled = true;
             try {
-                const res = await fetch(`/api/follow/${userId}`, {method: 'DELETE'});
+                const res = await csrfFetch(`/api/follow/${userId}`, {method: 'DELETE'});
                 if (res.ok) {
                     const data = await res.json();
                     setState(data.is_following, data.follower_count, data.following_count);
@@ -571,7 +571,7 @@
         const status = btn.dataset.status;
 
         try {
-            const res = await fetch(`/api/reports/${reportId}/vote`, {
+            const res = await csrfFetch(`/api/reports/${reportId}/vote`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({status}),

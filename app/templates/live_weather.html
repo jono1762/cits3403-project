@@ -64,7 +64,7 @@
         window.history.replaceState({}, '', `?city=${encodeURIComponent(cityObj.short_name)}`);
         
         // Fetch weather data from API
-        fetch(`/api/weather/${encodeURIComponent(cityObj.short_name)}`)
+        csrfFetch(`/api/weather/${encodeURIComponent(cityObj.short_name)}`)
             .then(r => {
                 if (!r.ok) throw new Error('Weather fetch failed');
                 return r.json();

@@ -8,6 +8,7 @@ load_dotenv()
 from flask import Flask, flash, redirect, request, url_for, jsonify
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from markupsafe import Markup
 from sqlalchemy import inspect
 from .config import Config
@@ -22,6 +23,10 @@ login_manager = LoginManager()
 # migrations/versions/. Teammates run `flask db upgrade` after pulling
 # instead of deleting their local DB.
 migrate = Migrate()
+# CSRF protection on all POST/PUT/PATCH/DELETE — applies to both WTForms-
+# rendered forms (auto-included via {{ form.hidden_tag() }}) and JSON-API
+# calls (header X-CSRFToken, supplied by the csrfFetch wrapper in base.html).
+csrf = CSRFProtect()
  
 @login_manager.user_loader
 def load_user(user_id):
@@ -190,6 +195,7 @@ def create_app():
     migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
+    csrf.init_app(app)
  
     # Register the four route groups. Each blueprint owns one slice of
     # the URL map (auth flows, report pages, user / profile pages, JSON API).

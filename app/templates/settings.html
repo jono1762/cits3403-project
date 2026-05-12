@@ -151,7 +151,7 @@
             // skip the round-trip if the user re-typed the same already-checked string
             if (val === lastChecked) return;
             try {
-                const res = await fetch('/api/settings/verify-password', {
+                const res = await csrfFetch('/api/settings/verify-password', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({current_password: val}),

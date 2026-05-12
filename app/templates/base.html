@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# CSRF token exposed for csrfFetch() — Flask-WTF rejects POST/PUT/PATCH/DELETE
+       JSON requests without this header. See script block below. #}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Australia Explorer</title>
     <link rel="icon" type="image/png" media="(prefers-color-scheme: light)"
           href="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_light.png') }}">
@@ -16,6 +19,20 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
     {% block styles %}{% endblock %}
+    <script>
+        // Drop-in replacement for fetch() that auto-attaches the CSRF token
+        // to state-changing requests. Use csrfFetch() in templates instead of
+        // fetch() for any POST / PUT / PATCH / DELETE call. The header is
+        // harmless on GET requests, so it's fine to use csrfFetch everywhere.
+        function csrfFetch(url, opts) {
+            opts = opts || {};
+            opts.headers = opts.headers || {};
+            if (!opts.headers['X-CSRFToken']) {
+                opts.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').content;
+            }
+            return fetch(url, opts);
+        }
+    </script>
 </head>
 <body>
     {# Detect whether we're rendering the home page in the marketing/intro style.
@@ -389,7 +406,7 @@
                 }
                 searchTimer = setTimeout(async () => {
                     try {
-                        const res = await fetch('/api/search-users?q=' + encodeURIComponent(q));
+                        const res = await csrfFetch('/api/search-users?q=' + encodeURIComponent(q));
                         const data = await res.json();
                         if (data.length === 0) {
                             results.innerHTML = '';

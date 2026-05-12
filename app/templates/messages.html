@@ -305,7 +305,7 @@
 
     async function refreshInbox() {
         try {
-            const res = await fetch('/api/conversations');
+            const res = await csrfFetch('/api/conversations');
             if (!res.ok) return;
             const data = await res.json();
 
@@ -407,7 +407,7 @@
 
     async function loadMessages(userId) {
         try {
-            const res = await fetch(`/api/conversations/${userId}/messages`);
+            const res = await csrfFetch(`/api/conversations/${userId}/messages`);
             if (!res.ok) return;
             const data = await res.json();
 
@@ -435,7 +435,7 @@
             const url = lastMessageAt
                 ? `/api/conversations/${activeUserId}/messages?since=${encodeURIComponent(lastMessageAt)}`
                 : `/api/conversations/${activeUserId}/messages`;
-            const res = await fetch(url);
+            const res = await csrfFetch(url);
             if (!res.ok) return;
             const data = await res.json();
             if (data.messages.length) {
@@ -451,7 +451,7 @@
 
     async function markRead(userId) {
         try {
-            await fetch(`/api/conversations/${userId}/read`, {method: 'POST'});
+            await csrfFetch(`/api/conversations/${userId}/read`, {method: 'POST'});
         } catch (err) { /* silent */ }
     }
 
@@ -525,7 +525,7 @@
             if (files) {
                 for (const f of files) fd.append('media', f);
             }
-            const res = await fetch(`/api/conversations/${activeUserId}/messages`, {
+            const res = await csrfFetch(`/api/conversations/${activeUserId}/messages`, {
                 method: 'POST',
                 body: fd,
             });
@@ -567,7 +567,7 @@
         if (!activeUserId) return;
         acceptBtn.disabled = true;
         try {
-            const res = await fetch(`/api/conversations/${activeUserId}/accept`, {method: 'POST'});
+            const res = await csrfFetch(`/api/conversations/${activeUserId}/accept`, {method: 'POST'});
             if (res.ok) {
                 requestBanner.hidden = true;
                 threadStatus.textContent = '';
@@ -590,7 +590,7 @@
 
     async function refreshBlockedList() {
         try {
-            const res = await fetch('/api/blocked-users');
+            const res = await csrfFetch('/api/blocked-users');
             if (!res.ok) return;
             const users = await res.json();
             blockedListEl.replaceChildren();
@@ -700,7 +700,7 @@
                 // Case 1: user is unblocking from the blocked-list modal
                 if (pendingListUnblock) {
                     const target = pendingListUnblock;
-                    const r = await fetch(`/api/block/${target.userId}`, {method: 'DELETE'});
+                    const r = await csrfFetch(`/api/block/${target.userId}`, {method: 'DELETE'});
                     if (r.ok) {
                         target.li.remove();
                         if (blockedListEl.children.length === 0) blockedListEmpty.hidden = false;
@@ -718,7 +718,7 @@
                 // Case 2: user is blocking/unblocking from inside the open thread
                 if (!activeUserId) return;
                 const blocked = blockBtn.dataset.blocked === 'true';
-                const res = await fetch(`/api/block/${activeUserId}`, {
+                const res = await csrfFetch(`/api/block/${activeUserId}`, {
                     method: blocked ? 'DELETE' : 'POST',
                 });
                 if (res.ok) {
@@ -840,7 +840,7 @@
             enterSearchMode();
             searchTimer = setTimeout(async () => {
                 try {
-                    const res = await fetch('/api/search-users?q=' + encodeURIComponent(q));
+                    const res = await csrfFetch('/api/search-users?q=' + encodeURIComponent(q));
                     if (!res.ok) return;
                     const users = await res.json();
                     searchList.innerHTML = '';
@@ -880,7 +880,7 @@
 
         // not in the inbox yet — fetch their public profile snippet to build the header
         try {
-            const res = await fetch(`/api/users/${target}`);
+            const res = await csrfFetch(`/api/users/${target}`);
             if (!res.ok) return;
             const u = await res.json();
             openConversation({

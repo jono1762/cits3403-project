@@ -318,7 +318,7 @@
     btn.addEventListener('click', async () => {
         btn.disabled = true;
         try {
-            const res = await fetch(`/api/reports/${btn.dataset.reportId}`, {method: 'DELETE'});
+            const res = await csrfFetch(`/api/reports/${btn.dataset.reportId}`, {method: 'DELETE'});
             if (res.ok) {
                 window.location.href = "{{ url_for('reports.listing_page') }}";
             } else {
@@ -345,7 +345,7 @@
         btn.disabled = true;
         try {
             const method = isSaved ? 'DELETE' : 'POST';
-            const res = await fetch(`/api/favourites/report/${reportId}`, { method });
+            const res = await csrfFetch(`/api/favourites/report/${reportId}`, { method });
             if (!res.ok) throw new Error('Request failed');
             const nowSaved = !isSaved;
             btn.dataset.saved = nowSaved ? 'true' : 'false';
@@ -563,7 +563,7 @@
             }
 
             try {
-                const res = await fetch(`/api/reports/${reportId}/comments`, {
+                const res = await csrfFetch(`/api/reports/${reportId}/comments`, {
                     method: 'POST',
                     body: fd,
                 });
@@ -606,7 +606,7 @@
             if (!id) return;
             deleteConfirmBtn.disabled = true;
             try {
-                const res = await fetch(`/api/comments/${id}`, {method: 'DELETE'});
+                const res = await csrfFetch(`/api/comments/${id}`, {method: 'DELETE'});
                 if (res.ok) {
                     const li = list && list.querySelector(`.comment-item[data-comment-id="${id}"]`);
                     if (li) li.remove();
@@ -632,7 +632,7 @@
         const commentId = bar.dataset.commentId;
         const status = btn.dataset.status;
         try {
-            const res = await fetch(`/api/comments/${commentId}/vote`, {
+            const res = await csrfFetch(`/api/comments/${commentId}/vote`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({status}),
@@ -659,7 +659,7 @@ document.querySelectorAll('.report-view-vote-bar .vote-btn').forEach((btn) => {
         const reportId = bar.dataset.reportId;
         const status = btn.dataset.status;
         try {
-            const res = await fetch(`/api/reports/${reportId}/vote`, {
+            const res = await csrfFetch(`/api/reports/${reportId}/vote`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({status}),

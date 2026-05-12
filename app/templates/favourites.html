@@ -68,7 +68,7 @@
             const cityId = panel && panel.getAttribute('data-city-id');
             if (!cityId) return;
             if (!confirm('Remove this location from your favourites?')) return;
-            fetch(`/api/favourites/location/${cityId}`, { method: 'DELETE' })
+            csrfFetch(`/api/favourites/location/${cityId}`, { method: 'DELETE' })
                 .then(r => r.json())
                 .then(() => {
                     panel.remove();

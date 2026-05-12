@@ -219,7 +219,7 @@
 
 	// Load saved favourites from the server so popups can reflect the saved state.
 	function loadSavedFavourites() {
-		return fetch('/api/favourites/locations')
+		return csrfFetch('/api/favourites/locations')
 			.then(r => {
 				if (!r.ok) throw new Error('Failed to load favourites');
 				return r.json();
@@ -388,7 +388,7 @@
 			alert('This location cannot be saved because it is not in the database.');
 			return;
 		}
-		fetch(`/api/favourites/location/${cityId}`, { method: 'POST' })
+		csrfFetch(`/api/favourites/location/${cityId}`, { method: 'POST' })
 			.then(r => {
 				if (!r.ok) throw new Error('Network error');
 				return r.json();

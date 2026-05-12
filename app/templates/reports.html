@@ -149,7 +149,7 @@ document.getElementById('report-form').addEventListener('submit', async (event) 
         payload.append('media', file);
     }
 
-    const response = await fetch('/api/reports', {
+    const response = await csrfFetch('/api/reports', {
         method: 'POST',
         body: payload,    // browser sets multipart/form-data + boundary automatically
     });

@@ -43,7 +43,7 @@
             const reportId = card && card.getAttribute('data-report-id');
             if (!reportId) return;
             if (!confirm('Remove this report from your favourites?')) return;
-            fetch(`/api/favourites/report/${reportId}`, { method: 'DELETE' })
+            csrfFetch(`/api/favourites/report/${reportId}`, { method: 'DELETE' })
                 .then(r => r.json())
                 .then(() => {
                     card.remove();
