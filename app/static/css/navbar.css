@@ -299,7 +299,7 @@
     position: absolute;
     top: 100%;
     left: 0;
-    width: 200px;
+    width: 150px;
     max-height: 300px;
     overflow-y: auto;
     margin-top: 4px;
@@ -323,15 +323,17 @@
 
 .app-navbar-search-results a {
     display: block;
-    padding: 0.6rem 0.8rem;
-    color: #a5b4fc;
+    padding: 0.7rem 0.9rem;
+    color: rgba(255, 255, 255, 0.78);
     text-decoration: none;
+    font-weight: 500;
+    font-size: 0.98rem;
     transition: background 0.15s ease, color 0.15s ease;
 }
 
 .app-navbar-search-results a:hover,
 .app-navbar-search-results a:focus {
-    background: rgba(79, 70, 229, 0.2);
+    background: rgba(99, 102, 241, 0.15);
     color: #fff;
     outline: none;
 }
@@ -349,6 +351,87 @@
     }
 
     .app-navbar-search-results {
-        width: 160px;
+        width: 120px;
     }
+}
+
+/* Profile dropdown button — user profile image in navbar */
+.app-navbar-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    border: none;
+    padding: 0;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+    text-decoration: none !important;
+}
+
+.app-navbar-profile-btn:hover,
+.app-navbar-profile-btn:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: scale(1.05);
+    box-shadow: none;
+    text-decoration: none !important;
+}
+
+.app-navbar-profile-image {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    display: block;
+}
+
+.app-navbar-profile-initials {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    overflow: hidden;
+}
+
+/* Profile dropdown menu styling */
+.app-navbar-profile-menu {
+    background: #1a2332;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    padding: 0.5rem 0;
+    width: 165px;
+    left: 0 !important;
+    right: auto !important;
+}
+
+.app-navbar-profile-menu .dropdown-item {
+    color: rgba(255, 255, 255, 0.78);
+    padding: 0.7rem 0.9rem;
+    font-weight: 500;
+    font-size: 0.98rem;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-navbar-profile-menu .dropdown-item:hover,
+.app-navbar-profile-menu .dropdown-item:focus {
+    background: rgba(99, 102, 241, 0.15);
+    color: #fff;
+}
+
+.app-navbar-profile-menu .dropdown-item {
+    font-weight: 500;
 }
