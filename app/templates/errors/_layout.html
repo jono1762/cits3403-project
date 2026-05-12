@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Error – Australia Explorer{% endblock %}</title>
+    <link rel="icon" type="image/png" media="(prefers-color-scheme: light)"
+          href="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_light.png') }}">
+    <link rel="icon" type="image/png" media="(prefers-color-scheme: dark)"
+          href="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_dark.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    {# style.css for the shared page background + typography (no navbar / sidebar) #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/errors.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>
