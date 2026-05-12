@@ -148,6 +148,58 @@
     color: #1e293b;
 }
 
+.listing-feed-dropdown {
+    width: 100%;
+}
+
+.listing-feed-button {
+    width: 100%;
+    text-align: left;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    color: #1e293b;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.listing-feed-button:hover,
+.listing-feed-button:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    color: #1e293b;
+}
+
+.listing-feed-menu {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    padding: 0.35rem 0;
+}
+
+.listing-feed-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 0.98rem;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+.listing-feed-row input {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.listing-feed-row input:checked {
+    background-color: #6366f1;
+    border-color: #6366f1;
+}
+
 
 /* ============================================================
    Category filter chips — clickable colored pills (replaces the dropdown)
