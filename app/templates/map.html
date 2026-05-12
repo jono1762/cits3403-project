@@ -160,6 +160,10 @@
 		return isSaved ? '★ Saved' : '☆ Save';
 	}
 
+	function getSaveButtonTitle(isSaved) {
+		return isSaved ? 'Click to unsave' : '';
+	}
+
 	// OpenStreetMap default tiles — colorful base (greens for land, blues for water)
 	// then we tint the whole pane via CSS filter to push the palette toward purple-green
 	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -194,8 +198,8 @@
 			// Saved cities render in the filled-star state and can be toggled off.
 			const isSaved = cityId && (SAVED_CITY_IDS.has(String(cityId)) || SAVED_CITY_IDS.has(Number(cityId)));
 			const disabled = IS_GUEST;
-			const guestTitle = IS_GUEST ? ' title="Please log in to save locations"' : '';
-			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button"${disabled ? ' disabled' : ''}${guestTitle}>${getSaveButtonLabel(isSaved)}</button>` : '';
+			const buttonTitle = IS_GUEST ? 'Please log in to save locations' : getSaveButtonTitle(isSaved);
+			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button"${disabled ? ' disabled' : ''}${buttonTitle ? ` title="${buttonTitle}"` : ''}>${getSaveButtonLabel(isSaved)}</button>` : '';
 
 			marker.bindPopup(`
 				<div class="popup-content">
@@ -403,9 +407,11 @@
 			.then(() => {
 				if (wasSaved) {
 					btn.textContent = getSaveButtonLabel(false);
+					btn.title = getSaveButtonTitle(false);
 					SAVED_CITY_IDS.delete(cityKey);
 				} else {
 					btn.textContent = getSaveButtonLabel(true);
+					btn.title = getSaveButtonTitle(true);
 					SAVED_CITY_IDS.add(cityKey);
 				}
 			})
