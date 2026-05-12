@@ -1,0 +1,57 @@
+/* Shared styles for the 403 / 404 / 500 pages. The accent colour comes
+   from each template via `--error-accent` so the layout stays consistent
+   while each error keeps its own brand colour. */
+
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    padding: 2rem;
+}
+
+.error-code {
+    font-size: 6rem;
+    font-weight: 900;
+    color: var(--error-accent);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    letter-spacing: -2px;
+}
+
+.error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.error-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    font-size: 1rem;
+    color: #666;
+    max-width: 420px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.error-btn {
+    display: inline-block;
+    padding: 0.75rem 1.75rem;
+    background-color: var(--error-accent);
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: filter 0.2s ease;
+}
+
+.error-btn:hover {
+    filter: brightness(0.85);
+    color: #fff;
+}
