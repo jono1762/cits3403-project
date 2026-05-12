@@ -96,8 +96,6 @@
 			</div>
 			{# "Search" zooms the map to the matched city's pin and opens its popup #}
 			<button type="button" id="searchButton">Search</button>
-			{# "View Reports" navigates to the filtered listing for that city #}
-			<button type="button" id="viewReportsButton">View Reports</button>
 		</div>
 	</div>
 
@@ -350,18 +348,7 @@
 		if (selectedCity.marker) selectedCity.marker.openPopup();
 	}
 
-	// "View Reports" — navigate to the listing filtered by this city
-	function onViewReportsSubmit(event) {
-		event.stopPropagation();
-		const selectedCity = findCityFromQuery();
-		if (!selectedCity) return;
-		const shortName = selectedCity.name.split(",")[0].trim();
-		const cityId = CITY_IDS_BY_NAME[shortName];
-		const url = cityId
-			? `{{ url_for('reports.listing_page') }}?city_id=${cityId}`
-			: `{{ url_for('reports.listing_page') }}`;
-		window.location = url;
-	}
+	// (removed: View Reports button handler — navigation now available via listing links)
 
 	function onSearchBarKeyDown(event) {
 		if (event.key === "Enter") {
@@ -378,13 +365,11 @@
 		map.setView(defaultView.center, defaultView.zoom);
 	}
 
-	const viewReportsButton = document.getElementById("viewReportsButton");
-
 	searchBar.addEventListener("click", onSearchBarClick);
 	searchBar.addEventListener("input", search);
 	searchBar.addEventListener("keydown", onSearchBarKeyDown);
 	searchButton.addEventListener("click", onSearchSubmit);
-	viewReportsButton.addEventListener("click", onViewReportsSubmit);
+	// viewReportsButton removed
 
 	// Handle Save Location clicks inside marker popups (delegated)
 	document.addEventListener('click', function (ev) {
