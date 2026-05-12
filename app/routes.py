@@ -109,13 +109,13 @@ def favourites_page():
     fav_city_ids = [f.city_id for f in fav_rows if f.city_id]
     reports_by_city = {}
     if fav_city_ids:
-        active_reports = (
+        all_active_reports = (
             _active_reports_q()
             .filter(Report.city_id.in_(fav_city_ids))
             .order_by(Report.created_at.desc())
             .all()
         )
-        for r in active_reports:
+        for r in all_active_reports:
             reports_by_city.setdefault(r.city_id, []).append(r)
 
     saved_cities = []
@@ -124,7 +124,7 @@ def favourites_page():
         if not city:
             continue
         city_reports = reports_by_city.get(city.id, [])
-        reports_today = len(city_reports)
+        active_reports = len(city_reports)
         last_report = city_reports[0] if city_reports else None
         if last_report and last_report.created_at:
             delta = datetime.utcnow() - last_report.created_at
@@ -143,14 +143,14 @@ def favourites_page():
             last_update = '—'
  
         # trending heuristic: many active reports for this city
-        trending = reports_today >= FAVOURITES_TRENDING_THRESHOLD
+        trending = active_reports >= FAVOURITES_TRENDING_THRESHOLD
  
         saved_cities.append({
             'id': city.id,
             'name': city.name,
             'country': 'Australia',
             'state_code': city.state.code if getattr(city, 'state', None) else '',
-            'reports_today': reports_today,
+            'active_reports': active_reports,
             'last_update': last_update,
             'trending': trending,
         })
