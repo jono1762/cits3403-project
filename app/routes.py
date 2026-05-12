@@ -497,3 +497,18 @@ def api_get_weather(city):
     # Cache and return
     _set_cached_weather(city, weather_data)
     return jsonify(weather_data)
+    
+@app.route('/500')
+def test500():
+    from flask import abort
+    abort(500)
+
+@app.route('/403')
+def test403():
+    from flask import abort
+    abort(403)
+
+@app.route('/404')
+def test404():
+    from flask import abort
+    abort(404)
