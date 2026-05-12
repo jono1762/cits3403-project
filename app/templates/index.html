@@ -83,139 +83,184 @@
                 <rect x="30" y="30" width="440" height="34" fill="#0f172a"/>
                 <text x="44" y="52" font-family="Italiana, serif" font-size="14" fill="#fff" letter-spacing="0.5">Australia Explorer</text>
                 <rect x="316" y="40" width="100" height="18" rx="9" fill="rgba(255,255,255,0.1)"/>
-                {# magnifier glyph + the city name; both updated by JS as the city cycles #}
+                {# magnifier glyph + static search prompt #}
                 <text x="324" y="53" font-size="9" fill="rgba(255,255,255,0.55)"
                       font-family="Inter, system-ui, sans-serif">⌕</text>
                 <text id="home-search-text" x="366" y="53" font-size="8.5" fill="rgba(255,255,255,0.85)" text-anchor="middle"
-                      font-family="Inter, system-ui, sans-serif">Sydney</text>
+                      font-family="Inter, system-ui, sans-serif">Search users...</text>
                 <circle cx="438" cy="49" r="9" fill="#4f46e5"/>
 
                 {# left sidebar #}
                 <rect x="30" y="64" width="100" height="266" fill="#0f172a"/>
-                <text x="44" y="86" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                
+                {# LOCATIONS section #}
+                <text x="44" y="78" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
                       font-family="Inter, system-ui, sans-serif">LOCATIONS</text>
-                <text x="50" y="106" font-size="10" fill="rgba(255,255,255,0.65)"
+                {# Map — highlighted in blue #}
+                <rect x="40" y="86" width="80" height="18" rx="4" fill="#4f46e5"/>
+                <text x="50" y="98" font-size="9" fill="#fff" font-weight="600"
                       font-family="Inter, system-ui, sans-serif">Map</text>
-                <text x="50" y="128" font-size="10" fill="rgba(255,255,255,0.65)"
-                      font-family="Inter, system-ui, sans-serif">Favourites</text>
-                <text x="44" y="156" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                
+                {# REPORTS section #}
+                <text x="44" y="118" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
                       font-family="Inter, system-ui, sans-serif">REPORTS</text>
-                <text x="50" y="174" font-size="10" fill="rgba(255,255,255,0.65)"
+                <text x="50" y="134" font-size="9" fill="rgba(255,255,255,0.7)"
                       font-family="Inter, system-ui, sans-serif">Create Report</text>
-                {# Top Reports — now the active page (indigo highlight, white bold text) #}
-                <rect x="40" y="184" width="80" height="20" rx="5" fill="#4f46e5"/>
-                <text x="50" y="198" font-size="10" fill="#fff" font-weight="600"
-                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
+                <text x="50" y="148" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">View Reports</text>
+                <text x="50" y="162" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">Trending</text>
+                <text x="50" y="176" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">From Following</text>
+                
+                {# LIVE section #}
+                <text x="44" y="194" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">LIVE</text>
+                <text x="50" y="210" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">Live Weather</text>
+                
+                {# FAVOURITES section #}
+                <text x="44" y="228" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">FAVOURITES</text>
+                <text x="50" y="244" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">Locations</text>
+                <text x="50" y="258" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">Reports</text>
+                
+                {# SUPPORT section #}
+                <text x="44" y="276" font-size="8" font-weight="700" fill="#a5b4fc" letter-spacing="1.5"
+                      font-family="Inter, system-ui, sans-serif">SUPPORT</text>
+                <text x="50" y="292" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">Help</text>
+                <text x="50" y="306" font-size="9" fill="rgba(255,255,255,0.7)"
+                      font-family="Inter, system-ui, sans-serif">About</text>
+                
+                {# Log out button #}
+                <rect x="40" y="316" width="80" height="18" rx="4" fill="rgba(255,255,255,0.1)"/>
+                <text x="44" y="327" font-size="8" fill="#f87171" font-weight="600"
+                      font-family="Inter, system-ui, sans-serif">⤵ Log out</text>
 
-                {# main heading — now "Top Reports" with a trending subhead #}
+                {# main heading — "All Reports" with New Report button #}
                 <text x="146" y="86" font-size="13" font-weight="700" fill="#1e293b"
-                      font-family="Inter, system-ui, sans-serif">Top Reports</text>
-                <text x="146" y="100" font-size="9" fill="#64748b"
-                      font-family="Inter, system-ui, sans-serif">🔥 Trending across Australia · last 24h</text>
+                      font-family="Inter, system-ui, sans-serif">All Reports</text>
+                <rect x="370" y="72" width="90" height="20" rx="5" fill="#4f46e5"/>
+                <text x="415" y="85" font-size="9" fill="#fff" font-weight="600" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">+ New Report</text>
 
-                {# ============== 6 REPORT CARDS — 2 COLUMNS, EACH SLIDING FROM A DIFFERENT DIRECTION ============== #}
+                {# Filter controls — STATE, CITY, SORT BY, Clear #}
+                <text x="146" y="107" font-size="7" font-weight="700" fill="#64748b" letter-spacing="0.5"
+                      font-family="Inter, system-ui, sans-serif">STATE</text>
+                <rect x="146" y="112" width="50" height="16" rx="4" fill="#f8fafc" stroke="#d1d5db" stroke-width="0.5"/>
+                <text x="171" y="122" font-size="7" fill="#64748b" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">All states</text>
 
-                {# Each card now has TWO nested <g> elements:
-                   - outer <g transform="translate(...)"> handles POSITIONING (SVG attribute)
-                   - inner <g class="home-row ..."> handles ANIMATION (CSS transform)
-                   Without this nesting, the CSS transform overrides the SVG transform attribute,
-                   which is why every card was sliding in from (0,0) — the top-left of the SVG. #}
+                <text x="210" y="107" font-size="7" font-weight="700" fill="#64748b" letter-spacing="0.5"
+                      font-family="Inter, system-ui, sans-serif">CITY</text>
+                <rect x="210" y="112" width="50" height="16" rx="4" fill="#f8fafc" stroke="#d1d5db" stroke-width="0.5"/>
+                <text x="235" y="122" font-size="7" fill="#94a3b8" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">All cities</text>
 
-                {# --- LEFT COLUMN --- #}
+                <text x="274" y="107" font-size="7" font-weight="700" fill="#64748b" letter-spacing="0.5"
+                      font-family="Inter, system-ui, sans-serif">SORT BY</text>
+                <rect x="274" y="112" width="45" height="16" rx="4" fill="#f8fafc" stroke="#d1d5db" stroke-width="0.5"/>
+                <text x="296.5" y="122" font-size="7" fill="#64748b" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Latest</text>
+
+                <rect x="330" y="112" width="40" height="16" rx="4" fill="#f8fafc" stroke="#d1d5db" stroke-width="0.5"/>
+                <text x="350" y="122" font-size="7" fill="#64748b" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Clear</text>
+
+                {# Category filter pills #}
+                <rect x="146" y="135" width="52" height="16" rx="8" fill="#4f46e5"/>
+                <text x="172" y="144" font-size="7" fill="#fff" font-weight="600" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">All categories</text>
+
+                <rect x="206" y="135" width="36" height="16" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="0.5"/>
+                <text x="224" y="144" font-size="6.5" fill="#3b82f6" font-weight="600" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Weather</text>
+
+                <rect x="250" y="135" width="28" height="16" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="0.5"/>
+                <text x="264" y="144" font-size="6.5" fill="#a855f7" font-weight="600" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Noise</text>
+
+                <rect x="286" y="135" width="32" height="16" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="0.5"/>
+                <text x="302" y="144" font-size="6.5" fill="#f97316" font-weight="600" text-anchor="middle"
+                      font-family="Inter, system-ui, sans-serif">Hazards</text>
+
+                {# --- TOP TWO REPORT CARDS --- #}
                 {# 1. WEATHER — slides in from LEFT #}
-                <g transform="translate(146, 110)">
+                <g transform="translate(146, 160)">
                     <g class="home-row home-row-from-left home-row-1">
-                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
-                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
-                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
-                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
-                              font-family="Inter, system-ui, sans-serif">🔥 142</text>
-                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Heavy rain across CBD</text>
-                        <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Sydney · 2m ago</text>
+                        <rect width="152" height="60" rx="7" fill="#fafbff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="0" y="0" width="4" height="60" rx="7" fill="#3b82f6"/>
+                        <text x="8" y="14" font-size="6.5" font-weight="700" fill="#1e40af"
+                              font-family="Inter, system-ui, sans-serif">WEATHER</text>
+                        <circle cx="142" cy="10" r="4" fill="#f97316"/>
+                        <text x="144" y="18" font-size="6.5" font-weight="600" fill="#059669" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✓18</text>
+                        <text x="144" y="26" font-size="6.5" font-weight="600" fill="#dc2626" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✗2</text>
+                        <text x="8" y="36" font-size="8.5" font-weight="700" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Heavy rain CBD</text>
+                        <text x="8" y="50" font-size="6.5" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Sydney · 2m</text>
                     </g>
                 </g>
 
-                {# 2. HAZARDS — slides in from BELOW #}
-                <g transform="translate(146, 180)">
-                    <g class="home-row home-row-from-bottom home-row-2">
-                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-                        <rect x="8" y="8" width="60" height="15" rx="7.5" fill="#e67e22"/>
-                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
-                              font-family="Inter, system-ui, sans-serif">⚠ HAZARDS</text>
-                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
-                              font-family="Inter, system-ui, sans-serif">🔥 87</text>
-                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Tree down on Yarra trail</text>
-                        <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Melbourne · 5m ago</text>
+                {# 2. HAZARDS — slides in from RIGHT #}
+                <g transform="translate(308, 160)">
+                    <g class="home-row home-row-from-right home-row-2">
+                        <rect width="152" height="60" rx="7" fill="#fafbff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="0" y="0" width="4" height="60" rx="7" fill="#f97316"/>
+                        <text x="8" y="14" font-size="6.5" font-weight="700" fill="#92400e"
+                              font-family="Inter, system-ui, sans-serif">HAZARD</text>
+                        <circle cx="142" cy="10" r="4" fill="#f97316"/>
+                        <text x="144" y="18" font-size="6.5" font-weight="600" fill="#059669" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✓9</text>
+                        <text x="144" y="26" font-size="6.5" font-weight="600" fill="#dc2626" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✗1</text>
+                        <text x="8" y="36" font-size="8.5" font-weight="700" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Tree down trail</text>
+                        <text x="8" y="50" font-size="6.5" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Melbourne · 5m</text>
                     </g>
                 </g>
 
                 {# 3. TRAFFIC — slides in from LEFT #}
-                <g transform="translate(146, 250)">
+                <g transform="translate(146, 230)">
                     <g class="home-row home-row-from-left home-row-3">
-                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-                        <rect x="8" y="8" width="58" height="15" rx="7.5" fill="#f1c40f"/>
-                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
-                              font-family="Inter, system-ui, sans-serif">🚦 TRAFFIC</text>
-                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
-                              font-family="Inter, system-ui, sans-serif">🔥 54</text>
-                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
+                        <rect width="152" height="60" rx="7" fill="#fafbff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="0" y="0" width="4" height="60" rx="7" fill="#eab308"/>
+                        <text x="8" y="14" font-size="6.5" font-weight="700" fill="#713f12"
+                              font-family="Inter, system-ui, sans-serif">TRAFFIC</text>
+                        <circle cx="142" cy="10" r="4" fill="#f97316"/>
+                        <text x="144" y="18" font-size="6.5" font-weight="600" fill="#059669" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✓12</text>
+                        <text x="144" y="26" font-size="6.5" font-weight="600" fill="#dc2626" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✗0</text>
+                        <text x="8" y="36" font-size="8.5" font-weight="700" fill="#1e293b"
                               font-family="Inter, system-ui, sans-serif">M1 backed up</text>
-                        <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Brisbane · 8m ago</text>
+                        <text x="8" y="50" font-size="6.5" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Brisbane · 8m</text>
                     </g>
                 </g>
 
-                {# --- RIGHT COLUMN --- #}
                 {# 4. EMERGENCY — slides in from RIGHT #}
-                <g transform="translate(308, 110)">
+                <g transform="translate(308, 230)">
                     <g class="home-row home-row-from-right home-row-4">
-                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-                        <rect x="8" y="8" width="76" height="15" rx="7.5" fill="#e74c3c"/>
-                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
-                              font-family="Inter, system-ui, sans-serif">🚨 EMERGENCY</text>
-                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
-                              font-family="Inter, system-ui, sans-serif">🔥 203</text>
-                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Power outage citywide</text>
-                        <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Perth · 12m ago</text>
-                    </g>
-                </g>
-
-                {# 5. NOISINESS — slides in from TOP #}
-                <g transform="translate(308, 180)">
-                    <g class="home-row home-row-from-top home-row-5">
-                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-                        <rect x="8" y="8" width="68" height="15" rx="7.5" fill="#9b59b6"/>
-                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
-                              font-family="Inter, system-ui, sans-serif">🔊 NOISINESS</text>
-                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
-                              font-family="Inter, system-ui, sans-serif">🔥 31</text>
-                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Construction noise</text>
-                        <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Adelaide · 18m ago</text>
-                    </g>
-                </g>
-
-                {# 6. WEATHER (storm) — slides in from RIGHT #}
-                <g transform="translate(308, 250)">
-                    <g class="home-row home-row-from-right home-row-6">
-                        <rect width="152" height="62" rx="7" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-                        <rect x="8" y="8" width="62" height="15" rx="7.5" fill="#3498db"/>
-                        <text x="14" y="19" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.4"
-                              font-family="Inter, system-ui, sans-serif">☁ WEATHER</text>
-                        <text x="144" y="19" font-size="9" font-weight="700" fill="#ef4444" text-anchor="end"
-                              font-family="Inter, system-ui, sans-serif">🔥 96</text>
-                        <text x="8" y="38" font-size="9.5" font-weight="600" fill="#1e293b"
-                              font-family="Inter, system-ui, sans-serif">Storm warning issued</text>
-                        <text x="8" y="54" font-size="8" fill="#64748b"
-                              font-family="Inter, system-ui, sans-serif">Sydney · 24m ago</text>
+                        <rect width="152" height="60" rx="7" fill="#fafbff" stroke="#e2e8f0" stroke-width="1"/>
+                        <rect x="0" y="0" width="4" height="60" rx="7" fill="#ef4444"/>
+                        <text x="8" y="14" font-size="6.5" font-weight="700" fill="#7f1d1d"
+                              font-family="Inter, system-ui, sans-serif">EMERGENCY</text>
+                        <circle cx="142" cy="10" r="4" fill="#f97316"/>
+                        <text x="144" y="18" font-size="6.5" font-weight="600" fill="#059669" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✓31</text>
+                        <text x="144" y="26" font-size="6.5" font-weight="600" fill="#dc2626" text-anchor="end"
+                              font-family="Inter, system-ui, sans-serif">✗3</text>
+                        <text x="8" y="36" font-size="8.5" font-weight="700" fill="#1e293b"
+                              font-family="Inter, system-ui, sans-serif">Power outage</text>
+                        <text x="8" y="50" font-size="6.5" fill="#64748b"
+                              font-family="Inter, system-ui, sans-serif">Perth · 12m</text>
                     </g>
                 </g>
 
@@ -228,8 +273,8 @@
 </section>
 
 <script>
-// Cycle the search bar + the 6 report cards through Australian cities every few seconds,
-// to make the monitor feel "live" — like the user is searching different cities.
+// Cycle the 6 report cards through Australian cities every few seconds
+// to make the monitor feel "live".
 (function () {
     const cities = [
         { name: 'Sydney',    posts: ['Heavy rain across CBD', 'Tree down at Centennial', 'M5 backed up south', 'Power outage in Bondi', 'Construction Pyrmont', 'Storm warning issued'] },
@@ -244,22 +289,6 @@
 
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const cards   = () => document.querySelectorAll('.home-illustration .home-row');
-    const search  = () => document.getElementById('home-search-text');
-
-    // type / delete one character at a time — the typewriter effect on the search bar
-    async function deleteText(el) {
-        while (el.textContent.length > 0) {
-            el.textContent = el.textContent.slice(0, -1);
-            await sleep(45);
-        }
-    }
-    async function typeText(el, text) {
-        for (let i = 1; i <= text.length; i++) {
-            el.textContent = text.substring(0, i);
-            await sleep(95);
-        }
-    }
-
     function updateCardContent(city) {
         cards().forEach((card, n) => {
             if (n >= city.posts.length) return;
@@ -301,18 +330,12 @@
         while (true) {
             cursor = (cursor + 1) % cities.length;
             const city = cities[cursor];
-            const s = search();
+                  await sleep(250);
 
-            if (s) {
-                await deleteText(s);              // 1. delete previous city, char by char
-                await typeText(s, city.name);     // 2. type new city, char by char
-            }
-            await sleep(250);                     // brief pause so the typed name registers
+                  updateCardContent(city);              // swap 6 cards' titles + meta lines
+                  replaySlideIns();                     // cards slide in fresh, like a refresh
 
-            updateCardContent(city);              // 3. swap 6 cards' titles + meta lines
-            replaySlideIns();                     // 4. cards slide in fresh, like a refresh
-
-            await sleep(3800);                    // 5. let the user read before the next city
+                  await sleep(3800);
         }
     }
 
