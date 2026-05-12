@@ -140,7 +140,6 @@ def api_search_users():
     ])
  
  
-# ---------------- Follow / Unfollow ----------------
 # POST creates the edge (idempotent — re-following is a no-op).
 # DELETE removes it. Self-follow is rejected at the API; the UI hides the
 # button on own profiles, but defence-in-depth never hurts.
@@ -181,7 +180,6 @@ def api_unfollow_user(user_id):
     })
  
  
-# ---------------- Block / Unblock (chat-only) ----------------
 # When user A blocks user B:
 #   - B can no longer send messages to A (server returns 403 in api_send_message)
 #   - B's existing conversations with A are filtered out of A's inbox

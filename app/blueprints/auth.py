@@ -15,7 +15,6 @@ from ..forms import LoginForm, EmailLoginForm, SignupForm
 bp = Blueprint('auth', __name__)
  
  
-# ---- file-upload constants for avatar ----
 ALLOWED_AVATAR_EXTS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
 AVATAR_MAX_BYTES = 5 * 1024 * 1024  # 5MB
  
@@ -45,10 +44,6 @@ def _sniff_image_type(stream):
  
 BIO_MAX_LENGTH = 500
  
- 
-# ============================================================
-# Login / signup / logout
-# ============================================================
  
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -105,10 +100,6 @@ def logout():
     logout_user()
     return redirect(url_for('auth.login'))
  
- 
-# ============================================================
-# Settings page + account / password updates
-# ============================================================
  
 @bp.route('/settings', methods=['GET'])
 @login_required
@@ -193,10 +184,6 @@ def api_verify_password():
     pw = payload.get('current_password') or ''
     return jsonify({'ok': bool(pw) and current_user.check_password(pw)})
  
- 
-# ============================================================
-# Profile editing — bio + avatar
-# ============================================================
  
 @bp.route('/profile/edit', methods=['GET'])
 @login_required
@@ -295,10 +282,6 @@ def settings_remove_avatar():
     flash('Profile picture removed.', 'success')
     return redirect(url_for('auth.profile_edit_page'))
  
- 
-# ============================================================
-# Account deletion — anonymises reports/comments, wipes everything else
-# ============================================================
  
 @bp.route('/settings/delete', methods=['POST'])
 @login_required

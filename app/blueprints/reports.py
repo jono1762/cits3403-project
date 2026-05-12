@@ -18,10 +18,6 @@ from ..models import (
 bp = Blueprint('reports', __name__)
  
  
-# ============================================================
-# Constants
-# ============================================================
- 
 MAX_MEDIA_FILES = 5
  
 TRENDING_LIMIT = 10
@@ -42,10 +38,6 @@ COMMENT_MAX_LENGTH = 2000
 _LAST_REPORT_CLEANUP = None
 _REPORT_CLEANUP_INTERVAL_MIN = 5
  
- 
-# ============================================================
-# Helpers — query, expiry cleanup, trending score, token encoding
-# ============================================================
  
 def _active_reports_q():
     """Base query for reports still within their expiry window. Use this
@@ -160,8 +152,16 @@ def _validate_uploads(files):
             return None, f'"{f.filename}" is not a valid image or video.'
         sniffs.append(s)
     return sniffs, None
- 
- 
+
+
+def _to_int(v):
+    """Parse a form/JSON value to int, returning None for empty / invalid input."""
+    try:
+        return int(v) if v not in (None, '') else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _trending_score_components():
     """SQLAlchemy expressions for the trending score, factored out so
     _trending_report_ids() and the listing page sort agree on the formula.
@@ -197,10 +197,6 @@ def _trending_report_ids():
     return {row[0] for row in rows}
  
  
-# ============================================================
-# Context processor — site-wide expiry banner
-# ============================================================
- 
 @bp.app_context_processor
 def inject_expiring_reports():
     """Surface the count of the user's own reports expiring in the next 24h
@@ -217,10 +213,6 @@ def inject_expiring_reports():
     ).count()
     return {'expiring_soon_count': count}
  
- 
-# ============================================================
-# Routes — view, vote, edit
-# ============================================================
  
 @bp.route('/reports/<string:token>')
 def view_report(token):
@@ -408,10 +400,6 @@ def edit_report_page(report_id):
         cities_by_state=cities_by_state,
     )
  
- 
-# ============================================================
-# Listing page + From-Following feed (shared handler)
-# ============================================================
  
 # /listing — list all reports.
 # Public — guests can browse without an account.
@@ -653,10 +641,6 @@ def listing_following_page():
     return _build_listing_response(base, feed_mode='following')
  
  
-# ============================================================
-# Create + delete report
-# ============================================================
- 
 # /reports — page where a logged-in user fills out and submits a report
 @bp.route('/reports')
 @login_required
@@ -688,13 +672,7 @@ def api_create_report():
         # plain JSON body, no files
         data = request.get_json(silent=True) or {}
         files = []
- 
-    def _to_int(v):
-        try:
-            return int(v) if v not in (None, '') else None
-        except (TypeError, ValueError):
-            return None
- 
+
     category_id = _to_int(data.get('category_id'))
     city_id = _to_int(data.get('city_id'))
     description = (data.get('description') or '').strip()

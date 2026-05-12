@@ -100,7 +100,7 @@ def seed_locations():
     db.session.commit()
  
 # a few arbitrary test users so the search feature has something to find
-# password for all of them is 'Test@1234' — move this to a real fixture later
+# (password for all of them is 'Test@1234')
 DEFAULT_TEST_USERS = [
     ('alice',   'alice@test.com'),
     ('bob',     'bob@test.com'),

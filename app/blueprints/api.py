@@ -20,8 +20,6 @@ from .users import _is_blocked
 bp = Blueprint('api', __name__)
  
  
-# ---------------- Favourites ----------------
- 
 @bp.route('/api/favourites/locations', methods=['GET'])
 @login_required
 def api_get_favourite_locations():
@@ -92,7 +90,6 @@ def api_remove_favourite_report(report_id):
     return jsonify({'removed': True})
  
  
-# ---------------- Chat ----------------
 # 1-on-1 messaging. Conversation rows store the per-pair state (accepted vs
 # request); ChatMessage rows store the actual messages.
 # Body is plain text — same XSS-safe pattern as comments (Jinja auto-escape +
@@ -366,10 +363,9 @@ def api_mark_read(user_id):
     return jsonify({'ok': True, 'marked': len(rows)})
  
  
-# ---------------- Comments ----------------
-# Body is stored as plain text and rendered with Jinja's default auto-escape, so
-# HTML/JS in user input becomes inert text in the page (XSS-safe). The frontend
-# also uses textContent (not innerHTML) when injecting new comments without a reload.
+# Comments — body stored as plain text and rendered with Jinja's default auto-
+# escape, so HTML/JS in user input becomes inert text (XSS-safe). The frontend
+# uses textContent (not innerHTML) when injecting new comments without reload.
  
 def _serialize_comment(comment, current_user_id=None):
     """Shared comment-to-JSON shape for the create endpoint and any future list endpoint."""

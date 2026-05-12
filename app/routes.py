@@ -391,7 +391,6 @@ def live_weather_page():
     return render_template('live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
 
 
-# ---- Weather API Caching ----
 # Simple in-memory cache, TTL configured via config.WEATHER_CACHE_TTL_MIN
 _WEATHER_CACHE = {}  # {city_name: {'data': {...}, 'cached_at': datetime, ...}}
 
