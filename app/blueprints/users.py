@@ -15,10 +15,11 @@ def _following_users_for(user):
         .order_by(Follow.created_at.desc())
         .all()
     )
-    # Resolve each Follow row to the actual followed-User object
-    return [User.query.get(r.followed_id) for r in rows if User.query.get(r.followed_id)]
- 
- 
+    # Resolve each Follow row to the followed-User object, skipping deleted users.
+    users = [User.query.get(r.followed_id) for r in rows]
+    return [u for u in users if u is not None]
+
+
 def _follower_users_for(user):
     """Return the User rows that follow this profile-user (newest follow first)."""
     rows = (
@@ -27,7 +28,8 @@ def _follower_users_for(user):
         .order_by(Follow.created_at.desc())
         .all()
     )
-    return [User.query.get(r.follower_id) for r in rows if User.query.get(r.follower_id)]
+    users = [User.query.get(r.follower_id) for r in rows]
+    return [u for u in users if u is not None]
  
  
 # /profile — show the logged-in user's own basic info
