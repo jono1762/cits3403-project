@@ -7,6 +7,11 @@ from .models import db, Category, Report, City, Verification, FavouriteLocation,
 # Report-related helpers live in the reports blueprint now. The favourites
 # and map pages here still call a couple, so we re-import them.
 from .blueprints.reports import _active_reports_q, _encode_report_id, TRENDING_LIMIT
+from .config import (
+    WEATHER_CACHE_TTL_MIN,
+    WEATHER_API_TIMEOUT_S,
+    FAVOURITES_TRENDING_THRESHOLD,
+)
  
 @app.route('/')
 def index():
@@ -137,8 +142,8 @@ def favourites_page():
         else:
             last_update = '—'
  
-        # trending heuristic: many reports today
-        trending = reports_today >= 20
+        # trending heuristic: many active reports for this city
+        trending = reports_today >= FAVOURITES_TRENDING_THRESHOLD
  
         saved_cities.append({
             'id': city.id,
@@ -387,9 +392,8 @@ def live_weather_page():
 
 
 # ---- Weather API Caching ----
-# Simple in-memory cache with 10-minute TTL per city
+# Simple in-memory cache, TTL configured via config.WEATHER_CACHE_TTL_MIN
 _WEATHER_CACHE = {}  # {city_name: {'data': {...}, 'cached_at': datetime, ...}}
-_WEATHER_CACHE_TTL_MIN = 10
 
 
 def _get_cached_weather(city_name):
@@ -398,7 +402,7 @@ def _get_cached_weather(city_name):
         return None
     cache_entry = _WEATHER_CACHE[city_name]
     age = (datetime.utcnow() - cache_entry['cached_at']).total_seconds() / 60
-    if age < _WEATHER_CACHE_TTL_MIN:
+    if age < WEATHER_CACHE_TTL_MIN:
         return cache_entry['data']
     return None
 
@@ -422,7 +426,7 @@ def _fetch_weather_from_api(lat, lng):
             'longitude': lng,
             'current': 'temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation',
         }
-        resp = requests.get(url, params=params, timeout=5)
+        resp = requests.get(url, params=params, timeout=WEATHER_API_TIMEOUT_S)
         resp.raise_for_status()
         data = resp.json()
         
