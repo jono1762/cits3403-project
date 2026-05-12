@@ -173,16 +173,22 @@ def seed_test_comments():
             ))
     db.session.commit()
  
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
- 
+
     app.config['SECRET_KEY'] = 'dev-secret-key-change-later'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
- 
+
     # media upload config
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
     app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024   # 20 MB max per request
+
+    # Test hook — pytest passes an override dict to swap the DB to in-memory
+    # and disable CSRF. Skips the dev-data seeders below.
+    if test_config:
+        app.config.update(test_config)
+
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
  
     db.init_app(app)
@@ -200,7 +206,17 @@ def create_app():
 
  
     with app.app_context():
-        from . import routes
+        # Each create_app() call must (re)register routes.py on the new app.
+        # Plain `import` is a no-op after the first call because Python caches
+        # the module; reload re-runs the @app.route decorators against the
+        # fresh current_app. Matters mainly for tests that build many apps.
+        import importlib
+        import sys
+        routes_module_name = f'{__name__}.routes'
+        if routes_module_name in sys.modules:
+            importlib.reload(sys.modules[routes_module_name])
+        else:
+            from . import routes  # noqa: F401  (decorators register routes)
         # Schema is owned by Flask-Migrate — fresh checkouts must run
         # `flask db upgrade` once before booting. The seeders below skip
         # silently if (a) the tables don't exist yet, or (b) the schema
