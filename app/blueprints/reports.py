@@ -413,153 +413,120 @@ def edit_report_page(report_id):
 # /listing — list all reports.
 # Public — guests can browse without an account.
 # Default sort = newest first. ?sort=top is the Trending page.
-def _build_listing_response(base_query, feed_mode=None):
-    """Shared listing-page handler. base_query is the starting Report.query
-    (already pre-filtered by /listing/following if applicable). feed_mode is
-    'following' for the From Following page, None for the regular listing —
-    template uses it to render the right title.
- 
-    Also runs the throttled lazy cleanup of expired reports — this is the
-    main public listing endpoint so it's a natural place to garbage-collect."""
-    _cleanup_expired_reports()
- 
-    page = request.args.get('page', 1, type=int)
-    state_id = request.args.get('state_id', type=int)
-    city_id = request.args.get('city_id', type=int)
-    category_id = request.args.get('category_id', type=int)
-    sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
- 
-    # Trending is auth-only — but anyone logged in can view it. The
-    # account-age requirement applies to whose VOTES count toward the
-    # ranking, not who can see the page (see _trending_score_components).
-    if sort == 'top' and not current_user.is_authenticated:
-        flash(
-            Markup(f'<a href="{url_for("auth.login")}" class="alert-link">Log in</a> to view trending reports.'),
-            'warning'
-        )
-        return redirect(url_for('reports.listing_page'))
- 
-    if city_id and not state_id:
-        selected_city = City.query.get(city_id)
-        if selected_city:
-            state_id = selected_city.state_id
- 
-    # Wrap base_query with the active-reports filter so expired posts never
-    # show up on the listing (regardless of which feed it was called from).
-    query = base_query.filter(Report.expires_at > datetime.utcnow())
-    # Trending filter options surface only cities / categories that actually
-    # appear in the current top 10. Empty until we compute them below.
-    trending_filter_cities = []
-    trending_filter_categories = []
- 
-    if sort != 'top':
-        # state filter has to go through City because Report only stores city_id, not state_id
-        if state_id:
-            query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
-        if city_id:
-            query = query.filter(Report.city_id == city_id)
-        if category_id:
-            query = query.filter(Report.category_id == category_id)
+def _apply_basic_filters(query, state_id, city_id, category_id):
+    """state / city / category dropdown filters for the non-trending listing.
+    State goes through City because Report only stores city_id."""
+    if state_id:
+        query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
+    if city_id:
+        query = query.filter(Report.city_id == city_id)
+    if category_id:
+        query = query.filter(Report.category_id == category_id)
+    return query
+
+
+def _apply_trending_filters(query, base_query, city_id, category_id):
+    """Trending mode: narrow to the top-N set, drop any filter selection that
+    isn't in the set, and build dropdown options from the cities / categories
+    that actually appear in the top-N. Returns the filtered query plus the
+    (possibly nulled) ids and the two dropdown lists."""
+    trending_ids_set = _trending_report_ids()
+    if not trending_ids_set:
+        query = query.filter(False)
+        top_reports = []
     else:
-        # On Trending we narrow by city / category WITHIN the top-10 set.
-        # State filter doesn't apply (would be redundant with city).
-        state_id = None
-        trending_ids_set = _trending_report_ids()
-        if not trending_ids_set:
-            query = query.filter(False)
-            top_reports = []
-        else:
-            query = query.filter(Report.id.in_(trending_ids_set))
-            top_reports = (
-                base_query.filter(Report.expires_at > datetime.utcnow())
-                          .filter(Report.id.in_(trending_ids_set))
-                          .all()
-            )
- 
-        # Drop a stale selection that isn't anywhere in the trending set —
-        # avoids confusing "no results" for a filter that doesn't apply.
-        global_city_ids = {r.city_id for r in top_reports}
-        global_category_ids = {r.category_id for r in top_reports}
-        if city_id and city_id not in global_city_ids:
-            city_id = None
-        if category_id and category_id not in global_category_ids:
-            category_id = None
- 
-        # Context-aware dropdown options. If you've picked a category, the city
-        # dropdown only lists cities that have a trending report in that
-        # category — and vice versa. Avoids showing combos with zero results.
-        cities_visible = top_reports
-        if category_id:
-            cities_visible = [r for r in top_reports if r.category_id == category_id]
-        cats_visible = top_reports
-        if city_id:
-            cats_visible = [r for r in top_reports if r.city_id == city_id]
-        trending_filter_cities = (
-            City.query.filter(City.id.in_({r.city_id for r in cities_visible}))
-                       .order_by(City.name).all()
+        query = query.filter(Report.id.in_(trending_ids_set))
+        top_reports = (
+            base_query.filter(Report.expires_at > datetime.utcnow())
+                      .filter(Report.id.in_(trending_ids_set))
+                      .all()
         )
-        trending_filter_categories = (
-            Category.query.filter(Category.id.in_({r.category_id for r in cats_visible}))
-                          .order_by(Category.name).all()
-        )
- 
-        # Apply the (now-validated) filters to the listing query
-        if city_id:
-            query = query.filter(Report.city_id == city_id)
-        if category_id:
-            query = query.filter(Report.category_id == category_id)
- 
+
+    # Drop a stale filter selection that isn't anywhere in the trending set
+    # — avoids confusing "no results" for a filter that doesn't apply.
+    global_city_ids = {r.city_id for r in top_reports}
+    global_category_ids = {r.category_id for r in top_reports}
+    if city_id and city_id not in global_city_ids:
+        city_id = None
+    if category_id and category_id not in global_category_ids:
+        category_id = None
+
+    # Context-aware dropdowns: picking a category shrinks the city list to
+    # cities that have a trending report in that category, and vice versa.
+    cities_visible = top_reports
+    if category_id:
+        cities_visible = [r for r in top_reports if r.category_id == category_id]
+    cats_visible = top_reports
+    if city_id:
+        cats_visible = [r for r in top_reports if r.city_id == city_id]
+    trending_filter_cities = (
+        City.query.filter(City.id.in_({r.city_id for r in cities_visible}))
+                   .order_by(City.name).all()
+    )
+    trending_filter_categories = (
+        Category.query.filter(Category.id.in_({r.category_id for r in cats_visible}))
+                      .order_by(Category.name).all()
+    )
+
+    if city_id:
+        query = query.filter(Report.city_id == city_id)
+    if category_id:
+        query = query.filter(Report.category_id == category_id)
+
+    return query, city_id, category_id, trending_filter_cities, trending_filter_categories
+
+
+def _apply_listing_sort(query, sort):
+    """Apply ORDER BY for the chosen sort mode. 'top' uses the trending
+    score; others rank by counts of verifies / disputes / comments. The
+    outer-joins keep reports with zero votes / comments visible (at the
+    bottom) rather than dropping them."""
     if sort == 'top':
-        # Trending score = eligible_verifies − eligible_disputes − days_old.
+        # Trending score = eligible_verifies - eligible_disputes - days_old.
         # Only votes from accounts older than TRENDING_VOTER_MIN_AGE_DAYS
-        # count toward the score; the displayed verify/dispute counts on
-        # cards still show every vote.
+        # feed the score; displayed verify/dispute counts on cards include
+        # every vote.
         _, _, _, score = _trending_score_components()
-        query = (
+        return (
             query.outerjoin(Verification, Verification.report_id == Report.id)
                  .outerjoin(User, User.id == Verification.user_id)
                  .group_by(Report.id)
                  .order_by(score.desc(), Report.created_at.desc())
         )
-    elif sort == 'verifies':
-        # Most-verified first — count of verify rows per report. outer-join so
-        # reports with zero verifies still appear (just at the bottom).
+    if sort == 'verifies':
         from sqlalchemy import case
         verify_count = db.func.count(case((Verification.status == 'verify', 1)))
-        query = (
+        return (
             query.outerjoin(Verification, Verification.report_id == Report.id)
                  .group_by(Report.id)
                  .order_by(verify_count.desc(), Report.created_at.desc())
         )
-    elif sort == 'disputes':
-        # Most-disputed first — same shape as verifies but counts dispute rows.
+    if sort == 'disputes':
         from sqlalchemy import case
         dispute_count = db.func.count(case((Verification.status == 'dispute', 1)))
-        query = (
+        return (
             query.outerjoin(Verification, Verification.report_id == Report.id)
                  .group_by(Report.id)
                  .order_by(dispute_count.desc(), Report.created_at.desc())
         )
-    elif sort == 'comments':
-        # Most-discussed first — count of comments per report. outer-join so
-        # reports with zero comments still show up (just at the bottom).
+    if sort == 'comments':
         comment_count = db.func.count(Comment.id)
-        query = (
+        return (
             query.outerjoin(Comment, Comment.report_id == Report.id)
                  .group_by(Report.id)
                  .order_by(comment_count.desc(), Report.created_at.desc())
         )
-    elif sort == 'oldest':
-        # Oldest first — inverse of the default Recent sort. Useful for users
-        # who want to scroll back through historical reports in order.
-        query = query.order_by(Report.created_at.asc())
-    else:
-        query = query.order_by(Report.created_at.desc())
- 
-    # Trending is capped to a hard top 10 — no pagination, no scroll-forever.
-    # Regular listing keeps the standard 20-per-page pagination.
+    if sort == 'oldest':
+        return query.order_by(Report.created_at.asc())
+    return query.order_by(Report.created_at.desc())
+
+
+def _paginate_listing(query, sort, page):
+    """Trending caps at TRENDING_LIMIT (no pagination); regular listing
+    paginates at 20 per page."""
     if sort == 'top':
         items = query.limit(TRENDING_LIMIT).all()
+
         class _SinglePagePagination:
             def __init__(self, items):
                 self.items = items
@@ -567,12 +534,62 @@ def _build_listing_response(base_query, feed_mode=None):
                 self.has_next = False
                 self.page = 1
                 self.pages = 1
+
             def iter_pages(self, **kwargs):
                 return [1]
-        pagination = _SinglePagePagination(items)
+
+        return _SinglePagePagination(items)
+    return query.paginate(page=page, per_page=20, error_out=False)
+
+
+def _build_listing_response(base_query, feed_mode=None):
+    """Shared listing-page handler. base_query is the starting Report.query
+    (already pre-filtered by /listing/following if applicable). feed_mode is
+    'following' for the From Following page, None for the regular listing —
+    template uses it to render the right title.
+
+    Also runs the throttled lazy cleanup of expired reports — this is the
+    main public listing endpoint so it's a natural place to garbage-collect."""
+    _cleanup_expired_reports()
+
+    page = request.args.get('page', 1, type=int)
+    state_id = request.args.get('state_id', type=int)
+    city_id = request.args.get('city_id', type=int)
+    category_id = request.args.get('category_id', type=int)
+    sort = request.args.get('sort', 'recent')
+
+    # Trending is auth-only — the account-age rule applies to whose VOTES
+    # count toward the score, not who can SEE the page.
+    if sort == 'top' and not current_user.is_authenticated:
+        flash(
+            Markup(f'<a href="{url_for("auth.login")}" class="alert-link">Log in</a> to view trending reports.'),
+            'warning'
+        )
+        return redirect(url_for('reports.listing_page'))
+
+    if city_id and not state_id:
+        selected_city = City.query.get(city_id)
+        if selected_city:
+            state_id = selected_city.state_id
+
+    # Active reports only — expired posts never show up regardless of feed.
+    query = base_query.filter(Report.expires_at > datetime.utcnow())
+    trending_filter_cities = []
+    trending_filter_categories = []
+
+    if sort != 'top':
+        query = _apply_basic_filters(query, state_id, city_id, category_id)
     else:
-        pagination = query.paginate(page=page, per_page=20, error_out=False)
- 
+        # State filter doesn't apply on Trending (redundant with city).
+        state_id = None
+        (query, city_id, category_id,
+         trending_filter_cities, trending_filter_categories) = _apply_trending_filters(
+            query, base_query, city_id, category_id
+        )
+
+    query = _apply_listing_sort(query, sort)
+    pagination = _paginate_listing(query, sort, page)
+
     states = State.query.order_by(State.name).all()
     cities_by_state = {
         s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities]
