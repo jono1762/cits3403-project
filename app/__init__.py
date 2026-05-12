@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from sqlalchemy import inspect
@@ -8,7 +8,7 @@ from .blueprints.auth import bp as auth_bp
 from .blueprints.reports import bp as reports_bp
 from .blueprints.users import bp as users_bp
 from .blueprints.api import bp as api_bp
-from flask import Flask, render_template
+
  
 login_manager = LoginManager()
 # Schema-versioning helper. Tracks every model change as a script in
@@ -175,7 +175,6 @@ def create_app():
                 seed_test_comments()           # canned comments on any report missing them
             except Exception as e:
                 db.session.rollback()
-                raise e  # ← add this line temporarily
  
     @app.errorhandler(403)
     def forbidden(e):
