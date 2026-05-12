@@ -8,7 +8,7 @@
 {% block content %}
 <div class="container" id="mapPage">
 	<h1>Map</h1>
-	<p>Explore situation reports across Australia</p>
+	<p class="report-subtitle">Explore situation reports across Australia</p>
 
 	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
 	   Card 3 links to the user's favourites page (stub for now). #}
@@ -137,12 +137,14 @@
 	const westBound = australiaBounds[0][1];
 	const northBound = australiaBounds[1][0];
 	const eastBound = australiaBounds[1][1];
-	const defaultView = { center: [-27.0, 133.7751], zoom: 4 };
+	const defaultView = { center: [-27.0, 133.7751], zoom: 3.5 };
 	const map = L.map("map", {
 		center: defaultView.center,
 		zoom: defaultView.zoom,
 		minZoom: defaultView.zoom,
 		maxZoom: 8,
+		zoomSnap: 0.5,
+		zoomDelta: 0.5,
 		zoomControl: false,
 		worldCopyJump: true
 	});
