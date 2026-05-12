@@ -258,3 +258,21 @@ body::after {
 .delete-modal-content .modal-footer {
     border-top: 1px solid #f1f5f9;
 }
+
+
+/* Shared carousel media frame — used by profile cards, listing cards, and the
+   single-report page. Black backdrop hides letterboxing on aspect-mismatched
+   images and videos. `.media-frame-lg` bumps the height for the larger
+   report-view layout. */
+.media-frame {
+    background-color: #000;
+}
+.media-frame img,
+.media-frame video {
+    height: 400px;
+    object-fit: contain;
+}
+.media-frame-lg img,
+.media-frame-lg video {
+    height: 480px;
+}

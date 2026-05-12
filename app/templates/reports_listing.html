@@ -297,19 +297,17 @@
                                 </div>
                             {% endif %}
  
-                            <div class="carousel-inner rounded border" style="background-color: #000;">
+                            <div class="carousel-inner rounded border media-frame">
                                 {% for m in r.media %}
                                     <div class="carousel-item {{ 'active' if loop.first else '' }}">
                                         {% if m.media_type == 'image' %}
                                             <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
                                                  class="d-block w-100"
-                                                 style="height: 400px; object-fit: contain;"
                                                  alt="{{ m.original_name }}">
                                         {% else %}
                                             <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
                                                    controls
-                                                   class="d-block w-100"
-                                                   style="height: 400px; object-fit: contain; background: #000;"></video>
+                                                   class="d-block w-100"></video>
                                         {% endif %}
                                     </div>
                                 {% endfor %}
