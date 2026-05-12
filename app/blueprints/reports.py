@@ -394,7 +394,7 @@ def edit_report_page(report_id):
     # JS-side lookup: { state_id: [{id, name}, ...] } so the city dropdown
     # can repopulate when the user changes state without a server round-trip
     cities_by_state = {
-        s.id: [{'id': c.id, 'name': c.name} for c in s.cities if c.name != 'Fremantle']
+        s.id: [{'id': c.id, 'name': c.name} for c in s.cities]
         for s in states
     }
     return render_template(
@@ -575,7 +575,7 @@ def _build_listing_response(base_query, feed_mode=None):
  
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities]
         for s in states
     }
     categories = Category.query.order_by(Category.id).all()
@@ -644,7 +644,7 @@ def reports_page():
     categories = Category.query.order_by(Category.id).all()
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities]
         for s in states
     }
     return render_template(

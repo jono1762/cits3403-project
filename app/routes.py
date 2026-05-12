@@ -49,7 +49,7 @@ CITY_TO_STATE = {
     'Sydney': 'nsw', 'Newcastle': 'nsw', 'Wollongong': 'nsw', 'Central Coast': 'nsw',
     'Melbourne': 'vic', 'Geelong': 'vic', 'Ballarat': 'vic',
     'Brisbane': 'qld', 'Gold Coast': 'qld', 'Sunshine Coast': 'qld', 'Cairns': 'qld', 'Townsville': 'qld',
-    'Perth': 'wa', 'Fremantle': 'wa', 'Mandurah': 'wa', 'Bunbury': 'wa',
+    'Perth': 'wa', 'Mandurah': 'wa', 'Bunbury': 'wa',
     'Adelaide': 'sa', 'Mount Gambier': 'sa',
     'Hobart': 'tas', 'Launceston': 'tas',
     'Canberra': 'act',
