@@ -156,20 +156,23 @@
     box-shadow: none;
 }
 
-.app-mobile-menu-floating {
-    position: fixed;
-    top: calc(var(--navbar-height) + 10px);
-    left: 10px;
-    z-index: 1040;
-    background-color: #111;
-    border-color: rgba(255, 255, 255, 0.35);
+.app-navbar-menu-btn {
+    padding: 6px 8px;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.18s ease;
 }
 
-.app-mobile-menu-floating:hover,
-.app-mobile-menu-floating:focus {
-    background-color: #111;
+.app-navbar-menu-btn:hover,
+.app-navbar-menu-btn:focus {
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.app-hamburger-icon {
+    display: inline-block;
+    vertical-align: middle;
 }
 
 @media (max-width: 767.98px) {

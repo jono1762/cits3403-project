@@ -40,6 +40,13 @@
             </a>
 
             <div class="app-navbar-right">
+                <button class="btn btn-link d-md-none app-navbar-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open navigation menu">
+                    <svg class="app-hamburger-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
                 {% if current_user.is_authenticated %}
                     {# Profile dropdown menu — shows user profile image #}
                     <div class="dropdown">
@@ -79,15 +86,6 @@
 
     {% if show_app %}
         {% set path = request.path %}
-
-        <button class="btn btn-sm btn-outline-light d-md-none app-mobile-menu-floating"
-                type="button"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#mobileSidebar"
-                aria-controls="mobileSidebar"
-                aria-label="Open navigation menu">
-            Menu
-        </button>
 
         <div class="offcanvas offcanvas-start text-bg-dark d-md-none" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
             <div class="offcanvas-header border-bottom border-secondary">
