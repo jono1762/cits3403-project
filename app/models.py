@@ -3,8 +3,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 
-# Reports auto-expire this many days after creation. Authors can extend by
-# clicking "Post it again" before expiry.
+# Reports auto-expire this many days after creation.
 REPORT_LIFETIME_DAYS = 7
 
 
@@ -179,8 +178,7 @@ class Report(db.Model):
     description = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Auto-expiry — after this datetime the report is hidden from public lists
-    # and gets deleted by the next cleanup pass. Authors can reset it via the
-    # "Post it again" button before it lapses.
+    # and gets deleted by the next cleanup pass.
     expires_at = db.Column(db.DateTime, default=_default_report_expiry, nullable=True)
 
     verifications = db.relationship('Verification', backref='report', lazy=True)
