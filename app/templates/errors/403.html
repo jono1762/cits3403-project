@@ -1,67 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %} 403 – Forbidden{% endblock %}
-
 {% block styles %}
-<style>
-    .error-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 60vh;
-        text-align: center;
-        padding: 2rem;
-    }
-    .error-code {
-        font-size: 6rem;
-        font-weight: 900;
-        color: #e74c3c;
-        line-height: 1;
-        margin-bottom: 0.5rem;
-        letter-spacing: -2px;
-    }
-    .error-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-    .error-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-    }
-    .error-message {
-        font-size: 1rem;
-        color: #666;
-        max-width: 420px;
-        line-height: 1.6;
-        margin-bottom: 2rem;
-    }
-    .error-btn {
-        display: inline-block;
-        padding: 0.75rem 1.75rem;
-        background-color: #e74c3c;
-        color: #fff;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: background-color 0.2s ease;
-    }
-    .error-btn:hover {
-        background-color: #c0392b;
-        color: #fff;
-    }
-</style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/errors.css') }}">
+    <style>.error-container { --error-accent: #e74c3c; }</style>
 {% endblock %}
 
 {% block content %}
 <div class="error-container">
     <div class="error-code">403</div>
-    <div class="error-icon">🔒</div>
+    <div class="error-icon" aria-hidden="true">🔒</div>
     <h1 class="error-title">Access Forbidden</h1>
     <p class="error-message">
-     You don't have permission to access this page.<br>
-     If you think this is a mistake, please contact the site administrator.
+        You don't have permission to access this page.<br>
+        If you think this is a mistake, please contact the site administrator.
     </p>
     <a href="{{ url_for('index') }}" class="error-btn">← Back to Home</a>
 </div>

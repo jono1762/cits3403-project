@@ -497,4 +497,3 @@ def api_get_weather(city):
     # Cache and return
     _set_cached_weather(city, weather_data)
     return jsonify(weather_data)
-    

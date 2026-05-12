@@ -1,7 +1,5 @@
 import os
-Three_404_html_files
 from flask import Flask, flash, redirect, request, url_for, jsonify, render_template
-main
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from markupsafe import Markup
@@ -214,7 +212,7 @@ def create_app():
                 seed_locations()               # states + cities
                 seed_test_users_and_reports()  # arbitrary users so search has something to find
                 seed_test_comments()           # canned comments on any report missing them
-            except Exception as e:
+            except Exception:
                 db.session.rollback()
  
     @app.errorhandler(403)
