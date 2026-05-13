@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css', v='2') }}">
 {% endblock %}
 
 {% block content %}
@@ -60,41 +60,134 @@
             </div>
         </div>
 
-        {# ---------- right column: desktop monitor showing the app ---------- #}
+        {# ---------- right column: animated preview of the real View Reports page ---------- #}
         <div class="home-illustration-wrap">
-            <svg class="home-illustration" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <defs>
-                              <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.4"/>
-                                    <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.4"/>
-                              </linearGradient>
-                              <clipPath id="monitorScreenClip">
-                                    <rect x="30" y="30" width="440" height="250" rx="8"/>
-                              </clipPath>
-                        </defs>
+            <div class="home-report-demo" aria-hidden="true">
+                <div class="home-demo-screen">
+                    <div class="home-demo-topbar">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
 
-                {# soft circular background behind the monitor #}
-                <circle cx="250" cy="200" r="200" fill="url(#bgGrad)"/>
+                    <div class="home-demo-app">
+                        <div class="home-demo-navbar">
+                            <span class="home-demo-logo">Australia Explorer</span>
+                            <div class="home-demo-nav-actions">
+                                <span class="home-demo-profile">C</span>
+                                <span class="home-demo-search">Search users...</span>
+                                <span class="home-demo-message-icon" aria-hidden="true"></span>
+                            </div>
+                        </div>
 
-                {# ============== MONITOR FRAME ============== #}
-                <rect x="20" y="50" width="460" height="270" rx="14" fill="#1e293b"/>
-                <rect x="24" y="54" width="452" height="262" rx="10" fill="#0f172a"/>
-                <rect x="30" y="60" width="440" height="250" rx="6" fill="#000000"/>
+                        <div class="home-demo-body">
+                            <aside class="home-demo-sidebar">
+                                <span class="home-demo-section">Locations</span>
+                                <span>Map</span>
+                                <span class="home-demo-section">Reports</span>
+                                <span>Create</span>
+                                <span class="is-active">View</span>
+                                <span class="home-demo-section">Live</span>
+                                <span>Weather</span>
+                                <span class="home-demo-section">Favourites</span>
+                                <span>Locations</span>
+                                <span>Reports</span>
+                            </aside>
 
-                <image
-                              href="{{ url_for('static', filename='images/monitor-screenshot.png') }}"
-                              x="30"
-                              y="60"
-                              width="440"
-                              height="250"
-                              preserveAspectRatio="xMidYMid meet"
-                              clip-path="url(#monitorScreenClip)"
-                        />
+                            <div class="home-demo-content">
+                                <div class="home-demo-header">
+                                    <h2 class="home-demo-title">All Reports</h2>
+                                    <div class="home-demo-new-report">+ New Report</div>
+                                </div>
 
-                        {# ============== MONITOR STAND ============== #}
-                <rect x="230" y="320" width="40" height="34" fill="#334155"/>
-                <rect x="180" y="354" width="140" height="14" rx="6" fill="#475569"/>
-            </svg>
+                                <div class="home-demo-filters">
+                                    <span>All states</span>
+                                    <span>All cities</span>
+                                    <span>Latest</span>
+                                    <span>All reports</span>
+                                    <span class="home-demo-clear">Clear</span>
+                                </div>
+
+                                <div class="home-demo-categories">
+                                    <span class="home-demo-chip is-active">All categories</span>
+                                    <span class="home-demo-chip home-demo-chip-weather">Weather</span>
+                                    <span class="home-demo-chip home-demo-chip-hazard">Hazards</span>
+                                    <span class="home-demo-chip home-demo-chip-traffic">Traffic</span>
+                                </div>
+
+                                <div class="home-demo-feed-window">
+                                    <div class="home-demo-feed">
+                                        <article class="home-demo-report home-demo-report-hazard">
+                                            <div class="home-demo-report-main">
+                                                <div class="home-demo-report-meta">
+                                                    <span class="home-demo-badge">Hazards</span>
+                                                    <span class="home-demo-trending">🔥 Trending</span>
+                                                    <span>Perth, WA</span>
+                                                </div>
+                                                <p class="home-demo-report-desc">Fallen branch on the Kings Park path.</p>
+                                            </div>
+                                            <div class="home-demo-votes">
+                                                <span class="home-demo-star">★</span>
+                                                <span class="home-demo-verify">✓ Verify <strong>0</strong></span>
+                                                <span class="home-demo-dispute">X Dispute <strong>0</strong></span>
+                                            </div>
+                                        </article>
+
+                                        <article class="home-demo-report home-demo-report-traffic">
+                                            <div class="home-demo-report-main">
+                                                <div class="home-demo-report-meta">
+                                                    <span class="home-demo-badge">Traffic</span>
+                                                    <span class="home-demo-trending">🔥 Trending</span>
+                                                    <span>Melbourne, VIC</span>
+                                                </div>
+                                                <p class="home-demo-report-desc">Tram line blocked near Flinders Station.</p>
+                                            </div>
+                                            <div class="home-demo-votes">
+                                                <span class="home-demo-star">☆</span>
+                                                <span class="home-demo-verify">✓ Verify <strong>0</strong></span>
+                                                <span class="home-demo-dispute">X Dispute <strong>0</strong></span>
+                                            </div>
+                                        </article>
+
+                                        <article class="home-demo-report home-demo-report-weather">
+                                            <div class="home-demo-report-main">
+                                                <div class="home-demo-report-meta">
+                                                    <span class="home-demo-badge">Weather</span>
+                                                    <span class="home-demo-trending">🔥 Trending</span>
+                                                    <span>Sydney, NSW</span>
+                                                </div>
+                                                <p class="home-demo-report-desc">Heavy rain at George St, watch out for puddles.</p>
+                                            </div>
+                                            <div class="home-demo-votes">
+                                                <span class="home-demo-star">☆</span>
+                                                <span class="home-demo-verify">✓ Verify <strong>0</strong></span>
+                                                <span class="home-demo-dispute">X Dispute <strong>0</strong></span>
+                                            </div>
+                                        </article>
+
+                                        <article class="home-demo-report home-demo-report-emergency">
+                                            <div class="home-demo-report-main">
+                                                <div class="home-demo-report-meta">
+                                                    <span class="home-demo-badge">Emergency</span>
+                                                    <span>Brisbane, QLD</span>
+                                                </div>
+                                                <p class="home-demo-report-desc">Power outage reported near the riverfront.</p>
+                                            </div>
+                                            <div class="home-demo-votes">
+                                                <span class="home-demo-star">☆</span>
+                                                <span class="home-demo-verify">✓ Verify <strong>0</strong></span>
+                                                <span class="home-demo-dispute">X Dispute <strong>0</strong></span>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="home-demo-stand"></div>
+                <div class="home-demo-base"></div>
+            </div>
         </div>
 </section>
 
