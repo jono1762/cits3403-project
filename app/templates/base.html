@@ -110,8 +110,8 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('reports.reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports.reports_page') else '' }}" data-bs-dismiss="offcanvas">Create Report</a>
-                            <a href="{{ url_for('reports.listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') != 'top' else '' }}" data-bs-dismiss="offcanvas">View Reports</a>
+                            <a href="{{ url_for('reports.reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('reports.reports_page') else '' }}">Create Report</a>
+                            <a href="{{ url_for('reports.listing_page') }}" class="app-sidebar-link {{ 'active' if request.path == url_for('reports.listing_page') and request.args.get('sort') != 'top' else '' }}">View Reports</a>
                         </div>
                     </div>
 
@@ -121,7 +121,7 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}" data-bs-dismiss="offcanvas">Live Weather</a>
+                            <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}">Live Weather</a>
                         </div>
                     </div>
 
@@ -131,8 +131,8 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}" data-bs-dismiss="offcanvas">Locations</a>
-                            <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}" data-bs-dismiss="offcanvas">Reports</a>
+                            <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
+                            <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}">Reports</a>
                         </div>
                     </div>
 
@@ -142,8 +142,8 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}" data-bs-dismiss="offcanvas">Help</a>
-                            <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}" data-bs-dismiss="offcanvas">About</a>
+                            <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>
+                            <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}">About</a>
                         </div>
                     </div>
                 </nav>
@@ -442,6 +442,8 @@
         (function () {
             const STORAGE_KEY = 'sidebar-collapsed-sections';
             const sections = document.querySelectorAll('.app-sidebar-group');
+            const offcanvasElement = document.getElementById('mobileSidebar');
+            const offcanvasInstance = offcanvasElement ? bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement) : null;
             
             // Load collapsed state from localStorage
             function loadCollapsedState() {
@@ -465,6 +467,14 @@
             // Initialize: apply saved state and attach listeners
             function initSidebar() {
                 const collapsedSections = loadCollapsedState();
+
+                document.querySelectorAll('.mobile-sidebar-nav .app-sidebar-link').forEach((link) => {
+                    link.addEventListener('click', () => {
+                        if (offcanvasInstance) {
+                            offcanvasInstance.hide();
+                        }
+                    });
+                });
                 
                 sections.forEach(section => {
                     const sectionName = section.getAttribute('data-section');
