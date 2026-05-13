@@ -1,5 +1,5 @@
 import os
-from flask import Flask, flash, redirect, request, url_for, jsonify
+from flask import Flask, flash, redirect, request, url_for, jsonify, render_template
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from markupsafe import Markup
@@ -9,6 +9,7 @@ from .blueprints.auth import bp as auth_bp
 from .blueprints.reports import bp as reports_bp
 from .blueprints.users import bp as users_bp
 from .blueprints.api import bp as api_bp
+
  
 login_manager = LoginManager()
 # Schema-versioning helper. Tracks every model change as a script in
@@ -194,6 +195,8 @@ def create_app():
     app.register_blueprint(reports_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(api_bp)
+
+
  
     with app.app_context():
         from . import routes
@@ -209,9 +212,19 @@ def create_app():
                 seed_test_users_and_reports()  # arbitrary users so search has something to find
                 seed_test_comments()           # canned comments on any report missing them
             except Exception:
-                # schema not in sync — user needs to run `flask db upgrade`
                 db.session.rollback()
  
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('errors/403.html'), 403
+ 
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template('errors/404.html'), 404
+ 
+    @app.errorhandler(500)
+    def server_error(e):
+        return render_template('errors/500.html'), 500
+
     return app
- 
- 
+
