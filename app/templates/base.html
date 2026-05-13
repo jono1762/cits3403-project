@@ -64,7 +64,6 @@
                         <ul class="dropdown-menu dropdown-menu-end app-navbar-profile-menu" aria-labelledby="profileDropdown">
                             <li><a class="dropdown-item" href="{{ url_for('users.profile_page') }}">Profile</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.settings_page') }}">Settings</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('messages_page') }}">Messages</a></li>
                         </ul>
                     </div>
                     {# search users input — always visible searchbar for finding users #}
@@ -73,6 +72,15 @@
                                placeholder="Search users..." autocomplete="off" aria-label="Search users">
                         <ul id="app-navbar-search-results" class="app-navbar-search-results" aria-hidden="true"></ul>
                     </div>
+                    <a href="{{ url_for('messages_page') }}"
+                       class="app-navbar-message"
+                       aria-label="Messages"
+                       title="Messages">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="app-navbar-message-dot" {% if unread_message_count <= 0 %}hidden{% endif %}></span>
+                    </a>
                 {% elif is_guest %}
                     {# guest viewing the public map — visually shows they're not signed in #}
                     <a href="{{ url_for('home_intro') }}" class="app-account-toggle app-account-guest">Guest</a>
