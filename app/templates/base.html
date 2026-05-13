@@ -60,6 +60,7 @@
                                     {{ current_user.username[0].upper() }}
                                 </div>
                             {% endif %}
+                            <span class="app-navbar-profile-chevron" aria-hidden="true">▾</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end app-navbar-profile-menu" aria-labelledby="profileDropdown">
                             <li><a class="dropdown-item" href="{{ url_for('users.profile_page') }}">Profile</a></li>

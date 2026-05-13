@@ -363,13 +363,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
+    width: auto;
     height: 34px;
     border-radius: 999px;
     color: rgba(255, 255, 255, 0.85);
     background: transparent;
     border: none;
-    padding: 0;
+    gap: 0.28rem;
+    padding: 0 0.35rem 0 0;
     transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
     text-decoration: none !important;
 }
@@ -407,6 +408,23 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     overflow: hidden;
+}
+
+.app-navbar-profile-chevron {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.72rem;
+    line-height: 1;
+    transform: translateY(1px);
+    transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.app-navbar-profile-btn:hover .app-navbar-profile-chevron,
+.app-navbar-profile-btn:focus .app-navbar-profile-chevron {
+    color: #fff;
+}
+
+.app-navbar-profile-btn[aria-expanded="true"] .app-navbar-profile-chevron {
+    transform: rotate(180deg) translateY(-1px);
 }
 
 /* Profile dropdown menu styling */
