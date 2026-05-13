@@ -7,8 +7,8 @@
  
 {% block content %}
 <section class="listing-page">
-    <header class="listing-header">
-        <h1 class="listing-title">
+    <header class="page-header listing-header">
+        <h1 class="page-title listing-title">
             {% if feed_trending_active and feed_following_active %}
                 Trending from Following
             {% elif feed_following_active %}
@@ -365,7 +365,6 @@
         <div class="listing-empty">
             No reports yet.
         </div>
-    {% endif %}
+{% endif %}
 </section>
 {% endblock %}
- 

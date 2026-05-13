@@ -2,13 +2,15 @@
 
 {% block styles %}
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css', v='2') }}">
 {% endblock %}
 
 {% block content %}
 <div class="container" id="mapPage">
-	<h1>Map</h1>
-	<p class="report-subtitle">Explore situation reports across Australia</p>
+	<header class="page-header map-header">
+		<h1 class="page-title map-title">Map</h1>
+		<p class="page-subtitle map-subtitle">Explore situation reports across Australia</p>
+	</header>
 
 	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
 	   Card 3 links to the user's favourites page (stub for now). #}

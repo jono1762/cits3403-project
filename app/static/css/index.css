@@ -25,20 +25,27 @@
 /* ============================================================
    Heading + intro line
    ============================================================ */
-#mapPage h1 {
-    margin: 0;
+.map-header {
+    margin-bottom: 1.25rem;
+}
+
+.map-title {
+    display: inline-block;
     font-family: 'Space Grotesk', sans-serif;
     font-size: clamp(1.75rem, 3vw, 2.25rem);
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.1;
     margin: 0 0 0.4rem;
-    color: #1e293b;
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
-/* subtitle — matches report page styling */
-#mapPage > p.report-subtitle {
-    margin: 0 0 1.25rem;
+.map-subtitle {
+    margin: 0;
     color: #64748b;
     font-size: 1rem;
     line-height: 1.5;

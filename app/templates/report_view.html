@@ -2,7 +2,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='15') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_view.css', v='16') }}">
 {% endblock %}
 
 {% block content %}
@@ -34,7 +34,7 @@
             </div>
         </header>
 
-        <h1 class="report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
+        <h1 class="page-title report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
 
         {% if report.address %}
             <p class="report-view-address">{{ report.address }}</p>
