@@ -631,26 +631,34 @@
 
 /* Save/Saved report button on listing cards */
 .listing-fav-btn {
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1.5px solid #fde68a;
     border-radius: 999px;
-    padding: 0.5rem 0.9rem;
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    color: #1f2937;
-    font-size: 0.82rem;
-    font-weight: 700;
+    padding: 0;
+    background: #fff;
+    color: #f59e0b;
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.22);
-    transition: transform 0.15s ease, box-shadow 0.18s ease;
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.14);
+    transition: transform 0.15s ease, box-shadow 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 .listing-fav-btn:hover,
 .listing-fav-btn:focus {
     transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.32);
+    border-color: #fbbf24;
+    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.22);
 }
 
 .listing-fav-btn.is-saved {
-    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
-    color: #fff;
-    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.26);
+    color: #f59e0b;
+    background: #fff;
+    border-color: #fcd34d;
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.12);
 }

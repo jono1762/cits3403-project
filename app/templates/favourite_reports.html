@@ -16,7 +16,7 @@
         <ul class="fav-report-list">
             {% for r in fav_reports %}
                 <li class="fav-report-card" style="--cat: {{ r.category_color }};" data-report-id="{{ r.id }}">
-                    <button class="fav-panel-star fav-report-remove" aria-label="Unstar report" title="Remove">⭐</button>
+                    <button class="fav-panel-star fav-report-remove" aria-label="Unsave report" title="Unsave">★</button>
                     <div class="fav-report-meta">
                         <span class="fav-report-badge">{{ CATEGORY_EMOJI.get(r.category, '') }} {{ r.category }}</span>
                     </div>

@@ -23,8 +23,10 @@
                             id="report-fav-btn"
                             class="report-fav-btn {{ 'is-saved' if is_report_favourited else '' }}"
                             data-report-id="{{ report.id }}"
-                            data-saved="{{ 'true' if is_report_favourited else 'false' }}">
-                        {{ 'Saved ✓' if is_report_favourited else 'Save report' }}
+                            data-saved="{{ 'true' if is_report_favourited else 'false' }}"
+                            aria-label="{{ 'Unsave report' if is_report_favourited else 'Save report' }}"
+                            title="{{ 'Unsave' if is_report_favourited else 'Save' }}">
+                        {{ '★' if is_report_favourited else '☆' }}
                     </button>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="report-fav-login-link">Log in to save</a>
@@ -352,7 +354,9 @@
             const nowSaved = !isSaved;
             btn.dataset.saved = nowSaved ? 'true' : 'false';
             btn.classList.toggle('is-saved', nowSaved);
-            btn.textContent = nowSaved ? 'Saved ✓' : 'Save report';
+            btn.textContent = nowSaved ? '★' : '☆';
+            btn.setAttribute('aria-label', nowSaved ? 'Unsave report' : 'Save report');
+            btn.setAttribute('title', nowSaved ? 'Unsave' : 'Save');
         } catch (err) {
             alert('Could not update report favourite.');
         } finally {
