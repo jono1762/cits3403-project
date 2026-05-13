@@ -9,12 +9,29 @@
     <link rel="icon" type="image/png" media="(prefers-color-scheme: dark)"
           href="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_dark.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_light.png') }}">
+    <script>
+        (function () {
+            try {
+                const stored = localStorage.getItem('sidebar-collapsed-sections-v2');
+                const collapsedSections = stored ? JSON.parse(stored) : [];
+                if (!Array.isArray(collapsedSections)) return;
+
+                collapsedSections.forEach((sectionName) => {
+                    if (/^[a-z0-9_-]+$/i.test(sectionName)) {
+                        document.documentElement.classList.add('sidebar-section-collapsed-' + sectionName);
+                    }
+                });
+            } catch (e) {
+                // localStorage might be unavailable (private mode, etc)
+            }
+        })();
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Italiana&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='4') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css', v='3') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css', v='2') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css', v='3') }}">
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -447,16 +464,15 @@
     {% endif %}
 
     <script>
-        // Sidebar section collapse/expand functionality with localStorage persistence
+        // Sidebar section collapse/expand functionality
         (function () {
-            const STORAGE_KEY = 'sidebar-collapsed-sections';
+            const STORAGE_KEY = 'sidebar-collapsed-sections-v2';
             const sections = document.querySelectorAll('.app-sidebar-group');
             const offcanvasElement = document.getElementById('mobileSidebar');
             const offcanvasInstance = (typeof bootstrap !== 'undefined' && offcanvasElement)
                 ? bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement)
                 : null;
-            
-            // Load collapsed state from localStorage
+
             function loadCollapsedState() {
                 try {
                     const stored = localStorage.getItem(STORAGE_KEY);
@@ -465,8 +481,7 @@
                     return [];
                 }
             }
-            
-            // Save collapsed state to localStorage
+
             function saveCollapsedState(collapsedSections) {
                 try {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsedSections));
@@ -474,8 +489,20 @@
                     // localStorage might be unavailable (private mode, etc)
                 }
             }
-            
-            // Initialize: apply saved state and attach listeners
+
+            function sectionClassName(sectionName) {
+                return 'sidebar-section-collapsed-' + sectionName;
+            }
+
+            function setSectionState(section, isCollapsed) {
+                const sectionName = section.getAttribute('data-section');
+                const button = section.querySelector('.app-sidebar-group-header');
+                section.classList.toggle('collapsed', isCollapsed);
+                button.setAttribute('aria-expanded', !isCollapsed ? 'true' : 'false');
+                document.documentElement.classList.toggle(sectionClassName(sectionName), isCollapsed);
+            }
+
+            // Initialize: default expanded, then preserve only states caused by header clicks.
             function initSidebar() {
                 const collapsedSections = loadCollapsedState();
 
@@ -490,25 +517,22 @@
                 sections.forEach(section => {
                     const sectionName = section.getAttribute('data-section');
                     const button = section.querySelector('.app-sidebar-group-header');
-                    
-                    // Apply saved collapsed state
-                    if (collapsedSections.includes(sectionName)) {
-                        section.classList.add('collapsed');
-                        button.setAttribute('aria-expanded', 'false');
-                    } else {
-                        section.classList.remove('collapsed');
-                        button.setAttribute('aria-expanded', 'true');
-                    }
-                    
+                    setSectionState(section, collapsedSections.includes(sectionName));
+
                     // Attach click handler to toggle
                     button.addEventListener('click', () => {
-                        const isCollapsed = section.classList.toggle('collapsed');
-                        button.setAttribute('aria-expanded', !isCollapsed ? 'true' : 'false');
-                        
-                        // Update localStorage
-                        const updated = Array.from(sections)
-                            .filter(s => s.classList.contains('collapsed'))
-                            .map(s => s.getAttribute('data-section'));
+                        const isCollapsed = !section.classList.contains('collapsed');
+                        sections.forEach((matchingSection) => {
+                            if (matchingSection.getAttribute('data-section') === sectionName) {
+                                setSectionState(matchingSection, isCollapsed);
+                            }
+                        });
+
+                        const updated = Array.from(new Set(
+                            Array.from(sections)
+                                .filter(s => s.classList.contains('collapsed'))
+                                .map(s => s.getAttribute('data-section'))
+                        ));
                         saveCollapsedState(updated);
                     });
                 });
