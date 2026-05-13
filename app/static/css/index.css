@@ -28,15 +28,12 @@
 #mapPage h1 {
     margin: 0;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.1;
-    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
+    margin: 0 0 0.4rem;
+    color: #1e293b;
 }
 
 /* subtitle — matches report page styling */
