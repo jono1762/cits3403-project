@@ -443,7 +443,9 @@
             const STORAGE_KEY = 'sidebar-collapsed-sections';
             const sections = document.querySelectorAll('.app-sidebar-group');
             const offcanvasElement = document.getElementById('mobileSidebar');
-            const offcanvasInstance = offcanvasElement ? bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement) : null;
+            const offcanvasInstance = (typeof bootstrap !== 'undefined' && offcanvasElement)
+                ? bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement)
+                : null;
             
             // Load collapsed state from localStorage
             function loadCollapsedState() {
