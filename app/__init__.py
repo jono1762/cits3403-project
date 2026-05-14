@@ -27,7 +27,6 @@ def load_user(user_id):
 LOGIN_REQUIRED_ACTIONS = {
     'reports.reports_page':            'create a report',
     'reports.edit_report_page':        'edit a report',
-    'reports.listing_following_page':  'see reports from people you follow',
     'users.profile_page':              'view your profile',
     'users.user_profile_page':         "view this user's profile",
     'users.search_users_page':         'search for users',

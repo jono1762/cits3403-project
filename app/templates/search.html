@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Search Users</h1>
+<header class="page-header">
+    <h1 class="page-title">Search Users</h1>
+</header>
 
 <form method="get" action="{{ url_for('users.search_users_page') }}" class="mb-4">
     <div class="input-group">

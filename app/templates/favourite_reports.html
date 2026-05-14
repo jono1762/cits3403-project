@@ -6,9 +6,9 @@
 
 {% block content %}
 <section class="fav-page">
-    <header class="fav-header">
-        <h1 class="fav-title">Favourite Reports</h1>
-        <p class="fav-subtitle">Reports you saved.</p>
+    <header class="page-header fav-header">
+        <h1 class="page-title fav-title">Favourite Reports</h1>
+        <p class="page-subtitle fav-subtitle">Reports you saved.</p>
     </header>
 
     <h2 class="fav-section-title">Saved Reports</h2>
@@ -16,7 +16,8 @@
         <ul class="fav-report-list">
             {% for r in fav_reports %}
                 <li class="fav-report-card" style="--cat: {{ r.category_color }};" data-report-id="{{ r.id }}">
-                    <button class="fav-panel-star fav-report-remove" aria-label="Unstar report" title="Remove">⭐</button>
+                    <a class="fav-report-link" href="{{ url_for('reports.view_report', token=r.token) }}" aria-label="View report"></a>
+                    <button class="fav-panel-star" aria-label="Unsave report" title="Unsave">⭐</button>
                     <div class="fav-report-meta">
                         <span class="fav-report-badge">{{ CATEGORY_EMOJI.get(r.category, '') }} {{ r.category }}</span>
                     </div>
@@ -25,9 +26,6 @@
                     {% if r.description %}
                         <p class="fav-report-where">{{ r.description[:120] }}{% if r.description|length > 120 %}...{% endif %}</p>
                     {% endif %}
-                    <div class="fav-panel-actions">
-                        <a class="btn btn-ghost" href="{{ url_for('reports.view_report', token=r.token) }}">View Report</a>
-                    </div>
                 </li>
             {% endfor %}
         </ul>
@@ -37,8 +35,10 @@
 
     <script>
         document.addEventListener('click', function (ev) {
-            const btn = ev.target.closest('.fav-report-remove');
+            const btn = ev.target.closest('.fav-report-card .fav-panel-star');
             if (!btn) return;
+            ev.preventDefault();
+            ev.stopPropagation();
             const card = btn.closest('.fav-report-card');
             const reportId = card && card.getAttribute('data-report-id');
             if (!reportId) return;

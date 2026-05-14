@@ -938,3 +938,29 @@
     color: #94a3b8;
     font-size: 0.78rem;
 }
+
+/* Save-report star on profile post cards. Same look as the listing page. */
+.profile-post-card .listing-fav-btn {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 1rem;
+    z-index: 2;
+    border: 0;
+    background: transparent;
+    padding: 0 0.25rem;
+    color: #f59e0b;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.15s ease, color 0.18s ease;
+}
+
+.profile-post-card .listing-fav-btn:hover,
+.profile-post-card .listing-fav-btn:focus {
+    transform: scale(1.1);
+    color: #d97706;
+    outline: none;
+}
+
+.profile-post-card .listing-fav-btn.is-saved svg {
+    fill: currentColor;
+}

@@ -55,7 +55,8 @@ def test_following_feed_excludes_strangers(client, make_user, login, db):
     db.session.commit()
 
     login('bob')
-    response = client.get('/listing/following')
+    # PR #94 consolidated /listing/following into /listing?feed_following=1
+    response = client.get('/listing?feed_following=1')
     assert response.status_code == 200
     body = response.get_data(as_text=True)
     assert 'alice-only-marker-xyz' in body
