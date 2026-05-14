@@ -49,6 +49,7 @@
                 <form method="POST" action="{{ url_for('auth.settings_upload_avatar') }}"
                       enctype="multipart/form-data" class="settings-avatar-form"
                       id="avatar-upload-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <label for="profile-edit-avatar-input" class="file-attach-label">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
@@ -65,6 +66,7 @@
                        and the modal's Remove button submits this form. #}
                     <form method="POST" action="{{ url_for('auth.settings_remove_avatar') }}"
                           class="settings-avatar-form" id="avatar-remove-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="button" class="settings-avatar-remove"
                                 data-bs-toggle="modal" data-bs-target="#avatar-remove-modal">
                             Remove picture
@@ -78,6 +80,7 @@
 
     {# Bio — short free-text shown on the public profile under the user's name. #}
     <form method="POST" action="{{ url_for('auth.profile_edit_bio') }}" class="settings-card">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2 class="settings-section-title">Bio</h2>
         <div class="settings-field">
             <label for="profile-edit-bio" class="form-label">

@@ -22,6 +22,7 @@
        Profile picture lives on /profile/edit (public-facing identity stuff
        is separated from account / security settings). #}
     <form method="POST" action="{{ url_for('auth.settings_update_account') }}" class="settings-card">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2 class="settings-section-title">Account</h2>
         <div class="settings-field">
             <label for="settings-username" class="form-label">Username <span class="text-danger">*</span></label>
@@ -40,6 +41,7 @@
        disabled until the current password is verified via AJAX. Server
        still re-checks on submit (defence in depth). #}
     <form method="POST" action="{{ url_for('auth.settings_update_password') }}" class="settings-card" id="password-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2 class="settings-section-title">Password</h2>
         <div class="settings-field">
             <label for="settings-current-pw" class="form-label">Current password <span class="text-danger">*</span></label>
@@ -84,6 +86,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content delete-modal-content">
             <form method="POST" action="{{ url_for('auth.settings_delete_account') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="delete-account-modal-label">Delete your account?</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

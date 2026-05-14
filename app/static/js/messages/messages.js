@@ -280,7 +280,7 @@
 
     // allowed extensions / size mirror the server-side limits in the api blueprint
     const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
-    const MAX_FILE_SIZE = 20 * 1024 * 1024;
+    const MAX_FILE_SIZE = 200 * 1024 * 1024;
     const MAX_FILES = 5;
 
     function showAttachStatus(text, isError) {
@@ -317,7 +317,7 @@
             }
             if (f.size > MAX_FILE_SIZE) {
                 threadMediaInput.value = '';
-                showAttachStatus(`"${f.name}" is too large — max 20 MB.`, true);
+                showAttachStatus(`"${f.name}" is too large — max 200 MB.`, true);
                 return;
             }
         }

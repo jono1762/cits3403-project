@@ -327,6 +327,7 @@
                flips between an open eye and a struck-through eye. #}
             <form method="POST" action="{{ url_for('users.profile_toggle_following_privacy') }}"
                   class="profile-following-privacy {{ 'is-public' if user.following_list_public else 'is-private' }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <span class="profile-following-status">
                     {% if user.following_list_public %}
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -383,6 +384,7 @@
         {% if is_own_profile %}
             <form method="POST" action="{{ url_for('users.profile_toggle_followers_privacy') }}"
                   class="profile-following-privacy {{ 'is-public' if user.followers_list_public else 'is-private' }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <span class="profile-following-status">
                     {% if user.followers_list_public %}
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

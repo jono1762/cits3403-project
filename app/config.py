@@ -20,7 +20,7 @@ class Config:
 
     # Media upload config — files saved to app/static/uploads/, served as /static/uploads/<filename>
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
-    MAX_CONTENT_LENGTH = 20 * 1024 * 1024   # 20 MB max per request
+    MAX_CONTENT_LENGTH = 200 * 1024 * 1024   # 200 MB max per request
 
 
 # Tunables imported directly by the modules that use them. Module-level rather

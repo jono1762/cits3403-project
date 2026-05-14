@@ -21,7 +21,7 @@ stateSelect.addEventListener('change', () => {
 const mediaInput = document.getElementById('media');
 const mediaStatus = document.getElementById('media-status');
 const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILE_SIZE = 200 * 1024 * 1024;
 const MAX_FILES = 5;
 
 function setMediaStatus(text, isError) {
@@ -47,7 +47,7 @@ mediaInput.addEventListener('change', () => {
         }
         if (f.size > MAX_FILE_SIZE) {
             mediaInput.value = '';
-            setMediaStatus(`"${f.name}" is too large — max 20 MB.`, true);
+            setMediaStatus(`"${f.name}" is too large — max 200 MB.`, true);
             return;
         }
     }
