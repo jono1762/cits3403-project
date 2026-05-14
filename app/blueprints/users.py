@@ -48,7 +48,7 @@ def profile_page():
         for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
     }
     return render_template(
-        'profile.html',
+        'users/profile.html',
         user=current_user,
         recent_reports=recent_reports,
         is_own_profile=True,
@@ -75,7 +75,7 @@ def user_profile_page(username):
         for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
     }
     return render_template(
-        'profile.html',
+        'users/profile.html',
         user=user,
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
@@ -120,7 +120,7 @@ def search_users_page():
             .limit(20)
             .all()
         )
-    return render_template('search.html', q=q, users=users)
+    return render_template('users/search.html', q=q, users=users)
  
  
 # /api/search-users — JSON endpoint for the sidebar search panel.

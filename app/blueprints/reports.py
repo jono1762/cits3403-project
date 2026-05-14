@@ -234,7 +234,7 @@ def view_report(token):
     # is this report currently in the global Trending top 10?
     is_trending = report.id in _trending_report_ids()
     return render_template(
-        'report_view.html',
+        'reports/report_view.html',
         report=report,
         comment_max_length=COMMENT_MAX_LENGTH,
         is_report_favourited=is_report_favourited,
@@ -393,7 +393,7 @@ def edit_report_page(report_id):
         for s in states
     }
     return render_template(
-        'report_edit.html',
+        'reports/report_edit.html',
         report=report,
         categories=categories,
         states=states,
@@ -512,7 +512,7 @@ def _build_listing_response(base_query, feed_mode=None):
         feed_query_args['feed_following'] = 1
 
     return render_template(
-        'reports_listing.html',
+        'reports/reports_listing.html',
         pagination=pagination,
         states=states,
         cities_by_state=cities_by_state,
@@ -559,7 +559,7 @@ def reports_page():
         for s in states
     }
     return render_template(
-        'reports.html',
+        'reports/reports.html',
         categories=categories,
         states=states,
         cities_by_state=cities_by_state,

@@ -58,7 +58,7 @@ def login():
             return redirect(url_for('main.index'))
         flash('Invalid username or password.', 'error')
  
-    return render_template('login.html', form=form)
+    return render_template('auth/login.html', form=form)
  
  
 @bp.route('/signup', methods=['GET', 'POST'])
@@ -75,7 +75,7 @@ def signup():
         login_user(user)
         return redirect(url_for('main.index'))
  
-    return render_template('signup.html', form=form)
+    return render_template('auth/signup.html', form=form)
  
  
 @bp.route('/login/email', methods=['GET', 'POST'])
@@ -91,7 +91,7 @@ def login_email():
             return redirect(url_for('main.index'))
         flash('Invalid email or password.', 'error')
  
-    return render_template('login_email.html', form=form)
+    return render_template('auth/login_email.html', form=form)
  
  
 @bp.route('/logout')
@@ -104,7 +104,7 @@ def logout():
 @bp.route('/settings', methods=['GET'])
 @login_required
 def settings_page():
-    return render_template('settings.html')
+    return render_template('users/settings.html')
  
  
 @bp.route('/settings/account', methods=['POST'])
@@ -190,7 +190,7 @@ def api_verify_password():
 def profile_edit_page():
     """Profile-public details (avatar, bio). Account / security stuff
     (email, password, delete) lives on /settings instead."""
-    return render_template('profile_edit.html', bio_max_length=BIO_MAX_LENGTH)
+    return render_template('users/profile_edit.html', bio_max_length=BIO_MAX_LENGTH)
  
  
 @bp.route('/profile/edit/bio', methods=['POST'])

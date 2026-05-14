@@ -166,7 +166,7 @@ def favourites_page():
         })
 
     # locations-only page (report favourites are on /favourites/reports)
-    return render_template('favourites.html', saved_cities=saved_cities)
+    return render_template('favourites/favourites.html', saved_cities=saved_cities)
 
 
 @bp.route('/favourites/reports')
@@ -196,25 +196,25 @@ def favourite_reports_page():
             'token': _encode_report_id(report.id),
         })
 
-    return render_template('favourite_reports.html', fav_reports=fav_reports)
+    return render_template('favourites/favourite_reports.html', fav_reports=fav_reports)
 
 
 # /help — static FAQ page, public
 @bp.route('/help')
 def help_page():
-    return render_template('help.html')
+    return render_template('main/help.html')
 
 
 # /about — static team / project info page, public
 @bp.route('/about')
 def about_page():
-    return render_template('about.html')
+    return render_template('main/about.html')
 
 
 @bp.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the home page
-    return render_template('map.html', **_map_page_context())
+    return render_template('main/map.html', **_map_page_context())
 
 
 def _map_page_context():
@@ -356,7 +356,7 @@ def _top_pinned_report_for(user):
 # home page (linked from the navbar home icon).
 @bp.route('/intro')
 def home_intro():
-    return render_template('index.html')
+    return render_template('main/index.html')
 
 
 # login / signup / login_email / logout moved to app/blueprints/auth.py
@@ -367,7 +367,7 @@ def home_intro():
 @login_required
 def messages_page():
     # ?user=<id> → JS auto-opens that conversation on page load
-    return render_template('messages.html')
+    return render_template('messages/messages.html')
 
 
 @bp.route('/reports/weather')
@@ -399,7 +399,7 @@ def live_weather_page():
         if match:
             selected_city = match
 
-    return render_template('live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
+    return render_template('main/live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
 
 
 # Simple in-memory cache, TTL configured via config.WEATHER_CACHE_TTL_MIN
