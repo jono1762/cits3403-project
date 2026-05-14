@@ -76,7 +76,37 @@ body::after {
 
 
 /* ============================================================
-   3. File-picker — styled label + hidden native input.
+   3. Shared page headers — consistent page title + subtitle styling.
+   ============================================================ */
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    display: inline-block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0 0 0.4rem;
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.page-subtitle {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   4. File-picker — styled label + hidden native input.
    The browser's locale-specific chrome ("Choose file" / "选择文件" / etc.)
    is hidden off-screen; the label below triggers it via for=, and a
    status span shows what was picked.
@@ -229,7 +259,7 @@ body::after {
 }
 
 /* ============================================================
-   4. App modal — softer corners and tidier header/footer dividers,
+   5. App modal — softer corners and tidier header/footer dividers,
    so confirm prompts (delete/unfollow/block/etc.) feel deliberate
    instead of looking like raw Bootstrap. Used everywhere a modal
    appears in the app.

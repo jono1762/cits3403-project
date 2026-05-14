@@ -76,6 +76,10 @@ instance/
 app/static/uploads/*
 !app/static/uploads/.gitkeep
 
+# local W3C validation helper + rendered output (dev-only)
+_w3c_check.py
+_w3c_rendered/
+
 # Scrapy stuff:
 .scrapy
 

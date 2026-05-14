@@ -7,12 +7,16 @@
  
 {% block content %}
 <section class="listing-page">
-    <header class="listing-header">
-        <h1 class="listing-title">
-            {% if feed_mode == 'following' %}
-                {{ 'Top from Following' if sort == 'top' else 'From Following' }}
+    <header class="page-header listing-header">
+        <h1 class="page-title listing-title">
+            {% if feed_trending_active and feed_following_active %}
+                Trending from Following
+            {% elif feed_following_active %}
+                From Following
+            {% elif feed_trending_active %}
+                Trending
             {% else %}
-                {{ 'Trending' if sort == 'top' else 'All Reports' }}
+                All Reports
             {% endif %}
         </h1>
         {% if current_user.is_authenticated %}
@@ -22,113 +26,109 @@
             <a href="{{ url_for('auth.signup') }}" class="listing-new-btn">Sign up to post</a>
         {% endif %}
     </header>
- 
-    {# Regular listing has full state/city/category filters. Trending has a
-       narrower filter set — only cities + categories that actually appear in
-       the current top 10 (so users can't filter to an empty set). #}
-    {% if sort != 'top' %}
-        {# Location filter — state + city selectors auto-submit on change so
-           the user never has to hit Apply. Picking a state submits with just
-           state_id (city wipes); picking a city submits state_id + city_id.
-           Category chips stay separate (they're already auto-navigating links). #}
-        <form method="get" action="{{ url_for('reports.listing_page') }}" class="listing-filters">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">State</label>
-                    <select name="state_id" id="filter-state" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="">All states</option>
-                        {% for s in states %}
-                            <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+
+    {# Unified inline filter bar — state, city, sort, and feed are all on the
+       same row so the page behaves like one reports view rather than separate
+       feed pages. #}
+    <form method="get" action="{{ url_for('reports.listing_page') }}" class="listing-filters">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">State</label>
+                <select name="state_id" id="filter-state" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All states</option>
+                    {% for s in states %}
+                        <option value="{{ s.id }}" {% if selected_state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">City</label>
+                <select name="city_id" id="filter-city" class="form-select form-select-sm"
+                        onchange="this.form.submit()"
+                        {% if not selected_state_id %}disabled{% endif %}>
+                    <option value="">All cities</option>
+                    {% if selected_state_id %}
+                        {% for city in cities_by_state.get(selected_state_id, []) %}
+                            <option value="{{ city.id }}" {% if selected_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
                         {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">City</label>
-                    <select name="city_id" id="filter-city" class="form-select form-select-sm"
-                            onchange="this.form.submit()"
-                            {% if not selected_state_id %}disabled{% endif %}>
-                        <option value="">All cities</option>
-                        {% if selected_state_id %}
-                            {% for city in cities_by_state.get(selected_state_id, []) %}
-                                <option value="{{ city.id }}" {% if selected_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
-                            {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sort by</label>
+                <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="recent" {% if sort not in ['verifies', 'disputes', 'comments', 'oldest'] %}selected{% endif %}>Latest</option>
+                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                    <option value="verifies" {% if sort == 'verifies' %}selected{% endif %}>Most verifications</option>
+                    <option value="disputes" {% if sort == 'disputes' %}selected{% endif %}>Most disputes</option>
+                    <option value="comments" {% if sort == 'comments' %}selected{% endif %}>Most comments</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Feed</label>
+                <div class="dropdown listing-feed-dropdown">
+                    <button class="form-select listing-feed-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if feed_trending_active and feed_following_active %}
+                            Trending + Following
+                        {% elif feed_following_active %}
+                            From Following
+                        {% elif feed_trending_active %}
+                            Trending
+                        {% else %}
+                            All reports
                         {% endif %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Sort by</label>
-                    <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="recent" {% if sort not in ['verifies', 'disputes', 'comments', 'oldest'] %}selected{% endif %}>Newest first</option>
-                        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
-                        <option value="verifies" {% if sort == 'verifies' %}selected{% endif %}>Most verified</option>
-                        <option value="disputes" {% if sort == 'disputes' %}selected{% endif %}>Most disputed</option>
-                        <option value="comments" {% if sort == 'comments' %}selected{% endif %}>Most commented</option>
-                    </select>
-                </div>
-                <div class="col-md-3 listing-filter-actions mt-2">
-                    <a href="{{ url_for('reports.listing_page') }}" class="listing-filter-clear">Clear</a>
+                    </button>
+                    <ul class="dropdown-menu listing-feed-menu w-100">
+                        <li>
+                            <label class="dropdown-item listing-feed-row">
+                                <span>Trending</span>
+                                <input class="listing-feed-toggle" type="checkbox" id="feed-trending" name="feed_trending" value="1" {% if feed_trending_active %}checked{% endif %}>
+                            </label>
+                        </li>
+                        <li>
+                            <label class="dropdown-item listing-feed-row">
+                                <span>From Following</span>
+                                <input class="listing-feed-toggle" type="checkbox" id="feed-following" name="feed_following" value="1" {% if feed_following_active %}checked{% endif %} {% if not current_user.is_authenticated %}disabled{% endif %}>
+                            </label>
+                        </li>
+                    </ul>
                 </div>
             </div>
-            {# preserve the category chip selection across state/city changes #}
-            {% if selected_category_id %}
-                <input type="hidden" name="category_id" value="{{ selected_category_id }}">
-            {% endif %}
-        </form>
- 
-        {# Category chips — click any one to filter. Each link carries the current
-           state/city so users don't lose those filters when changing category. #}
-        <div class="listing-categories">
-            <a href="{{ url_for('reports.listing_page', state_id=selected_state_id, city_id=selected_city_id) }}"
-               class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
-                🌏 All categories
-            </a>
-            {% for cat in categories %}
-                <a href="{{ url_for('reports.listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id) }}"
-                   class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
-                   style="--cat: {{ cat.marker_color }};">
-                    {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
-                </a>
-            {% endfor %}
+            <div class="col-md-12 listing-filter-actions mt-2">
+                <a href="{{ url_for('reports.listing_page') }}" class="listing-filter-clear">Clear</a>
+            </div>
         </div>
-    {% else %}
-        {# Trending filters — only options that actually appear in the current
-           top 10. Auto-submits on change. Hidden if every report is in the same
-           city / category (nothing to narrow down). #}
-        {% if trending_filter_cities or trending_filter_categories %}
-            <form method="get" action="{{ url_for('reports.listing_page') }}" class="listing-filters">
-                <input type="hidden" name="sort" value="top">
-                <div class="row g-2 align-items-end">
-                    {% if trending_filter_cities %}
-                        <div class="col-md-5">
-                            <label class="form-label">Filter by city</label>
-                            <select name="city_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                                <option value="">All trending cities</option>
-                                {% for c in trending_filter_cities %}
-                                    <option value="{{ c.id }}" {% if selected_city_id == c.id %}selected{% endif %}>{{ c.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    {% endif %}
-                    {% if trending_filter_categories %}
-                        <div class="col-md-5">
-                            <label class="form-label">Filter by category</label>
-                            <select name="category_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                                <option value="">All trending categories</option>
-                                {% for cat in trending_filter_categories %}
-                                    <option value="{{ cat.id }}" {% if selected_category_id == cat.id %}selected{% endif %}>{{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    {% endif %}
-                    <div class="col-md-2 listing-filter-actions mt-2">
-                        <a href="{{ url_for('reports.listing_page', sort='top') }}" class="listing-filter-clear">Clear</a>
-                    </div>
-                </div>
-            </form>
+        {% if selected_category_id %}
+            <input type="hidden" name="category_id" value="{{ selected_category_id }}">
         {% endif %}
-    {% endif %}
- 
+    </form>
+
+    {# Category chips — click any one to filter. Each link carries the current
+       state/city and feed state so users don't lose those filters when changing category. #}
+    <div class="listing-categories">
+        <a href="{{ url_for('reports.listing_page', state_id=selected_state_id, city_id=selected_city_id, **feed_query_args) }}"
+           class="listing-cat-chip listing-cat-chip-all {{ 'is-active' if not selected_category_id else '' }}">
+            🌏 All categories
+        </a>
+        {% for cat in categories %}
+            <a href="{{ url_for('reports.listing_page', state_id=selected_state_id, city_id=selected_city_id, category_id=cat.id, **feed_query_args) }}"
+               class="listing-cat-chip {{ 'is-active' if selected_category_id == cat.id else '' }}"
+               style="--cat: {{ cat.marker_color }};">
+                {{ CATEGORY_EMOJI.get(cat.name, '') }} {{ cat.name }}
+            </a>
+        {% endfor %}
+    </div>
     {% if current_user.is_authenticated %}
+    <script>
+    document.addEventListener('change', (event) => {
+        const toggle = event.target.closest('.listing-feed-toggle');
+        if (!toggle) return;
+        const form = toggle.closest('form');
+        if (!form) return;
+        form.submit();
+    });
+    </script>
+
     <script>
     document.addEventListener('click', async (event) => {
         const btn = event.target.closest('.listing-fav-btn');
@@ -145,7 +145,9 @@
             const nowSaved = !isSaved;
             btn.dataset.saved = nowSaved ? 'true' : 'false';
             btn.classList.toggle('is-saved', nowSaved);
-            btn.textContent = nowSaved ? 'Saved ✓' : 'Save';
+            // SVG stays the same — color fill is driven by CSS via .is-saved
+            btn.setAttribute('aria-label', nowSaved ? 'Unsave report' : 'Save report');
+            btn.setAttribute('title', nowSaved ? 'Unsave' : 'Save');
         } catch (err) {
             alert('Could not update report favourite.');
         } finally {
@@ -236,12 +238,6 @@
                     {% set is_saved = current_user.is_authenticated and (r.id in fav_report_ids) %}
                     {% if is_own %}
                         <div class="own-report-actions">
-                            <button type="button"
-                                    class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
-                                    data-report-id="{{ r.id }}"
-                                    data-saved="{{ 'true' if is_saved else 'false' }}">
-                                {{ 'Saved ✓' if is_saved else 'Save' }}
-                            </button>
                             <a href="{{ url_for('reports.view_report', token=r.id|report_token) }}" class="own-report-tag">Your report</a>
                             <a href="{{ url_for('reports.edit_report_page', report_id=r.id) }}" class="listing-item-edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -255,14 +251,6 @@
                         {% set vote_disabled = not current_user.is_authenticated %}
                         {% set vote_tip = 'Please log in to verify or dispute reports' if vote_disabled else '' %}
                         <div class="vote-bar" data-report-id="{{ r.id }}">
-                            {% if current_user.is_authenticated %}
-                                <button type="button"
-                                        class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
-                                        data-report-id="{{ r.id }}"
-                                        data-saved="{{ 'true' if is_saved else 'false' }}">
-                                    {{ 'Saved ✓' if is_saved else 'Save' }}
-                                </button>
-                            {% endif %}
                             <span class="vote-wrap" title="{{ vote_tip }}">
                                 <button type="button"
                                         class="vote-btn vote-verify {{ 'is-active' if my_vote == 'verify' else '' }}"
@@ -280,6 +268,16 @@
                                 </button>
                             </span>
                         </div>
+                    {% endif %}
+                    {% if current_user.is_authenticated %}
+                        <button type="button"
+                                class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
+                                data-report-id="{{ r.id }}"
+                                data-saved="{{ 'true' if is_saved else 'false' }}"
+                                aria-label="{{ 'Unsave report' if is_saved else 'Save report' }}"
+                                title="{{ 'Unsave' if is_saved else 'Save' }}">
+                            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                        </button>
                     {% endif %}
  
                     {# carousel for image/video attachments — same pattern as profile.html #}
@@ -355,9 +353,8 @@
         {% endif %}
     {% else %}
         <div class="listing-empty">
-            No reports yet. Be the first to <a href="{{ url_for('reports.reports_page') }}">submit one</a>.
+            No reports yet.
         </div>
-    {% endif %}
+{% endif %}
 </section>
 {% endblock %}
- 

@@ -17,6 +17,7 @@ from .blueprints.auth import bp as auth_bp
 from .blueprints.reports import bp as reports_bp
 from .blueprints.users import bp as users_bp
 from .blueprints.api import bp as api_bp
+from .blueprints.main import bp as main_bp
 
 login_manager = LoginManager()
 # Schema-versioning helper. Tracks every model change as a script in
@@ -38,15 +39,14 @@ def load_user(user_id):
 LOGIN_REQUIRED_ACTIONS = {
     'reports.reports_page':            'create a report',
     'reports.edit_report_page':        'edit a report',
-    'reports.listing_following_page':  'see reports from people you follow',
     'users.profile_page':              'view your profile',
     'users.user_profile_page':         "view this user's profile",
     'users.search_users_page':         'search for users',
     'auth.settings_page':              'open settings',
     'auth.profile_edit_page':          'edit your profile',
-    'favourites_page':                 'view your saved locations',
-    'favourite_reports_page':          'view your saved reports',
-    'messages_page':                   'open your messages',
+    'main.favourites_page':            'view your saved locations',
+    'main.favourite_reports_page':     'view your saved reports',
+    'main.messages_page':              'open your messages',
 }
 
 
@@ -68,7 +68,7 @@ def _unauthorized():
         Markup(f'<a href="{url_for("auth.login")}" class="alert-link">Log in</a> to {action}.'),
         'warning'
     )
-    return redirect(request.referrer or url_for('home_intro'))
+    return redirect(request.referrer or url_for('main.home_intro'))
  
 # the 5 report categories + marker colour for each
 DEFAULT_CATEGORIES = [
@@ -184,11 +184,17 @@ def seed_test_comments():
             ))
     db.session.commit()
  
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
 
     # All config lives in app/config.py — env vars feed into it from .env.
     app.config.from_object(Config)
+
+    # Test hook — pytest passes an override dict to swap the DB to in-memory
+    # and disable CSRF. Skips the dev-data seeders below.
+    if test_config:
+        app.config.update(test_config)
+
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     db.init_app(app)
@@ -197,17 +203,16 @@ def create_app():
     login_manager.login_view = 'auth.login'
     csrf.init_app(app)
  
-    # Register the four route groups. Each blueprint owns one slice of
-    # the URL map (auth flows, report pages, user / profile pages, JSON API).
+    # Register the five route groups. Each blueprint owns one slice of
+    # the URL map (top-level pages, auth flows, report pages, user /
+    # profile pages, JSON API).
+    app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(api_bp)
 
-
- 
     with app.app_context():
-        from . import routes
         # Schema is owned by Flask-Migrate — fresh checkouts must run
         # `flask db upgrade` once before booting. The seeders below skip
         # silently if (a) the tables don't exist yet, or (b) the schema

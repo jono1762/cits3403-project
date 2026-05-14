@@ -23,8 +23,10 @@
                             id="report-fav-btn"
                             class="report-fav-btn {{ 'is-saved' if is_report_favourited else '' }}"
                             data-report-id="{{ report.id }}"
-                            data-saved="{{ 'true' if is_report_favourited else 'false' }}">
-                        {{ 'Saved ✓' if is_report_favourited else 'Save report' }}
+                            data-saved="{{ 'true' if is_report_favourited else 'false' }}"
+                            aria-label="{{ 'Unsave report' if is_report_favourited else 'Save report' }}"
+                            title="{{ 'Unsave' if is_report_favourited else 'Save' }}">
+                        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
                     </button>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="report-fav-login-link">Log in to save</a>
@@ -32,7 +34,7 @@
             </div>
         </header>
 
-        <h1 class="report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
+        <h1 class="page-title report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
 
         {% if report.address %}
             <p class="report-view-address">{{ report.address }}</p>
@@ -350,7 +352,9 @@
             const nowSaved = !isSaved;
             btn.dataset.saved = nowSaved ? 'true' : 'false';
             btn.classList.toggle('is-saved', nowSaved);
-            btn.textContent = nowSaved ? 'Saved ✓' : 'Save report';
+            // SVG stays the same — color fill is driven by CSS via .is-saved
+            btn.setAttribute('aria-label', nowSaved ? 'Unsave report' : 'Save report');
+            btn.setAttribute('title', nowSaved ? 'Unsave' : 'Save');
         } catch (err) {
             alert('Could not update report favourite.');
         } finally {

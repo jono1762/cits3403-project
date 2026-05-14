@@ -6,10 +6,10 @@
 
 {% block content %}
 <section class="settings-page">
-    <header class="settings-header">
+    <header class="page-header settings-header">
         <a href="{{ url_for('users.profile_page') }}" class="profile-edit-back">← Back to my profile</a>
-        <h1 class="settings-title">Edit profile</h1>
-        <p class="settings-subtitle">Change how you appear to other users. Account &amp; security settings live on the Settings page.</p>
+        <h1 class="page-title settings-title">Edit profile</h1>
+        <p class="page-subtitle settings-subtitle">Change how you appear to other users. Account &amp; security settings live on the Settings page.</p>
     </header>
 
     {# Profile picture — preview + upload form + (optional) remove form.
@@ -134,13 +134,13 @@
                 <div class="settings-avatar-previews avatar-modal-previews">
                     <figure class="settings-avatar-figure">
                         <div class="settings-avatar-preview" id="modal-preview-circle">
-                            <img id="modal-preview-circle-img" alt="New avatar preview (round)">
+                            <img id="modal-preview-circle-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="New avatar preview (round)">
                         </div>
                         <figcaption>Chat &amp; comments</figcaption>
                     </figure>
                     <figure class="settings-avatar-figure">
                         <div class="settings-avatar-preview-square" id="modal-preview-square">
-                            <img id="modal-preview-square-img" alt="New avatar preview (profile hero)">
+                            <img id="modal-preview-square-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="New avatar preview (profile hero)">
                         </div>
                         <figcaption>Profile page</figcaption>
                     </figure>

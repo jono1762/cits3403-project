@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
  
-from ..models import db, User, Report, Follow, BlockedUser
+from ..models import db, User, Report, Follow, BlockedUser, FavouriteReport
  
 bp = Blueprint('users', __name__)
  
@@ -43,11 +43,16 @@ def profile_page():
         .limit(5)
         .all()
     )
+    fav_report_ids = {
+        row.report_id
+        for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
+    }
     return render_template(
         'profile.html',
         user=current_user,
         recent_reports=recent_reports,
         is_own_profile=True,
+        fav_report_ids=fav_report_ids,
         following_users=_following_users_for(current_user),
         follower_users=_follower_users_for(current_user),
     )
@@ -65,11 +70,16 @@ def user_profile_page(username):
         .limit(5)
         .all()
     )
+    fav_report_ids = {
+        row.report_id
+        for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
+    }
     return render_template(
         'profile.html',
         user=user,
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
+        fav_report_ids=fav_report_ids,
         following_users=_following_users_for(user),
         follower_users=_follower_users_for(user),
     )

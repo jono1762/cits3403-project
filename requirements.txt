@@ -6,3 +6,7 @@ flask-wtf
 email-validator
 requests
 python-dotenv
+pytest
+pytest-flask
+selenium
+webdriver-manager
