@@ -61,6 +61,6 @@ def test_delete_account_anonymises_reports(client, make_user, login, db):
     assert response.status_code == 200
 
     assert User.query.filter_by(username='alice').first() is None
-    surviving = Report.query.get(report_id)
+    surviving = db.session.get(Report, report_id)
     assert surviving is not None         # report still exists
     assert surviving.user_id is None     # author anonymised

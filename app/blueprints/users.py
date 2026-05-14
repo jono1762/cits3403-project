@@ -16,7 +16,7 @@ def _following_users_for(user):
         .all()
     )
     # Resolve each Follow row to the followed-User object, skipping deleted users.
-    users = [User.query.get(r.followed_id) for r in rows]
+    users = [db.session.get(User, r.followed_id) for r in rows]
     return [u for u in users if u is not None]
 
 
@@ -28,7 +28,7 @@ def _follower_users_for(user):
         .order_by(Follow.created_at.desc())
         .all()
     )
-    users = [User.query.get(r.follower_id) for r in rows]
+    users = [db.session.get(User, r.follower_id) for r in rows]
     return [u for u in users if u is not None]
  
  
@@ -159,7 +159,7 @@ def api_search_users():
 def api_follow_user(user_id):
     if user_id == current_user.id:
         return jsonify({'error': "You can't follow yourself."}), 400
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     existing = Follow.query.filter_by(
         follower_id=current_user.id, followed_id=target.id
     ).first()
@@ -176,7 +176,7 @@ def api_follow_user(user_id):
 @bp.route('/api/follow/<int:user_id>', methods=['DELETE'])
 @login_required
 def api_unfollow_user(user_id):
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     existing = Follow.query.filter_by(
         follower_id=current_user.id, followed_id=target.id
     ).first()
@@ -208,7 +208,7 @@ def _is_blocked(blocker_id, blocked_id):
 def api_block_user(user_id):
     if user_id == current_user.id:
         return jsonify({'error': "You can't block yourself."}), 400
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     if not _is_blocked(current_user.id, target.id):
         db.session.add(BlockedUser(blocker_id=current_user.id, blocked_id=target.id))
         db.session.commit()
@@ -228,7 +228,7 @@ def api_list_blocked_users():
     )
     out = []
     for row in rows:
-        u = User.query.get(row.blocked_id)
+        u = db.session.get(User, row.blocked_id)
         if not u:
             continue
         out.append({
@@ -243,7 +243,7 @@ def api_list_blocked_users():
 @bp.route('/api/block/<int:user_id>', methods=['DELETE'])
 @login_required
 def api_unblock_user(user_id):
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     row = BlockedUser.query.filter_by(
         blocker_id=current_user.id, blocked_id=target.id
     ).first()

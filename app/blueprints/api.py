@@ -41,7 +41,7 @@ def api_get_favourite_locations():
 @bp.route('/api/favourites/location/<int:city_id>', methods=['POST'])
 @login_required
 def api_add_favourite_location(city_id):
-    city = City.query.get_or_404(city_id)
+    city = db.get_or_404(City, city_id)
     existing = FavouriteLocation.query.filter_by(user_id=current_user.id, city_id=city.id).first()
     if not existing:
         fav = FavouriteLocation(user_id=current_user.id, city_id=city.id)
@@ -73,7 +73,7 @@ def api_get_favourite_reports():
 @bp.route('/api/favourites/report/<int:report_id>', methods=['POST'])
 @login_required
 def api_add_favourite_report(report_id):
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
     existing = FavouriteReport.query.filter_by(user_id=current_user.id, report_id=report.id).first()
     if not existing:
         db.session.add(FavouriteReport(user_id=current_user.id, report_id=report.id))
@@ -154,7 +154,7 @@ def api_user_brief(user_id):
     yet contain this user (fresh conversation started from a profile page)."""
     if user_id == current_user.id:
         return jsonify({'error': "That's you."}), 400
-    u = User.query.get_or_404(user_id)
+    u = db.get_or_404(User, user_id)
     return jsonify({
         'user_id': u.id,
         'username': u.username,
@@ -204,7 +204,7 @@ def api_list_conversations():
 def api_get_messages(user_id):
     """Fetch the message history with a specific user. Optional ?since=<iso> to
     only get messages newer than the given timestamp (used by the polling loop)."""
-    other = User.query.get_or_404(user_id)
+    other = db.get_or_404(User, user_id)
     me, them = sorted([current_user.id, other.id])
     conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
     if conv is None:
@@ -253,7 +253,7 @@ def api_send_message(user_id):
     conversation; recipient replying auto-accepts a pending request."""
     if user_id == current_user.id:
         return jsonify({'error': "You can't message yourself."}), 400
-    recipient = User.query.get_or_404(user_id)
+    recipient = db.get_or_404(User, user_id)
  
     # Block check — recipient may have blocked the current user from messaging.
     # Show a generic "can't reach this user" message rather than confirming
@@ -331,7 +331,7 @@ def api_send_message(user_id):
 @login_required
 def api_accept_conversation(user_id):
     """Move a pending message-request into the main Chats inbox."""
-    other = User.query.get_or_404(user_id)
+    other = db.get_or_404(User, user_id)
     me, them = sorted([current_user.id, other.id])
     conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first_or_404()
     # only the recipient can accept (the initiator already had it in their Chats)
@@ -347,7 +347,7 @@ def api_accept_conversation(user_id):
 def api_mark_read(user_id):
     """Mark every unread message addressed to me in this conversation as read.
     Called when the recipient opens the thread."""
-    other = User.query.get_or_404(user_id)
+    other = db.get_or_404(User, user_id)
     me, them = sorted([current_user.id, other.id])
     conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
     if conv is None:
@@ -400,7 +400,7 @@ def _serialize_comment(comment, current_user_id=None):
 def api_create_comment(report_id):
     """Accepts either JSON ({body}) for text-only or multipart/form-data
     (body + media[]) when the user attached images / videos."""
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
  
     if request.content_type and 'multipart/form-data' in request.content_type:
         body = (request.form.get('body') or '').strip()
@@ -456,7 +456,7 @@ def api_create_comment(report_id):
 @login_required
 def api_delete_comment(comment_id):
     """Comment author only — wipes the comment, its media (DB + disk), and any votes."""
-    comment = Comment.query.get_or_404(comment_id)
+    comment = db.get_or_404(Comment, comment_id)
     if comment.user_id != current_user.id:
         return jsonify({'error': "You can't delete someone else's comment."}), 403
  
@@ -481,7 +481,7 @@ def api_delete_comment(comment_id):
 def api_vote_comment(comment_id):
     """Verify / dispute a comment — same toggle semantics as report-vote.
     Comment author can't vote on their own comment."""
-    comment = Comment.query.get_or_404(comment_id)
+    comment = db.get_or_404(Comment, comment_id)
     if comment.user_id == current_user.id:
         return jsonify({'error': "You can't vote on your own comment."}), 400
  

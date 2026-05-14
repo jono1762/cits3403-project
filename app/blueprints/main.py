@@ -268,7 +268,7 @@ def _map_page_context():
     city_pick = _top_group(lambda r: r.city_id)
     if city_pick:
         cid, cnt = city_pick
-        c = City.query.get(cid)
+        c = db.session.get(City, cid)
         if c:
             top_city = {'name': c.name, 'count': cnt, 'total': total_in_top}
 
@@ -276,7 +276,7 @@ def _map_page_context():
     cat_pick = _top_group(lambda r: r.category_id)
     if cat_pick:
         cat_id, cnt = cat_pick
-        cat = Category.query.get(cat_id)
+        cat = db.session.get(Category, cat_id)
         if cat:
             top_category = {'name': cat.name, 'count': cnt, 'total': total_in_top}
 
@@ -347,7 +347,7 @@ def _top_pinned_report_for(user):
         .order_by(score_expr.desc(), Report.created_at.desc())
         .first()
     )
-    return Report.query.get(row[0]) if row else None
+    return db.session.get(Report, row[0]) if row else None
 
 
 # /intro — same content as / but always rendered in the marketing/intro

@@ -220,7 +220,7 @@ def view_report(token):
         report_id = _report_serializer().loads(token)
     except BadSignature:
         abort(404)
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
     # expired reports get hidden until cleanup deletes them — 404 the URL too
     # so direct links don't leak content scheduled for deletion
     if report.expires_at and report.expires_at <= utcnow():
@@ -248,7 +248,7 @@ def view_report(token):
 @bp.route('/api/reports/<int:report_id>/vote', methods=['POST'])
 @login_required
 def api_vote_report(report_id):
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
  
     if report.user_id == current_user.id:
         return jsonify({'error': "You can't vote on your own report."}), 400
@@ -300,7 +300,7 @@ def api_vote_report(report_id):
 @bp.route('/reports/<int:report_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_report_page(report_id):
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
     if report.user_id != current_user.id:
         abort(403)
  
@@ -322,9 +322,9 @@ def edit_report_page(report_id):
  
         # same validation rules as create — category + city required, address optional
         errors = {}
-        if not category_id or not Category.query.get(category_id):
+        if not category_id or not db.session.get(Category, category_id):
             errors['category_id'] = 'Invalid or missing category.'
-        if not city_id or not City.query.get(city_id):
+        if not city_id or not db.session.get(City, city_id):
             errors['city_id'] = 'Invalid or missing location.'
         if address and len(address) > 200:
             errors['address'] = 'Address must be 200 characters or fewer.'
@@ -486,7 +486,7 @@ def _build_listing_response(base_query, feed_mode=None):
         feed_following = False
 
     if city_id and not state_id:
-        selected_city = City.query.get(city_id)
+        selected_city = db.session.get(City, city_id)
         if selected_city:
             state_id = selected_city.state_id
 
@@ -587,9 +587,9 @@ def api_create_report():
  
     # server-side validation — description, address, media are optional; category and city are required
     errors = {}
-    if not category_id or not Category.query.get(category_id):
+    if not category_id or not db.session.get(Category, category_id):
         errors['category_id'] = 'Invalid or missing category.'
-    if not city_id or not City.query.get(city_id):
+    if not city_id or not db.session.get(City, city_id):
         errors['city_id'] = 'Invalid or missing location.'
     if address and len(address) > 200:
         errors['address'] = 'Address must be 200 characters or fewer.'
@@ -672,7 +672,7 @@ def api_create_report():
 @login_required
 def api_delete_report(report_id):
     """Author-only — wipes the report, its media (DB rows + disk files), and any votes."""
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
     if report.user_id != current_user.id:
         return jsonify({'error': "You can't delete someone else's report."}), 403
  
