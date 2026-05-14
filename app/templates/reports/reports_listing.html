@@ -118,75 +118,6 @@
             </a>
         {% endfor %}
     </div>
-    {% if current_user.is_authenticated %}
-    <script>
-    document.addEventListener('change', (event) => {
-        const toggle = event.target.closest('.listing-feed-toggle');
-        if (!toggle) return;
-        const form = toggle.closest('form');
-        if (!form) return;
-        form.submit();
-    });
-    </script>
-
-    <script>
-    document.addEventListener('click', async (event) => {
-        const btn = event.target.closest('.listing-fav-btn');
-        if (!btn || btn.disabled) return;
-        event.preventDefault();
-        event.stopPropagation();
-        const reportId = btn.dataset.reportId;
-        const isSaved = btn.dataset.saved === 'true';
-        btn.disabled = true;
-        try {
-            const method = isSaved ? 'DELETE' : 'POST';
-            const res = await csrfFetch(`/api/favourites/report/${reportId}`, { method });
-            if (!res.ok) throw new Error('Request failed');
-            const nowSaved = !isSaved;
-            btn.dataset.saved = nowSaved ? 'true' : 'false';
-            btn.classList.toggle('is-saved', nowSaved);
-            // SVG stays the same — color fill is driven by CSS via .is-saved
-            btn.setAttribute('aria-label', nowSaved ? 'Unsave report' : 'Save report');
-            btn.setAttribute('title', nowSaved ? 'Unsave' : 'Save');
-        } catch (err) {
-            alert('Could not update report favourite.');
-        } finally {
-            btn.disabled = false;
-        }
-    });
-    </script>
-    {% endif %}
- 
-    {# Vote (verify/dispute) AJAX handler — auth-only API, guests' buttons are disabled.
-       Click a button → POST to /api/reports/<id>/vote → update counts + active state.
-       Uses event delegation so it works regardless of where the script sits in the
-       page relative to the buttons. #}
-    <script>
-    document.addEventListener('click', async (event) => {
-        const btn = event.target.closest('.vote-btn');
-        if (!btn || btn.disabled) return;
-        const bar = btn.closest('.vote-bar');
-        if (!bar) return;
-        const reportId = bar.dataset.reportId;
-        const status = btn.dataset.status;
-        try {
-            const res = await csrfFetch(`/api/reports/${reportId}/vote`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({status}),
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            bar.querySelector('.vote-verify .vote-count').textContent = data.verify_count;
-            bar.querySelector('.vote-dispute .vote-count').textContent = data.dispute_count;
-            bar.querySelector('.vote-verify').classList.toggle('is-active', data.user_vote === 'verify');
-            bar.querySelector('.vote-dispute').classList.toggle('is-active', data.user_vote === 'dispute');
-        } catch (err) {
-            /* silent fail — keep the UI as-is */
-        }
-    });
-    </script>
- 
     {% if pagination.items %}
         <ul class="listing-feed">
             {% for r in pagination.items %}
@@ -357,4 +288,8 @@
         </div>
 {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/reports/reports_listing.js') }}"></script>
 {% endblock %}

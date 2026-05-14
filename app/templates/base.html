@@ -12,23 +12,7 @@
     <link rel="icon" type="image/png" media="(prefers-color-scheme: dark)"
           href="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_dark.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_light.png') }}">
-    <script>
-        (function () {
-            try {
-                const stored = localStorage.getItem('sidebar-collapsed-sections-v2');
-                const collapsedSections = stored ? JSON.parse(stored) : [];
-                if (!Array.isArray(collapsedSections)) return;
-
-                collapsedSections.forEach((sectionName) => {
-                    if (/^[a-z0-9_-]+$/i.test(sectionName)) {
-                        document.documentElement.classList.add('sidebar-section-collapsed-' + sectionName);
-                    }
-                });
-            } catch (e) {
-                // localStorage might be unavailable (private mode, etc)
-            }
-        })();
-    </script>
+    <script src="{{ url_for('static', filename='js/sidebar_state.js') }}"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Italiana&display=swap" rel="stylesheet">
@@ -36,20 +20,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
     {% block styles %}{% endblock %}
-    <script>
-        // Drop-in replacement for fetch() that auto-attaches the CSRF token
-        // to state-changing requests. Use csrfFetch() in templates instead of
-        // fetch() for any POST / PUT / PATCH / DELETE call. The header is
-        // harmless on GET requests, so it's fine to use csrfFetch everywhere.
-        function csrfFetch(url, opts) {
-            opts = opts || {};
-            opts.headers = opts.headers || {};
-            if (!opts.headers['X-CSRFToken']) {
-                opts.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').content;
-            }
-            return fetch(url, opts);
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
 </head>
 <body>
     {# Detect whether we're rendering the home page in the marketing/intro style.
@@ -357,218 +328,12 @@
 
     {% endif %}
 
-    <script>
-        document.querySelectorAll('.app-stub-link').forEach((link) => {
-            link.addEventListener('click', (event) => {
-                event.preventDefault();
-                alert(link.dataset.stubMessage || 'Stub: page not available yet.');
-
-                const offcanvasElement = document.getElementById('mobileSidebar');
-                if (offcanvasElement) {
-                    const offcanvasInstance = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
-                    offcanvasInstance.hide();
-                }
-            });
-        });
-
-        // Expiring-soon banner — dismissable per session. The dismiss key includes
-        // the current count so a new report becoming urgent re-shows the banner
-        // even if the user already dismissed an earlier one.
-        (function () {
-            const banner = document.getElementById('expiring-banner');
-            const closeBtn = document.getElementById('expiring-banner-close');
-            if (!banner || !closeBtn) return;
-            const key = 'expiringBannerDismissed:' + (banner.dataset.count || '0');
-            try {
-                if (sessionStorage.getItem(key) === '1') {
-                    banner.style.display = 'none';
-                }
-            } catch (e) { /* sessionStorage blocked — banner just stays visible */ }
-            closeBtn.addEventListener('click', () => {
-                banner.style.display = 'none';
-                try { sessionStorage.setItem(key, '1'); } catch (e) { /* fine */ }
-            });
-        })();
-
-        // Live HH:MM:SS countdown on report cards. Server emits the absolute
-        // expires_at on each .report-expiry pill via data-expires-at; this loop
-        // formats the remaining time and re-renders every second.
-        (function () {
-            const URGENT_MS = 24 * 60 * 60 * 1000;   // 24 h — flips pill to orange
-            function pad(n) { return String(n).padStart(2, '0'); }
-            function formatHMS(ms) {
-                const totalSec = Math.max(0, Math.floor(ms / 1000));
-                const h = Math.floor(totalSec / 3600);
-                const m = Math.floor((totalSec % 3600) / 60);
-                const s = totalSec % 60;
-                return pad(h) + ':' + pad(m) + ':' + pad(s);
-            }
-            function tickExpiries() {
-                const now = Date.now();
-                document.querySelectorAll('.report-expiry[data-expires-at]').forEach((el) => {
-                    const target = new Date(el.dataset.expiresAt).getTime();
-                    if (Number.isNaN(target)) return;
-                    const ms = target - now;
-                    el.textContent = '⏰ ' + (ms <= 0 ? 'expired' : formatHMS(ms));
-                    el.classList.toggle('is-urgent', ms > 0 && ms <= URGENT_MS);
-                });
-            }
-            tickExpiries();
-            setInterval(tickExpiries, 1000);
-        })();
-    </script>
-
-    {% if current_user.is_authenticated %}
-    <script>
-        // Navbar user-search input — dropdown results appear directly below.
-        // Live results via /api/search-users with debounced fetches.
-        (function () {
-            const input = document.getElementById('app-navbar-search-input');
-            if (!input) return;
-
-            const resultsList = document.getElementById('app-navbar-search-results');
-            let searchTimer;
-
-            function showResults() {
-                resultsList.setAttribute('aria-hidden', 'false');
-            }
-            function hideResults() {
-                resultsList.setAttribute('aria-hidden', 'true');
-            }
-
-            function performSearch() {
-                clearTimeout(searchTimer);
-                const q = input.value.trim();
-                if (!q) {
-                    resultsList.innerHTML = '';
-                    hideResults();
-                    return;
-                }
-                searchTimer = setTimeout(async () => {
-                    try {
-                        const res = await csrfFetch('/api/search-users?q=' + encodeURIComponent(q));
-                        const data = await res.json();
-                        if (data.length === 0) {
-                            resultsList.innerHTML = '<li class="app-navbar-search-empty">No users found.</li>';
-                        } else {
-                            resultsList.innerHTML = data.map(u =>
-                                `<li><a href="${u.profile_url}">${u.username}</a></li>`
-                            ).join('');
-                        }
-                        showResults();
-                    } catch (err) {
-                        resultsList.innerHTML = '<li class="app-navbar-search-empty">Search failed.</li>';
-                        showResults();
-                    }
-                }, 200);
-            }
-
-            input.addEventListener('input', performSearch);
-            input.addEventListener('focus', () => {
-                if (resultsList.innerHTML) showResults();
-            });
-
-            // close on Escape
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    hideResults();
-                    input.blur();
-                }
-            });
-            // close on outside click
-            document.addEventListener('click', (e) => {
-                if (!input.contains(e.target) && !resultsList.contains(e.target)) {
-                    hideResults();
-                }
-            });
-        })();
-    </script>
-    {% endif %}
-
-    <script>
-        // Sidebar section collapse/expand functionality
-        (function () {
-            const STORAGE_KEY = 'sidebar-collapsed-sections-v2';
-            const sections = document.querySelectorAll('.app-sidebar-group');
-            const offcanvasElement = document.getElementById('mobileSidebar');
-            const offcanvasInstance = (typeof bootstrap !== 'undefined' && offcanvasElement)
-                ? bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement)
-                : null;
-
-            function loadCollapsedState() {
-                try {
-                    const stored = localStorage.getItem(STORAGE_KEY);
-                    return stored ? JSON.parse(stored) : [];
-                } catch (e) {
-                    return [];
-                }
-            }
-
-            function saveCollapsedState(collapsedSections) {
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsedSections));
-                } catch (e) {
-                    // localStorage might be unavailable (private mode, etc)
-                }
-            }
-
-            function sectionClassName(sectionName) {
-                return 'sidebar-section-collapsed-' + sectionName;
-            }
-
-            function setSectionState(section, isCollapsed) {
-                const sectionName = section.getAttribute('data-section');
-                const button = section.querySelector('.app-sidebar-group-header');
-                section.classList.toggle('collapsed', isCollapsed);
-                button.setAttribute('aria-expanded', !isCollapsed ? 'true' : 'false');
-                document.documentElement.classList.toggle(sectionClassName(sectionName), isCollapsed);
-            }
-
-            // Initialize: default expanded, then preserve only states caused by header clicks.
-            function initSidebar() {
-                const collapsedSections = loadCollapsedState();
-
-                document.querySelectorAll('.mobile-sidebar-nav .app-sidebar-link').forEach((link) => {
-                    link.addEventListener('click', () => {
-                        if (offcanvasInstance) {
-                            offcanvasInstance.hide();
-                        }
-                    });
-                });
-                
-                sections.forEach(section => {
-                    const sectionName = section.getAttribute('data-section');
-                    const button = section.querySelector('.app-sidebar-group-header');
-                    setSectionState(section, collapsedSections.includes(sectionName));
-
-                    // Attach click handler to toggle
-                    button.addEventListener('click', () => {
-                        const isCollapsed = !section.classList.contains('collapsed');
-                        sections.forEach((matchingSection) => {
-                            if (matchingSection.getAttribute('data-section') === sectionName) {
-                                setSectionState(matchingSection, isCollapsed);
-                            }
-                        });
-
-                        const updated = Array.from(new Set(
-                            Array.from(sections)
-                                .filter(s => s.classList.contains('collapsed'))
-                                .map(s => s.getAttribute('data-section'))
-                        ));
-                        saveCollapsedState(updated);
-                    });
-                });
-            }
-            
-            // Initialize when DOM is ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initSidebar);
-            } else {
-                initSidebar();
-            }
-        })();
-    </script>
-
+    {# Bootstrap bundle FIRST so base.js + page scripts can use bootstrap.Offcanvas etc. #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    {% if current_user.is_authenticated %}
+    <script src="{{ url_for('static', filename='js/navbar_search.js') }}"></script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
 </body>
 </html>
