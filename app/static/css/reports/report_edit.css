@@ -84,17 +84,29 @@
     transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
+.report-card .form-select {
+    padding-right: 2.4rem;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.85);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 14px 10px;
+}
+
+.report-card .form-control:hover:not(:disabled),
 .report-card .form-control:focus,
+.report-card .form-select:hover:not(:disabled),
 .report-card .form-select:focus {
     border-color: #4f46e5;
-    background: #fff;
+    background-color: #fff;
     box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
     outline: none;
 }
 
 .report-card .form-control:disabled,
 .report-card .form-select:disabled {
-    background: #f1f5f9;
+    background-color: #f1f5f9;
     color: #94a3b8;
     cursor: not-allowed;
 }

@@ -85,13 +85,19 @@
 .listing-filters .form-select {
     border: 1.5px solid #e2e8f0;
     border-radius: 8px;
-    padding: 0.45rem 0.75rem;
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
     font-size: 0.9rem;
     color: #1e293b;
-    background: #fff;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 14px 10px;
+    cursor: pointer;
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
+.listing-filters .form-select:hover:not(:disabled),
 .listing-filters .form-select:focus {
     border-color: #4f46e5;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
@@ -99,8 +105,9 @@
 }
 
 .listing-filters .form-select:disabled {
-    background: #f1f5f9;
+    background-color: #f1f5f9;
     color: #94a3b8;
+    cursor: not-allowed;
 }
 
 .listing-filter-actions {
@@ -155,12 +162,21 @@
 .listing-feed-button {
     width: 100%;
     text-align: left;
-    background: #fff;
+    background-color: #fff;
     border: 1.5px solid #e2e8f0;
     border-radius: 8px;
     color: #1e293b;
-    padding: 0.45rem 0.75rem;
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
     font-size: 0.9rem;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 14px 10px;
+}
+
+.listing-feed-button.dropdown-toggle::after {
+    display: none;
 }
 
 .listing-feed-button:hover,
