@@ -5,8 +5,7 @@ way as auth / reports / users / api."""
 import requests
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
-from datetime import datetime
-from ..models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport
+from ..models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport, utcnow
 # Report-related helpers live in the reports blueprint now. The favourites
 # and map pages here still call a couple, so we re-import them.
 from .reports import _active_reports_q, _encode_report_id, TRENDING_LIMIT
@@ -136,7 +135,7 @@ def favourites_page():
         active_reports = len(city_reports)
         last_report = city_reports[0] if city_reports else None
         if last_report and last_report.created_at:
-            delta = datetime.utcnow() - last_report.created_at
+            delta = utcnow() - last_report.created_at
             minutes = int(delta.total_seconds() // 60)
             if minutes < 1:
                 last_update = 'just now'
@@ -220,7 +219,7 @@ def map_page():
 def _map_page_context():
     city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
-    now = datetime.utcnow()
+    now = utcnow()
 
     # Top trending city / category derived from the global Trending top N.
     # Group the top-N reports by city (or category), and rank groups by:
@@ -411,7 +410,7 @@ def _get_cached_weather(city_name):
     if city_name not in _WEATHER_CACHE:
         return None
     cache_entry = _WEATHER_CACHE[city_name]
-    age = (datetime.utcnow() - cache_entry['cached_at']).total_seconds() / 60
+    age = (utcnow() - cache_entry['cached_at']).total_seconds() / 60
     if age < WEATHER_CACHE_TTL_MIN:
         return cache_entry['data']
     return None
@@ -421,7 +420,7 @@ def _set_cached_weather(city_name, data):
     """Store weather data in cache with current timestamp."""
     _WEATHER_CACHE[city_name] = {
         'data': data,
-        'cached_at': datetime.utcnow(),
+        'cached_at': utcnow(),
     }
 
 
@@ -494,7 +493,7 @@ def _fetch_weather_from_api(lat, lng):
             'wind_kph': wind_kph,
             'wind_direction': wind_cardinal,
             'precip_mm': precip_mm,
-            'fetched_at': datetime.utcnow().isoformat() + 'Z',
+            'fetched_at': utcnow().isoformat() + 'Z',
         }
     except Exception:
         # Log silently; return None so frontend shows "unavailable"

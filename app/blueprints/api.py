@@ -13,6 +13,7 @@ from ..models import (
     db, User, City, Report, Comment, CommentMedia, CommentVote,
     Conversation, ChatMessage, ChatMessageMedia,
     FavouriteLocation, FavouriteReport, BlockedUser,
+    utcnow,
 )
 from .reports import _validate_uploads, MAX_MEDIA_FILES, COMMENT_MAX_LENGTH
 from .users import _is_blocked
@@ -297,7 +298,7 @@ def api_send_message(user_id):
                 original_name=secure_filename(f.filename) or stored_name,
                 media_type=media_type,
             ))
-        conv.last_message_at = datetime.utcnow()
+        conv.last_message_at = utcnow()
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -351,7 +352,7 @@ def api_mark_read(user_id):
     conv = Conversation.query.filter_by(user_a_id=me, user_b_id=them).first()
     if conv is None:
         return jsonify({'ok': True, 'marked': 0})
-    now = datetime.utcnow()
+    now = utcnow()
     rows = ChatMessage.query.filter(
         ChatMessage.conversation_id == conv.id,
         ChatMessage.sender_id != current_user.id,

@@ -1,9 +1,9 @@
 """Model-level tests — password hashing, follow graph, expiry filtering,
 and the is_expiring_soon banner trigger."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from app.models import Follow, Report, Category, City
+from app.models import Follow, Report, Category, City, utcnow
 from app.blueprints.reports import _active_reports_q
 
 
@@ -39,11 +39,11 @@ def test_report_expiry_filtered(make_user, db):
 
     active = Report(
         user_id=alice.id, city_id=sydney.id, category_id=weather.id,
-        description='active', expires_at=datetime.utcnow() + timedelta(days=3),
+        description='active', expires_at=utcnow() + timedelta(days=3),
     )
     expired = Report(
         user_id=alice.id, city_id=sydney.id, category_id=weather.id,
-        description='expired', expires_at=datetime.utcnow() - timedelta(hours=1),
+        description='expired', expires_at=utcnow() - timedelta(hours=1),
     )
     db.session.add_all([active, expired])
     db.session.commit()
@@ -62,15 +62,15 @@ def test_is_expiring_soon_within_24h(make_user, db):
 
     soon = Report(
         user_id=alice.id, city_id=sydney.id, category_id=weather.id,
-        description='soon', expires_at=datetime.utcnow() + timedelta(hours=5),
+        description='soon', expires_at=utcnow() + timedelta(hours=5),
     )
     far = Report(
         user_id=alice.id, city_id=sydney.id, category_id=weather.id,
-        description='far', expires_at=datetime.utcnow() + timedelta(hours=48),
+        description='far', expires_at=utcnow() + timedelta(hours=48),
     )
     expired = Report(
         user_id=alice.id, city_id=sydney.id, category_id=weather.id,
-        description='expired', expires_at=datetime.utcnow() - timedelta(hours=1),
+        description='expired', expires_at=utcnow() - timedelta(hours=1),
     )
     db.session.add_all([soon, far, expired])
     db.session.commit()

@@ -1,7 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+
+def utcnow():
+    """Replacement for datetime.utcnow() (deprecated in Python 3.12).
+    Returns a NAIVE UTC datetime — matches our DateTime columns which
+    don't carry tz info (SQLite default)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 # Reports auto-expire this many days after creation.
 REPORT_LIFETIME_DAYS = 7
@@ -9,7 +17,7 @@ REPORT_LIFETIME_DAYS = 7
 
 def _default_report_expiry():
     """Default `expires_at` for a freshly-created report."""
-    return datetime.utcnow() + timedelta(days=REPORT_LIFETIME_DAYS)
+    return utcnow() + timedelta(days=REPORT_LIFETIME_DAYS)
 
 db = SQLAlchemy()
 
@@ -28,7 +36,7 @@ class User(UserMixin, db.Model):
     # Account creation time — drives anti-gaming on the Trending leaderboard:
     # only verifies / disputes from accounts older than the configured min
     # age count toward a report's trending score.
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     # Whether the user's "Following" list is visible to other users.
     # The owner always sees their own list regardless of this flag.
     # server_default='1' so existing rows get backfilled when the column
@@ -141,7 +149,7 @@ class FavouriteLocation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     user = db.relationship('User', foreign_keys=[user_id])
     city = db.relationship('City', foreign_keys=[city_id])
@@ -156,7 +164,7 @@ class FavouriteReport(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     report_id = db.Column(db.Integer, db.ForeignKey('reports.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     user = db.relationship('User', foreign_keys=[user_id])
     report = db.relationship('Report', foreign_keys=[report_id])
@@ -176,7 +184,7 @@ class Report(db.Model):
     # optional free-text for extra detail like street name or landmark
     address = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     # Auto-expiry — after this datetime the report is hidden from public lists
     # and gets deleted by the next cleanup pass.
     expires_at = db.Column(db.DateTime, default=_default_report_expiry, nullable=False)
@@ -205,7 +213,7 @@ class Report(db.Model):
         None if no expiry set."""
         if not self.expires_at:
             return None
-        delta = self.expires_at - datetime.utcnow()
+        delta = self.expires_at - utcnow()
         return int(delta.total_seconds() // 3600)
 
     @property
@@ -245,7 +253,7 @@ class ReportMedia(db.Model):
     filename = db.Column(db.String(64), nullable=False)        # stored UUID-based name on disk
     original_name = db.Column(db.String(255), nullable=False)  # what the user called it
     media_type = db.Column(db.String(10), nullable=False)      # 'image' or 'video'
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=utcnow)
 
 class Verification(db.Model):
     __tablename__ = 'verifications'
@@ -255,7 +263,7 @@ class Verification(db.Model):
     # 'verify' = user confirms the report is accurate; 'dispute' = user denies it.
     # Each (user, report) pair has at most one row — flipping vote updates this.
     status = db.Column(db.String(10), nullable=False, default='verify')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 class Comment(db.Model):
     __tablename__ = 'comments'
@@ -268,7 +276,7 @@ class Comment(db.Model):
     # body can be empty if the comment carries media instead — server enforces
     # that at least one of (body, media) is present.
     body = db.Column(db.Text, nullable=False, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     author = db.relationship('User')
     # cascade so deleting a comment also wipes its attached images/videos
@@ -301,7 +309,7 @@ class CommentMedia(db.Model):
     filename = db.Column(db.String(64), nullable=False)        # uuid stored name on disk
     original_name = db.Column(db.String(255), nullable=False)
     media_type = db.Column(db.String(10), nullable=False)      # 'image' or 'video'
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=utcnow)
 
 
 class CommentVote(db.Model):
@@ -312,7 +320,7 @@ class CommentVote(db.Model):
     # 'verify' = user agrees with the comment; 'dispute' = user disagrees.
     # Same toggle semantics as Verification on Report.
     status = db.Column(db.String(10), nullable=False, default='verify')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class Follow(db.Model):
@@ -322,7 +330,7 @@ class Follow(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     __table_args__ = (
         db.UniqueConstraint('follower_id', 'followed_id', name='uq_follow_pair'),
@@ -342,8 +350,8 @@ class Conversation(db.Model):
     # auto-True when the two users are mutual followers (FB-style "friends");
     # otherwise flips to True the moment the recipient replies or accepts
     accepted = db.Column(db.Boolean, nullable=False, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_message_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    last_message_at = db.Column(db.DateTime, default=utcnow)
 
     user_a = db.relationship('User', foreign_keys=[user_a_id])
     user_b = db.relationship('User', foreign_keys=[user_b_id])
@@ -374,7 +382,7 @@ class ChatMessage(db.Model):
     # we do for comments. Server caps length at the route layer. Body can be
     # empty if the message carries media instead.
     body = db.Column(db.Text, nullable=False, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     read_at = db.Column(db.DateTime, nullable=True)
 
     sender = db.relationship('User', foreign_keys=[sender_id])
@@ -390,7 +398,7 @@ class ChatMessageMedia(db.Model):
     filename = db.Column(db.String(64), nullable=False)        # uuid stored name on disk
     original_name = db.Column(db.String(255), nullable=False)
     media_type = db.Column(db.String(10), nullable=False)      # 'image' or 'video'
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=utcnow)
 
 
 class BlockedUser(db.Model):
@@ -401,7 +409,7 @@ class BlockedUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     blocker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     blocked_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     __table_args__ = (
         db.UniqueConstraint('blocker_id', 'blocked_id', name='uq_block_pair'),

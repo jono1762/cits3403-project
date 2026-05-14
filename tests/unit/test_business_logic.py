@@ -2,9 +2,9 @@
 ratio is computed correctly, and vote toggling switches verify ↔ dispute
 without leaving stale rows behind."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from app.models import Report, Verification, Category, City, User
+from app.models import Report, Verification, Category, City, User, utcnow
 from app.blueprints.reports import _trending_report_ids
 
 
@@ -19,7 +19,7 @@ def test_expired_report_not_in_trending(make_user, db):
     expired = Report(
         user_id=alice.id, city_id=sydney.id, category_id=weather.id,
         description='expired-but-loved',
-        expires_at=datetime.utcnow() - timedelta(hours=1),
+        expires_at=utcnow() - timedelta(hours=1),
     )
     db.session.add(expired)
     db.session.commit()

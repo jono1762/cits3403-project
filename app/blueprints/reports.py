@@ -8,11 +8,11 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from markupsafe import Markup
-from datetime import datetime, timedelta
+from datetime import timedelta
  
 from ..models import (
     db, User, Category, Report, State, City, ReportMedia, Verification,
-    Comment, CommentVote, Follow, FavouriteReport,
+    Comment, CommentVote, Follow, FavouriteReport, utcnow,
 )
  
 bp = Blueprint('reports', __name__)
@@ -43,14 +43,14 @@ def _active_reports_q():
     """Base query for reports still within their expiry window. Use this
     everywhere reports are rendered to a guest or non-author audience so
     expired stuff doesn't leak."""
-    return Report.query.filter(Report.expires_at > datetime.utcnow())
+    return Report.query.filter(Report.expires_at > utcnow())
  
  
 def _cleanup_expired_reports():
     """Hard-delete reports whose expiry has lapsed (plus their on-disk media).
     Throttled so a burst of listing-page hits doesn't run this every request."""
     global _LAST_REPORT_CLEANUP
-    now = datetime.utcnow()
+    now = utcnow()
     if _LAST_REPORT_CLEANUP and (now - _LAST_REPORT_CLEANUP) < timedelta(minutes=_REPORT_CLEANUP_INTERVAL_MIN):
         return
     _LAST_REPORT_CLEANUP = now
@@ -186,7 +186,7 @@ def _trending_report_ids():
     _, _, _, score_expr = _trending_score_components()
     rows = (
         db.session.query(Report.id)
-        .filter(Report.expires_at > datetime.utcnow())
+        .filter(Report.expires_at > utcnow())
         .outerjoin(Verification, Verification.report_id == Report.id)
         .outerjoin(User, User.id == Verification.user_id)
         .group_by(Report.id)
@@ -204,7 +204,7 @@ def inject_expiring_reports():
     re-post the content if they want to keep it."""
     if not current_user.is_authenticated:
         return {'expiring_soon_count': 0}
-    now = datetime.utcnow()
+    now = utcnow()
     soon = now + timedelta(hours=24)
     count = Report.query.filter(
         Report.user_id == current_user.id,
@@ -223,7 +223,7 @@ def view_report(token):
     report = Report.query.get_or_404(report_id)
     # expired reports get hidden until cleanup deletes them — 404 the URL too
     # so direct links don't leak content scheduled for deletion
-    if report.expires_at and report.expires_at <= datetime.utcnow():
+    if report.expires_at and report.expires_at <= utcnow():
         abort(404)
     is_report_favourited = False
     if current_user.is_authenticated:
@@ -491,9 +491,9 @@ def _build_listing_response(base_query, feed_mode=None):
             state_id = selected_city.state_id
 
     # Active reports only — expired posts never show up regardless of feed.
-    query = base_query.filter(Report.expires_at > datetime.utcnow())
+    query = base_query.filter(Report.expires_at > utcnow())
     if feed_following:
-        query = _following_reports_query().filter(Report.expires_at > datetime.utcnow())
+        query = _following_reports_query().filter(Report.expires_at > utcnow())
 
     if feed_trending:
         trending_ids = _trending_report_ids()
