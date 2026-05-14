@@ -10,10 +10,15 @@ class Config:
     # this module lives at the root of the app/ package.
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    # Pulled from .env (see .env.example). Falls back to an obvious dev
-    # placeholder so the app still boots without a real secret set —
-    # NEVER use the placeholder in production.
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-only-CHANGE-ME')
+    # Pulled from .env (created by `python init_env.py` on a fresh clone).
+    # No fallback — if it's missing the app refuses to boot with a clear
+    # message, which is safer than silently shipping a known weak key.
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise RuntimeError(
+            "SECRET_KEY is not set. Run `python init_env.py` to generate "
+            "a fresh .env with a random SECRET_KEY, then start the app again."
+        )
 
     SQLALCHEMY_DATABASE_URI = 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
