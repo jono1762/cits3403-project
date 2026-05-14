@@ -24,15 +24,28 @@ const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov']
 const MAX_FILE_SIZE = 200 * 1024 * 1024;
 const MAX_FILES = 5;
 
+let attachedFiles = [];
+
 function setMediaStatus(text, isError) {
     mediaStatus.textContent = text;
     mediaStatus.classList.toggle('is-error', !!isError);
 }
 
+function syncMediaInput() {
+    const dt = new DataTransfer();
+    attachedFiles.forEach(f => dt.items.add(f));
+    mediaInput.files = dt.files;
+}
+
+function setCountStatus() {
+    if (attachedFiles.length === 0) setMediaStatus('', false);
+    else if (attachedFiles.length === 1) setMediaStatus('1 file selected', false);
+    else setMediaStatus(attachedFiles.length + ' files selected', false);
+}
+
 function renderMediaPreview() {
     mediaPreview.innerHTML = '';
-    const files = mediaInput.files ? Array.from(mediaInput.files) : [];
-    files.forEach((file, index) => {
+    attachedFiles.forEach((file, index) => {
         const thumb = document.createElement('div');
         thumb.className = 'attachment-thumb';
         const isVideo = file.type.startsWith('video/');
@@ -53,39 +66,42 @@ function renderMediaPreview() {
 }
 
 function removeFileAt(index) {
-    const dt = new DataTransfer();
-    const files = Array.from(mediaInput.files);
-    files.forEach((f, i) => { if (i !== index) dt.items.add(f); });
-    mediaInput.files = dt.files;
-    mediaInput.dispatchEvent(new Event('change'));
+    attachedFiles.splice(index, 1);
+    syncMediaInput();
+    setCountStatus();
+    renderMediaPreview();
 }
 
 mediaInput.addEventListener('change', () => {
-    const files = mediaInput.files ? Array.from(mediaInput.files) : [];
-    const n = files.length;
-    if (n === 0) { setMediaStatus('', false); renderMediaPreview(); return; }
-    if (n > MAX_FILES) {
-        mediaInput.value = '';
-        setMediaStatus(`Too many files — max ${MAX_FILES}.`, true);
-        renderMediaPreview();
-        return;
-    }
-    for (const f of files) {
-        const ext = (f.name.split('.').pop() || '').toLowerCase();
+    const picked = mediaInput.files ? Array.from(mediaInput.files) : [];
+    if (picked.length === 0) return;
+
+    for (const nf of picked) {
+        const dup = attachedFiles.some(f => f.name === nf.name && f.size === nf.size);
+        if (dup) continue;
+        const ext = (nf.name.split('.').pop() || '').toLowerCase();
         if (!ALLOWED_EXTS.includes(ext)) {
-            mediaInput.value = '';
-            setMediaStatus(`"${f.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+            setMediaStatus(`"${nf.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+            syncMediaInput();
             renderMediaPreview();
             return;
         }
-        if (f.size > MAX_FILE_SIZE) {
-            mediaInput.value = '';
-            setMediaStatus(`"${f.name}" is too large — max 200 MB.`, true);
+        if (nf.size > MAX_FILE_SIZE) {
+            setMediaStatus(`"${nf.name}" is too large — max 200 MB.`, true);
+            syncMediaInput();
             renderMediaPreview();
             return;
         }
+        if (attachedFiles.length >= MAX_FILES) {
+            setMediaStatus(`Too many files — max ${MAX_FILES}.`, true);
+            syncMediaInput();
+            renderMediaPreview();
+            return;
+        }
+        attachedFiles.push(nf);
     }
-    setMediaStatus(n === 1 ? '1 file selected' : n + ' files selected', false);
+    syncMediaInput();
+    setCountStatus();
     renderMediaPreview();
 });
 
@@ -118,6 +134,8 @@ document.getElementById('report-form').addEventListener('submit', async (event) 
         event.target.reset();
         citySelect.selectedIndex = 0;
         mediaStatus.textContent = '';
+        attachedFiles = [];
+        syncMediaInput();
         mediaPreview.innerHTML = '';
     } else {
         // jump to the single-report page for the report we just created

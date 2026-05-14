@@ -284,6 +284,8 @@
     const MAX_FILE_SIZE = 200 * 1024 * 1024;
     const MAX_FILES = 5;
 
+    let attachedThreadFiles = [];
+
     function showAttachStatus(text, isError) {
         attachStatus.hidden = false;
         attachStatus.textContent = text;
@@ -296,11 +298,22 @@
         attachStatus.classList.remove('is-error');
     }
 
+    function syncThreadMediaInput() {
+        const dt = new DataTransfer();
+        attachedThreadFiles.forEach(f => dt.items.add(f));
+        threadMediaInput.files = dt.files;
+    }
+
+    function setAttachCountStatus() {
+        if (attachedThreadFiles.length === 0) clearAttachStatus();
+        else if (attachedThreadFiles.length === 1) showAttachStatus('1 file attached', false);
+        else showAttachStatus(attachedThreadFiles.length + ' files attached', false);
+    }
+
     function renderThreadMediaPreview() {
         if (!threadMediaPreview) return;
         threadMediaPreview.innerHTML = '';
-        const files = threadMediaInput.files ? Array.from(threadMediaInput.files) : [];
-        files.forEach((file, index) => {
+        attachedThreadFiles.forEach((file, index) => {
             const thumb = document.createElement('div');
             thumb.className = 'attachment-thumb';
             const isVideo = file.type.startsWith('video/');
@@ -321,43 +334,42 @@
     }
 
     function removeThreadMediaAt(index) {
-        const dt = new DataTransfer();
-        const files = Array.from(threadMediaInput.files);
-        files.forEach((f, i) => { if (i !== index) dt.items.add(f); });
-        threadMediaInput.files = dt.files;
-        threadMediaInput.dispatchEvent(new Event('change'));
+        attachedThreadFiles.splice(index, 1);
+        syncThreadMediaInput();
+        setAttachCountStatus();
+        renderThreadMediaPreview();
     }
 
     threadMediaInput.addEventListener('change', () => {
-        const files = threadMediaInput.files ? Array.from(threadMediaInput.files) : [];
-        const n = files.length;
-        if (n === 0) {
-            clearAttachStatus();
-            renderThreadMediaPreview();
-            return;
-        }
-        if (n > MAX_FILES) {
-            threadMediaInput.value = '';
-            showAttachStatus(`Too many files — max ${MAX_FILES}.`, true);
-            renderThreadMediaPreview();
-            return;
-        }
-        for (const f of files) {
-            const ext = (f.name.split('.').pop() || '').toLowerCase();
+        const picked = threadMediaInput.files ? Array.from(threadMediaInput.files) : [];
+        if (picked.length === 0) return;
+
+        for (const nf of picked) {
+            const dup = attachedThreadFiles.some(f => f.name === nf.name && f.size === nf.size);
+            if (dup) continue;
+            const ext = (nf.name.split('.').pop() || '').toLowerCase();
             if (!ALLOWED_EXTS.includes(ext)) {
-                threadMediaInput.value = '';
-                showAttachStatus(`"${f.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+                showAttachStatus(`"${nf.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+                syncThreadMediaInput();
                 renderThreadMediaPreview();
                 return;
             }
-            if (f.size > MAX_FILE_SIZE) {
-                threadMediaInput.value = '';
-                showAttachStatus(`"${f.name}" is too large — max 200 MB.`, true);
+            if (nf.size > MAX_FILE_SIZE) {
+                showAttachStatus(`"${nf.name}" is too large — max 200 MB.`, true);
+                syncThreadMediaInput();
                 renderThreadMediaPreview();
                 return;
             }
+            if (attachedThreadFiles.length >= MAX_FILES) {
+                showAttachStatus(`Too many files — max ${MAX_FILES}.`, true);
+                syncThreadMediaInput();
+                renderThreadMediaPreview();
+                return;
+            }
+            attachedThreadFiles.push(nf);
         }
-        showAttachStatus(n === 1 ? '1 file attached' : n + ' files attached', false);
+        syncThreadMediaInput();
+        setAttachCountStatus();
         renderThreadMediaPreview();
     });
 
@@ -388,6 +400,7 @@
                 threadInput.value = '';
                 threadInput.style.height = 'auto';
                 threadMediaInput.value = '';
+                attachedThreadFiles = [];
                 attachStatus.hidden = true;
                 attachStatus.textContent = '';
                 if (threadMediaPreview) threadMediaPreview.innerHTML = '';

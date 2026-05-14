@@ -173,14 +173,16 @@
     if (form) {
         const input = document.getElementById('comment-body');
         const mediaInput = document.getElementById('comment-media');
+        const mediaPreview = document.getElementById('comment-media-preview');
         const hint = document.getElementById('comment-form-hint');
         const attachStatus = document.getElementById('comment-attach-status');
         const defaultHint = hint ? hint.textContent : '';
 
-        // mirror the native file-input's selection in our own visible label
         const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
-        const MAX_FILE_SIZE = 20 * 1024 * 1024;
+        const MAX_FILE_SIZE = 200 * 1024 * 1024;
         const MAX_FILES = 5;
+
+        let commentAttachedFiles = [];
 
         function setAttachStatus(text, isError) {
             if (!attachStatus) return;
@@ -188,30 +190,77 @@
             attachStatus.classList.toggle('is-error', !!isError);
         }
 
+        function syncCommentMediaInput() {
+            const dt = new DataTransfer();
+            commentAttachedFiles.forEach(f => dt.items.add(f));
+            mediaInput.files = dt.files;
+        }
+
+        function setCommentAttachCount() {
+            if (commentAttachedFiles.length === 0) setAttachStatus('', false);
+            else if (commentAttachedFiles.length === 1) setAttachStatus('1 file selected', false);
+            else setAttachStatus(commentAttachedFiles.length + ' files selected', false);
+        }
+
+        function renderCommentMediaPreview() {
+            if (!mediaPreview) return;
+            mediaPreview.innerHTML = '';
+            commentAttachedFiles.forEach((file, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'attachment-thumb';
+                const isVideo = file.type.startsWith('video/');
+                const media = document.createElement(isVideo ? 'video' : 'img');
+                media.src = URL.createObjectURL(file);
+                if (isVideo) media.muted = true;
+                else media.alt = file.name;
+                thumb.appendChild(media);
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'remove-btn';
+                remove.setAttribute('aria-label', 'Remove attachment');
+                remove.textContent = '×';
+                remove.addEventListener('click', () => {
+                    commentAttachedFiles.splice(index, 1);
+                    syncCommentMediaInput();
+                    setCommentAttachCount();
+                    renderCommentMediaPreview();
+                });
+                thumb.appendChild(remove);
+                mediaPreview.appendChild(thumb);
+            });
+        }
+
         if (mediaInput && attachStatus) {
             mediaInput.addEventListener('change', () => {
-                const files = mediaInput.files ? Array.from(mediaInput.files) : [];
-                const n = files.length;
-                if (n === 0) { setAttachStatus('', false); return; }
-                if (n > MAX_FILES) {
-                    mediaInput.value = '';
-                    setAttachStatus(`Too many files — max ${MAX_FILES}.`, true);
-                    return;
-                }
-                for (const f of files) {
-                    const ext = (f.name.split('.').pop() || '').toLowerCase();
+                const picked = mediaInput.files ? Array.from(mediaInput.files) : [];
+                if (picked.length === 0) return;
+                for (const nf of picked) {
+                    const dup = commentAttachedFiles.some(f => f.name === nf.name && f.size === nf.size);
+                    if (dup) continue;
+                    const ext = (nf.name.split('.').pop() || '').toLowerCase();
                     if (!ALLOWED_EXTS.includes(ext)) {
-                        mediaInput.value = '';
-                        setAttachStatus(`"${f.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+                        setAttachStatus(`"${nf.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+                        syncCommentMediaInput();
+                        renderCommentMediaPreview();
                         return;
                     }
-                    if (f.size > MAX_FILE_SIZE) {
-                        mediaInput.value = '';
-                        setAttachStatus(`"${f.name}" is too large — max 20 MB.`, true);
+                    if (nf.size > MAX_FILE_SIZE) {
+                        setAttachStatus(`"${nf.name}" is too large — max 200 MB.`, true);
+                        syncCommentMediaInput();
+                        renderCommentMediaPreview();
                         return;
                     }
+                    if (commentAttachedFiles.length >= MAX_FILES) {
+                        setAttachStatus(`Too many files — max ${MAX_FILES}.`, true);
+                        syncCommentMediaInput();
+                        renderCommentMediaPreview();
+                        return;
+                    }
+                    commentAttachedFiles.push(nf);
                 }
-                setAttachStatus(n === 1 ? '1 file selected' : n + ' files selected', false);
+                syncCommentMediaInput();
+                setCommentAttachCount();
+                renderCommentMediaPreview();
             });
         }
 
@@ -246,6 +295,8 @@
                 updateCount(+1);
                 input.value = '';
                 if (mediaInput) mediaInput.value = '';
+                commentAttachedFiles = [];
+                if (mediaPreview) mediaPreview.innerHTML = '';
                 if (attachStatus) attachStatus.textContent = '';
                 if (hint) hint.textContent = defaultHint;
             } catch (err) {
