@@ -37,11 +37,11 @@
 <body>
     {# Detect whether we're rendering the home page in the marketing/intro style.
        True for /intro AND for / when the user is not authenticated. #}
-    {% set is_intro = request.endpoint == 'home_intro' or (request.endpoint == 'index' and not current_user.is_authenticated) %}
+    {% set is_intro = request.endpoint == 'main.home_intro' or (request.endpoint == 'main.index' and not current_user.is_authenticated) %}
 
     {# Show the full app shell (sidebar + navbar account stuff) for authenticated users
        AND for guests browsing public pages (map, listing). Intro stays a clean marketing-style page. #}
-    {% set guest_pages = ['map_page', 'reports.listing_page', 'live_weather_page', 'help_page', 'about_page'] %}
+    {% set guest_pages = ['main.map_page', 'reports.listing_page', 'main.live_weather_page', 'main.help_page', 'main.about_page'] %}
     {% set show_app = (current_user.is_authenticated or request.endpoint in guest_pages) and not is_intro %}
     {% set is_guest = show_app and not current_user.is_authenticated %}
 
@@ -49,7 +49,7 @@
     {% if not is_intro %}
     <nav class="navbar navbar-dark bg-dark fixed-top app-navbar">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('home_intro') }}">
+            <a class="navbar-brand" href="{{ url_for('main.home_intro') }}">
                 <img src="{{ url_for('static', filename='images/favicon/Logo_for_Weather_web_dark.png') }}"
                      alt="Australia Explorer logo"
                      class="navbar-logo me-2">
@@ -65,7 +65,7 @@
                     </svg>
                 </button>
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('messages_page') }}"
+                    <a href="{{ url_for('main.messages_page') }}"
                        class="app-navbar-message"
                        aria-label="Messages"
                        title="Messages">
@@ -101,7 +101,7 @@
                     </div>
                 {% elif is_guest %}
                     {# guest viewing the public map — visually shows they're not signed in #}
-                    <a href="{{ url_for('home_intro') }}" class="app-account-toggle app-account-guest">Guest</a>
+                    <a href="{{ url_for('main.home_intro') }}" class="app-account-toggle app-account-guest">Guest</a>
                 {% endif %}
             </div>
         </div>
@@ -126,7 +126,7 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
+                            <a href="{{ url_for('main.map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.map_page') or path == url_for('main.index') else '' }}">Map</a>
                         </div>
                     </div>
 
@@ -147,7 +147,7 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}">Weather</a>
+                            <a href="{{ url_for('main.live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.live_weather_page') else '' }}">Weather</a>
                         </div>
                     </div>
 
@@ -157,8 +157,8 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
-                            <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}">Reports</a>
+                            <a href="{{ url_for('main.favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
+                            <a href="{{ url_for('main.favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.favourite_reports_page') else '' }}">Reports</a>
                         </div>
                     </div>
 
@@ -168,8 +168,8 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>
-                            <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}">About</a>
+                            <a href="{{ url_for('main.help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.help_page') else '' }}">Help</a>
+                            <a href="{{ url_for('main.about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.about_page') else '' }}">About</a>
                         </div>
                     </div>
                 </nav>
@@ -217,7 +217,7 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('map_page') or path == url_for('index') else '' }}">Map</a>
+                            <a href="{{ url_for('main.map_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.map_page') or path == url_for('main.index') else '' }}">Map</a>
                         </div>
                     </div>
 
@@ -238,7 +238,7 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('live_weather_page') else '' }}">Weather</a>
+                            <a href="{{ url_for('main.live_weather_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.live_weather_page') else '' }}">Weather</a>
                         </div>
                     </div>
 
@@ -248,8 +248,8 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
-                            <a href="{{ url_for('favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('favourite_reports_page') else '' }}">Reports</a>
+                            <a href="{{ url_for('main.favourites_page') }}" class="app-sidebar-link {{ 'active' if path in ['/favourites', '/favourites/locations'] else '' }}">Locations</a>
+                            <a href="{{ url_for('main.favourite_reports_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.favourite_reports_page') else '' }}">Reports</a>
                         </div>
                     </div>
 
@@ -259,8 +259,8 @@
                             <svg class="app-sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="app-sidebar-group-content">
-                            <a href="{{ url_for('help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('help_page') else '' }}">Help</a>
-                            <a href="{{ url_for('about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('about_page') else '' }}">About</a>
+                            <a href="{{ url_for('main.help_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.help_page') else '' }}">Help</a>
+                            <a href="{{ url_for('main.about_page') }}" class="app-sidebar-link {{ 'active' if path == url_for('main.about_page') else '' }}">About</a>
                         </div>
                     </div>
                 </nav>

@@ -180,10 +180,13 @@ def _trending_score_components():
 def _trending_report_ids():
     """Return the set of report IDs currently in the global Trending top N.
     Matches the Trending page's query exactly so the 🔥 badge on a report
-    means the same thing on every page: this report is currently on Trending."""
+    means the same thing on every page: this report is currently on Trending.
+    Active-only filter mirrors _active_reports_q so reports the listing would
+    hide can never poison the trending top-N."""
     _, _, _, score_expr = _trending_score_components()
     rows = (
         db.session.query(Report.id)
+        .filter(Report.expires_at > datetime.utcnow())
         .outerjoin(Verification, Verification.report_id == Report.id)
         .outerjoin(User, User.id == Verification.user_id)
         .group_by(Report.id)
@@ -383,7 +386,7 @@ def edit_report_page(report_id):
                 raise
  
             flash('Report updated.', 'success')
-            return redirect(url_for('profile_page'))
+            return redirect(url_for('users.profile_page'))
  
         # validation failed — fall through and re-render the form showing errors
         for msg in errors.values():
