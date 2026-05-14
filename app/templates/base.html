@@ -37,11 +37,11 @@
 <body>
     {# Detect whether we're rendering the home page in the marketing/intro style.
        True for /intro AND for / when the user is not authenticated. #}
-    {% set is_intro = request.endpoint == 'home_intro' or (request.endpoint == 'index' and not current_user.is_authenticated) %}
+    {% set is_intro = request.endpoint == 'main.home_intro' or (request.endpoint == 'main.index' and not current_user.is_authenticated) %}
 
     {# Show the full app shell (sidebar + navbar account stuff) for authenticated users
        AND for guests browsing public pages (map, listing). Intro stays a clean marketing-style page. #}
-    {% set guest_pages = ['map_page', 'reports.listing_page', 'live_weather_page', 'help_page', 'about_page'] %}
+    {% set guest_pages = ['main.map_page', 'reports.listing_page', 'main.live_weather_page', 'main.help_page', 'main.about_page'] %}
     {% set show_app = (current_user.is_authenticated or request.endpoint in guest_pages) and not is_intro %}
     {% set is_guest = show_app and not current_user.is_authenticated %}
 

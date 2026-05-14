@@ -386,7 +386,7 @@ def edit_report_page(report_id):
                 raise
  
             flash('Report updated.', 'success')
-            return redirect(url_for('profile_page'))
+            return redirect(url_for('users.profile_page'))
  
         # validation failed — fall through and re-render the form showing errors
         for msg in errors.values():
