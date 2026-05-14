@@ -145,7 +145,7 @@
             const nowSaved = !isSaved;
             btn.dataset.saved = nowSaved ? 'true' : 'false';
             btn.classList.toggle('is-saved', nowSaved);
-            btn.textContent = nowSaved ? '★' : '☆';
+            // SVG stays the same — color fill is driven by CSS via .is-saved
             btn.setAttribute('aria-label', nowSaved ? 'Unsave report' : 'Save report');
             btn.setAttribute('title', nowSaved ? 'Unsave' : 'Save');
         } catch (err) {
@@ -238,14 +238,6 @@
                     {% set is_saved = current_user.is_authenticated and (r.id in fav_report_ids) %}
                     {% if is_own %}
                         <div class="own-report-actions">
-                            <button type="button"
-                                    class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
-                                    data-report-id="{{ r.id }}"
-                                    data-saved="{{ 'true' if is_saved else 'false' }}"
-                                    aria-label="{{ 'Unsave report' if is_saved else 'Save report' }}"
-                                    title="{{ 'Unsave' if is_saved else 'Save' }}">
-                                {{ '★' if is_saved else '☆' }}
-                            </button>
                             <a href="{{ url_for('reports.view_report', token=r.id|report_token) }}" class="own-report-tag">Your report</a>
                             <a href="{{ url_for('reports.edit_report_page', report_id=r.id) }}" class="listing-item-edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -259,16 +251,6 @@
                         {% set vote_disabled = not current_user.is_authenticated %}
                         {% set vote_tip = 'Please log in to verify or dispute reports' if vote_disabled else '' %}
                         <div class="vote-bar" data-report-id="{{ r.id }}">
-                            {% if current_user.is_authenticated %}
-                                <button type="button"
-                                        class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
-                                        data-report-id="{{ r.id }}"
-                                        data-saved="{{ 'true' if is_saved else 'false' }}"
-                                        aria-label="{{ 'Unsave report' if is_saved else 'Save report' }}"
-                                        title="{{ 'Unsave' if is_saved else 'Save' }}">
-                                    {{ '★' if is_saved else '☆' }}
-                                </button>
-                            {% endif %}
                             <span class="vote-wrap" title="{{ vote_tip }}">
                                 <button type="button"
                                         class="vote-btn vote-verify {{ 'is-active' if my_vote == 'verify' else '' }}"
@@ -286,6 +268,16 @@
                                 </button>
                             </span>
                         </div>
+                    {% endif %}
+                    {% if current_user.is_authenticated %}
+                        <button type="button"
+                                class="listing-fav-btn {{ 'is-saved' if is_saved else '' }}"
+                                data-report-id="{{ r.id }}"
+                                data-saved="{{ 'true' if is_saved else 'false' }}"
+                                aria-label="{{ 'Unsave report' if is_saved else 'Save report' }}"
+                                title="{{ 'Unsave' if is_saved else 'Save' }}">
+                            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                        </button>
                     {% endif %}
  
                     {# carousel for image/video attachments — same pattern as profile.html #}

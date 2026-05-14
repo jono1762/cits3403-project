@@ -110,6 +110,20 @@
     box-shadow: 0 6px 14px rgba(245, 158, 11, 0.22);
 }
 
+/* Star button on report cards needs to float ABOVE the stretched link. */
+.fav-report-card .fav-panel-star {
+    z-index: 2;
+}
+
+/* Stretched link covering the whole favourite-report card so clicking
+   anywhere (except the star) opens the single-report view. */
+.fav-report-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+
 .fav-panel-body {
     display: flex;
     justify-content: space-between;
