@@ -57,6 +57,10 @@
             </a>
 
             <div class="app-navbar-right">
+                {# Hamburger only renders when the mobile sidebar is also rendered
+                   (i.e. when show_app is true) — otherwise aria-controls would
+                   reference an element that doesn't exist on the page. #}
+                {% if show_app %}
                 <button class="btn btn-link d-md-none app-navbar-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open navigation menu">
                     <svg class="app-hamburger-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -64,6 +68,7 @@
                         <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
                 </button>
+                {% endif %}
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('main.messages_page') }}"
                        class="app-navbar-message"
@@ -82,9 +87,9 @@
                                      alt="Your profile picture"
                                      class="app-navbar-profile-image">
                             {% else %}
-                                <div class="app-navbar-profile-initials">
+                                <span class="app-navbar-profile-initials">
                                     {{ current_user.username[0].upper() }}
-                                </div>
+                                </span>
                             {% endif %}
                             <span class="app-navbar-profile-chevron" aria-hidden="true">▾</span>
                         </button>
