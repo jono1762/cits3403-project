@@ -546,8 +546,81 @@
     display: flex;
     flex-direction: column;
     gap: 0.52rem;
-    animation: demoReportScroll 8s ease-in-out infinite alternate;
 }
+
+/* ============================================================
+   View cycle — cycles through 4 filter snapshots, like a user
+   clicking a dropdown to change the filter
+   ============================================================ */
+.home-demo-cycle {
+    position: relative;
+    min-height: 11.5rem;
+}
+
+.home-demo-view {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    animation: viewCycle 16s steps(1, end) infinite;
+}
+
+.home-demo-view-1 { animation-delay: 0s; }
+.home-demo-view-2 { animation-delay: 4s; }
+.home-demo-view-3 { animation-delay: 8s; }
+.home-demo-view-4 { animation-delay: 12s; }
+
+/* Inside each view, the feed slowly scrolls up during the visible window
+   to reveal that there are many reports on this page. Uses linear timing
+   so the scroll feels like a steady auto-scroll, not an easing curve. */
+.home-demo-view .home-demo-feed {
+    animation: feedScroll 16s linear infinite;
+}
+
+.home-demo-view-1 .home-demo-feed { animation-delay: 0s; }
+.home-demo-view-2 .home-demo-feed { animation-delay: 4s; }
+.home-demo-view-3 .home-demo-feed { animation-delay: 8s; }
+.home-demo-view-4 .home-demo-feed { animation-delay: 12s; }
+
+/* Dropdown chevron on chips that act like select boxes */
+.home-demo-filters span.is-dropdown {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.2rem;
+}
+
+.home-demo-filters span.is-dropdown::after {
+    content: "▾";
+    font-size: 0.5rem;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+/* Highlighted filter chip — shows what the user "clicked" in this view */
+.home-demo-filters span.is-highlighted,
+.home-demo-categories .home-demo-chip.is-active {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 700;
+}
+
+/* "Click" feedback on the chosen dropdown — press-down + spring-back,
+   ring expands, and a tiny option-popup hint appears beneath. */
+.home-demo-view .is-highlighted,
+.home-demo-view .home-demo-chip.is-active {
+    transform-origin: center;
+    animation: chipClick 16s ease-out infinite;
+}
+
+.home-demo-view-1 .is-highlighted,
+.home-demo-view-1 .home-demo-chip.is-active { animation-delay: 0s; }
+.home-demo-view-2 .is-highlighted,
+.home-demo-view-2 .home-demo-chip.is-active { animation-delay: 4s; }
+.home-demo-view-3 .is-highlighted,
+.home-demo-view-3 .home-demo-chip.is-active { animation-delay: 8s; }
+.home-demo-view-4 .is-highlighted,
+.home-demo-view-4 .home-demo-chip.is-active { animation-delay: 12s; }
 
 .home-demo-report {
     position: relative;
@@ -633,17 +706,13 @@
 }
 
 .home-demo-star {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.35rem;
-    height: 1.35rem;
-    border-radius: 999px;
-    border: 1px solid #fde68a;
-    background: #fff;
+    position: absolute;
+    bottom: 0.35rem;
+    right: 0.55rem;
     color: #f59e0b;
-    font-size: 0.66rem;
-    font-weight: 800;
+    font-size: 0.95rem;
+    line-height: 1;
+    z-index: 2;
 }
 
 .home-demo-verify,
@@ -686,16 +755,37 @@
     background: #475569;
 }
 
-@keyframes demoReportScroll {
-    0%, 22% {
-        transform: translateY(0);
-    }
-    52%, 72% {
-        transform: translateY(-3.9rem);
-    }
-    100% {
-        transform: translateY(-7.8rem);
-    }
+/* View visibility — discrete on/off so two views never overlap-blend */
+@keyframes viewCycle {
+    0%, 25%, 100% { opacity: 0; pointer-events: none; }
+    1%, 24%      { opacity: 1; }
+}
+
+/* Feed slow-scrolls within each view's visible window so the user sees
+   that "there are many reports on this page". Animation runs for the
+   full 16s cycle, but each view's animation-delay aligns the scroll
+   movement to its own 1-24% visibility window. The scroll holds at the
+   bottom past 24% so when the view fades out at 25% the feed is still
+   at -7.5rem — then snaps back to 0 invisibly past 25%. */
+@keyframes feedScroll {
+    0%, 3%       { transform: translateY(0); }
+    22%, 25%     { transform: translateY(-7.5rem); }
+    25.5%, 100%  { transform: translateY(0); }
+}
+
+/* Chip "click" feedback — quick press-down, spring back up, ring
+   expansion. Sells the "user just clicked this dropdown and picked
+   the option" feel. */
+@keyframes chipClick {
+    0%   { transform: translateY(0) scale(1);
+           box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.0); }
+    1.5% { transform: translateY(2px) scale(0.94);
+           box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.55); }
+    4%   { transform: translateY(-2px) scale(1.16);
+           box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+    7%   { transform: translateY(0) scale(1.06);
+           box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    10%, 25%, 100% { transform: translateY(0) scale(1); }
 }
 
 @keyframes trendPulse {
@@ -763,8 +853,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .home-demo-feed,
+    .home-demo-view,
+    .home-demo-view .home-demo-feed,
+    .home-demo-view .is-highlighted,
+    .home-demo-view .home-demo-chip.is-active,
     .home-demo-trending {
         animation: none;
     }
+    /* Fall back to view 1 only when motion is reduced */
+    .home-demo-view-1 { opacity: 1; }
+    .home-demo-view-2,
+    .home-demo-view-3,
+    .home-demo-view-4 { display: none; }
 }
