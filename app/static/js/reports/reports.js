@@ -17,9 +17,9 @@ stateSelect.addEventListener('change', () => {
     citySelect.disabled = cities.length === 0;
 });
 
-// keep the visible status text in sync with the (hidden) file input
 const mediaInput = document.getElementById('media');
 const mediaStatus = document.getElementById('media-status');
+const mediaPreview = document.getElementById('media-preview');
 const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
 const MAX_FILE_SIZE = 200 * 1024 * 1024;
 const MAX_FILES = 5;
@@ -29,13 +29,45 @@ function setMediaStatus(text, isError) {
     mediaStatus.classList.toggle('is-error', !!isError);
 }
 
+function renderMediaPreview() {
+    mediaPreview.innerHTML = '';
+    const files = mediaInput.files ? Array.from(mediaInput.files) : [];
+    files.forEach((file, index) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'attachment-thumb';
+        const isVideo = file.type.startsWith('video/');
+        const media = document.createElement(isVideo ? 'video' : 'img');
+        media.src = URL.createObjectURL(file);
+        if (isVideo) media.muted = true;
+        else media.alt = file.name;
+        thumb.appendChild(media);
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'remove-btn';
+        remove.setAttribute('aria-label', 'Remove attachment');
+        remove.textContent = '×';
+        remove.addEventListener('click', () => removeFileAt(index));
+        thumb.appendChild(remove);
+        mediaPreview.appendChild(thumb);
+    });
+}
+
+function removeFileAt(index) {
+    const dt = new DataTransfer();
+    const files = Array.from(mediaInput.files);
+    files.forEach((f, i) => { if (i !== index) dt.items.add(f); });
+    mediaInput.files = dt.files;
+    mediaInput.dispatchEvent(new Event('change'));
+}
+
 mediaInput.addEventListener('change', () => {
     const files = mediaInput.files ? Array.from(mediaInput.files) : [];
     const n = files.length;
-    if (n === 0) { setMediaStatus('', false); return; }
+    if (n === 0) { setMediaStatus('', false); renderMediaPreview(); return; }
     if (n > MAX_FILES) {
         mediaInput.value = '';
         setMediaStatus(`Too many files — max ${MAX_FILES}.`, true);
+        renderMediaPreview();
         return;
     }
     for (const f of files) {
@@ -43,15 +75,18 @@ mediaInput.addEventListener('change', () => {
         if (!ALLOWED_EXTS.includes(ext)) {
             mediaInput.value = '';
             setMediaStatus(`"${f.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+            renderMediaPreview();
             return;
         }
         if (f.size > MAX_FILE_SIZE) {
             mediaInput.value = '';
             setMediaStatus(`"${f.name}" is too large — max 200 MB.`, true);
+            renderMediaPreview();
             return;
         }
     }
     setMediaStatus(n === 1 ? '1 file selected' : n + ' files selected', false);
+    renderMediaPreview();
 });
 
 document.getElementById('report-form').addEventListener('submit', async (event) => {
@@ -83,6 +118,7 @@ document.getElementById('report-form').addEventListener('submit', async (event) 
         event.target.reset();
         citySelect.selectedIndex = 0;
         mediaStatus.textContent = '';
+        mediaPreview.innerHTML = '';
     } else {
         // jump to the single-report page for the report we just created
         window.location.href = data.view_url;

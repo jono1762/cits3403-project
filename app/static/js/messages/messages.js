@@ -277,6 +277,7 @@
     // ---- composer ----
     const threadMediaInput = document.getElementById('thread-media');
     const attachStatus = document.getElementById('thread-attach-status');
+    const threadMediaPreview = document.getElementById('thread-media-preview');
 
     // allowed extensions / size mirror the server-side limits in the api blueprint
     const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
@@ -295,17 +296,50 @@
         attachStatus.classList.remove('is-error');
     }
 
-    // visible status next to the textarea — "1 file attached" / "3 files attached" / error
+    function renderThreadMediaPreview() {
+        if (!threadMediaPreview) return;
+        threadMediaPreview.innerHTML = '';
+        const files = threadMediaInput.files ? Array.from(threadMediaInput.files) : [];
+        files.forEach((file, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'attachment-thumb';
+            const isVideo = file.type.startsWith('video/');
+            const media = document.createElement(isVideo ? 'video' : 'img');
+            media.src = URL.createObjectURL(file);
+            if (isVideo) media.muted = true;
+            else media.alt = file.name;
+            thumb.appendChild(media);
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'remove-btn';
+            remove.setAttribute('aria-label', 'Remove attachment');
+            remove.textContent = '×';
+            remove.addEventListener('click', () => removeThreadMediaAt(index));
+            thumb.appendChild(remove);
+            threadMediaPreview.appendChild(thumb);
+        });
+    }
+
+    function removeThreadMediaAt(index) {
+        const dt = new DataTransfer();
+        const files = Array.from(threadMediaInput.files);
+        files.forEach((f, i) => { if (i !== index) dt.items.add(f); });
+        threadMediaInput.files = dt.files;
+        threadMediaInput.dispatchEvent(new Event('change'));
+    }
+
     threadMediaInput.addEventListener('change', () => {
         const files = threadMediaInput.files ? Array.from(threadMediaInput.files) : [];
         const n = files.length;
         if (n === 0) {
             clearAttachStatus();
+            renderThreadMediaPreview();
             return;
         }
         if (n > MAX_FILES) {
             threadMediaInput.value = '';
             showAttachStatus(`Too many files — max ${MAX_FILES}.`, true);
+            renderThreadMediaPreview();
             return;
         }
         for (const f of files) {
@@ -313,15 +347,18 @@
             if (!ALLOWED_EXTS.includes(ext)) {
                 threadMediaInput.value = '';
                 showAttachStatus(`"${f.name}" is not allowed. Only images (jpg, png, gif, webp) or videos (mp4, webm, mov).`, true);
+                renderThreadMediaPreview();
                 return;
             }
             if (f.size > MAX_FILE_SIZE) {
                 threadMediaInput.value = '';
                 showAttachStatus(`"${f.name}" is too large — max 200 MB.`, true);
+                renderThreadMediaPreview();
                 return;
             }
         }
         showAttachStatus(n === 1 ? '1 file attached' : n + ' files attached', false);
+        renderThreadMediaPreview();
     });
 
     threadComposer.addEventListener('submit', async (event) => {
@@ -353,6 +390,7 @@
                 threadMediaInput.value = '';
                 attachStatus.hidden = true;
                 attachStatus.textContent = '';
+                if (threadMediaPreview) threadMediaPreview.innerHTML = '';
                 requestBanner.hidden = true;  // sending a reply auto-accepts on the server
                 refreshInbox();
             }

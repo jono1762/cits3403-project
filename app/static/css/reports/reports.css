@@ -164,3 +164,60 @@
     box-shadow: 0 10px 24px rgba(79, 70, 229, 0.42);
     color: #fff;
 }
+
+.attachment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.6rem;
+}
+
+.attachment-grid:empty {
+    display: none;
+}
+
+.attachment-thumb {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid #e2e8f0;
+    background: #000;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.attachment-thumb:hover {
+    transform: translateY(-1px);
+    border-color: #cbd5e1;
+}
+
+.attachment-thumb img,
+.attachment-thumb video {
+    display: block;
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+}
+
+.attachment-thumb .remove-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15, 23, 42, 0.72);
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.attachment-thumb .remove-btn:hover {
+    background: #b91c1c;
+    transform: scale(1.08);
+}
