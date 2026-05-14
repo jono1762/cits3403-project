@@ -25,13 +25,18 @@
 /* ============================================================
    Heading + intro line
    ============================================================ */
-#mapPage h1 {
-    margin: 0;
+.map-header {
+    margin-bottom: 1.25rem;
+}
+
+.map-title {
+    display: inline-block;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.1;
+    margin: 0 0 0.4rem;
     background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -39,15 +44,11 @@
     color: transparent;
 }
 
-/* subtitle — small indigo accent bar on the left, like a side-quote */
-#mapPage > p {
+.map-subtitle {
     margin: 0;
-    color: #475569;
-    font-size: 0.95rem;
-    font-weight: 500;
-    line-height: 1.4;
-    border-left: 3px solid #4f46e5;
-    padding-left: 0.7rem;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 
