@@ -1,18 +1,25 @@
+"""Top-level public routes — home, about, help, map, favourites, messages,
+and weather. Was previously app/routes.py registered via importlib reload;
+now a proper Blueprint so create_app() can register it cleanly the same
+way as auth / reports / users / api."""
 import requests
-from flask import current_app as app
-from flask import render_template, redirect, url_for, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime
-from .models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport
+from ..models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport
 # Report-related helpers live in the reports blueprint now. The favourites
 # and map pages here still call a couple, so we re-import them.
-from .blueprints.reports import _active_reports_q, _encode_report_id, TRENDING_LIMIT
- 
-@app.route('/')
+from .reports import _active_reports_q, _encode_report_id, TRENDING_LIMIT
+
+bp = Blueprint('main', __name__)
+
+
+@bp.route('/')
 def index():
     # / is just an alias for /intro — keep one canonical URL for the home page.
-    return redirect(url_for('home_intro'))
- 
+    return redirect(url_for('main.home_intro'))
+
+
 # single source of truth for the category-name → emoji map.
 # Injected into every template via the context processor below so the same
 # emoji shows up consistently on the listing chips, profile cards, trending
@@ -24,12 +31,14 @@ CATEGORY_EMOJI = {
     'Traffic':   '🚦',
     'Emergency': '🚨',
 }
- 
-@app.context_processor
+
+
+@bp.app_context_processor
 def inject_category_emoji():
     return {'CATEGORY_EMOJI': CATEGORY_EMOJI}
- 
-@app.context_processor
+
+
+@bp.app_context_processor
 def inject_unread_messages():
     """Make the chat unread count available to every template (used by the
     sidebar 'Messages' link to render the small red notification badge).
@@ -37,8 +46,8 @@ def inject_unread_messages():
     if current_user.is_authenticated:
         return {'unread_message_count': current_user.unread_message_count}
     return {'unread_message_count': 0}
- 
- 
+
+
 # mapping each city to its state code (lowercase, used as the flag dictionary key)
 CITY_TO_STATE = {
     'Sydney': 'nsw', 'Newcastle': 'nsw', 'Wollongong': 'nsw', 'Central Coast': 'nsw',
@@ -50,7 +59,7 @@ CITY_TO_STATE = {
     'Canberra': 'act',
     'Darwin': 'nt', 'Alice Springs': 'nt',
 }
- 
+
 # state code -> local flag image path served from /static/images/flags/
 STATE_FLAG_URL = {
     'nsw': '/static/images/flags/nsw.png',
@@ -62,7 +71,7 @@ STATE_FLAG_URL = {
     'act': '/static/images/flags/act.png',
     'nt':  '/static/images/flags/nt.png',
 }
- 
+
 # Lat/lng for every city in the DB. Single source of truth — fed to the
 # map JS via the template so adding a city only means editing this dict
 # (until we eventually move these onto the City model itself).
@@ -90,10 +99,10 @@ CITY_COORDS = {
     'Darwin':         (-12.4634, 130.8456),
     'Alice Springs':  (-23.6980, 133.8807),
 }
- 
- 
-@app.route('/favourites')
-@app.route('/favourites/locations')
+
+
+@bp.route('/favourites')
+@bp.route('/favourites/locations')
 @login_required
 def favourites_page():
     # load saved city favourites for the current user
@@ -122,10 +131,10 @@ def favourites_page():
                 last_update = f"{days} day{'s' if days!=1 else ''} ago"
         else:
             last_update = '—'
- 
+
         # trending heuristic: many reports today
         trending = reports_today >= 20
- 
+
         saved_cities.append({
             'id': city.id,
             'name': city.name,
@@ -135,12 +144,12 @@ def favourites_page():
             'last_update': last_update,
             'trending': trending,
         })
- 
+
     # locations-only page (report favourites are on /favourites/reports)
     return render_template('favourites.html', saved_cities=saved_cities)
- 
- 
-@app.route('/favourites/reports')
+
+
+@bp.route('/favourites/reports')
 @login_required
 def favourite_reports_page():
     fav_rows = (
@@ -149,7 +158,7 @@ def favourite_reports_page():
         .order_by(FavouriteReport.created_at.desc())
         .all()
     )
- 
+
     fav_reports = []
     for row in fav_rows:
         report = row.report
@@ -166,32 +175,33 @@ def favourite_reports_page():
             'description': report.description or '',
             'token': _encode_report_id(report.id),
         })
- 
+
     return render_template('favourite_reports.html', fav_reports=fav_reports)
- 
- 
+
+
 # /help — static FAQ page, public
-@app.route('/help')
+@bp.route('/help')
 def help_page():
     return render_template('help.html')
- 
+
+
 # /about — static team / project info page, public
-@app.route('/about')
+@bp.route('/about')
 def about_page():
     return render_template('about.html')
- 
- 
-@app.route('/map')
+
+
+@bp.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the home page
     return render_template('map.html', **_map_page_context())
- 
- 
+
+
 def _map_page_context():
     city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
     now = datetime.utcnow()
- 
+
     # Top trending city / category derived from the global Trending top N.
     # Group the top-N reports by city (or category), and rank groups by:
     #   1. how many of the top-N are in that city (descending)
@@ -216,7 +226,7 @@ def _map_page_context():
         .all()
     )
     total_in_top = len(trending_rows)
- 
+
     def _top_group(get_key):
         """For each report in the trending top-N, bucket by `get_key(row)`,
         track count and best score per bucket, then pick the bucket with the
@@ -234,7 +244,7 @@ def _map_page_context():
             return None
         winner_key = max(buckets, key=lambda k: (buckets[k]['count'], buckets[k]['best_score']))
         return winner_key, buckets[winner_key]['count']
- 
+
     top_city = None
     city_pick = _top_group(lambda r: r.city_id)
     if city_pick:
@@ -242,7 +252,7 @@ def _map_page_context():
         c = City.query.get(cid)
         if c:
             top_city = {'name': c.name, 'count': cnt, 'total': total_in_top}
- 
+
     top_category = None
     cat_pick = _top_group(lambda r: r.category_id)
     if cat_pick:
@@ -250,13 +260,13 @@ def _map_page_context():
         cat = Category.query.get(cat_id)
         if cat:
             top_category = {'name': cat.name, 'count': cnt, 'total': total_in_top}
- 
+
     # Third bubble — the user's "most important" pinned report, picked from
     # everything they've saved (favourited reports + reports in favourited
     # cities). Highest engagement score across that pool wins. Falls back to
     # None for guests / users with no saves; the template shows a stub then.
     top_pinned_report = _top_pinned_report_for(current_user)
- 
+
     # Build the map-pin list from the DB cities, joined with our hardcoded
     # CITY_COORDS lookup. Cities missing from CITY_COORDS just don't get a
     # pin (rather than crashing the map).
@@ -275,7 +285,7 @@ def _map_page_context():
             'lat': coords[0],
             'lng': coords[1],
         })
- 
+
     return {
         'city_ids_by_name': city_ids,
         'category_ids_by_name': category_ids,
@@ -286,8 +296,8 @@ def _map_page_context():
         'top_pinned_report': top_pinned_report,
         'map_cities': map_cities,
     }
- 
- 
+
+
 def _top_pinned_report_for(user):
     """Highest-scoring report across the user's saved reports + reports in
     their saved cities. Returns the Report object or None."""
@@ -302,7 +312,7 @@ def _top_pinned_report_for(user):
         )
     if not candidate_ids:
         return None
- 
+
     from sqlalchemy import case
     verify_sum = db.func.coalesce(
         db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
@@ -319,28 +329,28 @@ def _top_pinned_report_for(user):
         .first()
     )
     return Report.query.get(row[0]) if row else None
- 
- 
+
+
 # /intro — same content as / but always rendered in the marketing/intro
 # style (no navbar / sidebar). Lets logged-in users revisit the public-facing
 # home page (linked from the navbar home icon).
-@app.route('/intro')
+@bp.route('/intro')
 def home_intro():
     return render_template('index.html')
- 
- 
+
+
 # login / signup / login_email / logout moved to app/blueprints/auth.py
 # profile / search / follow / block routes moved to app/blueprints/users.py
- 
- 
-@app.route('/messages')
+
+
+@bp.route('/messages')
 @login_required
 def messages_page():
     # ?user=<id> → JS auto-opens that conversation on page load
     return render_template('messages.html')
 
 
-@app.route('/reports/weather')
+@bp.route('/reports/weather')
 def live_weather_page():
     """Public Live Weather page — shows a city search and (future) live data."""
     # Build city list with state info (same structure as map_cities)
@@ -359,7 +369,7 @@ def live_weather_page():
             'lat': coords[0],
             'lng': coords[1],
         })
-    
+
     # prefer a requested city from the querystring if it exists in our list
     req_city = (request.args.get('city') or '').strip()
     selected_city = None
@@ -368,7 +378,7 @@ def live_weather_page():
         match = next((c for c in weather_cities_data if c['short_name'] == req_city), None)
         if match:
             selected_city = match
-    
+
     return render_template('live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
 
 
@@ -411,14 +421,14 @@ def _fetch_weather_from_api(lat, lng):
         resp = requests.get(url, params=params, timeout=5)
         resp.raise_for_status()
         data = resp.json()
-        
+
         current = data.get('current', {})
         temp_c = current.get('temperature_2m')
         weather_code = current.get('weather_code')
         wind_kph = current.get('wind_speed_10m')
         wind_dir = current.get('wind_direction_10m')
         precip_mm = current.get('precipitation')
-        
+
         # WMO Weather interpretation codes
         # (simplified mapping for Australian context)
         code_to_text = {
@@ -448,7 +458,7 @@ def _fetch_weather_from_api(lat, lng):
             99: 'Thunderstorm with heavy hail',
         }
         condition_text = code_to_text.get(weather_code, 'Unknown')
-        
+
         # Cardinal direction from degrees
         def deg_to_cardinal(deg):
             if deg is None:
@@ -457,9 +467,9 @@ def _fetch_weather_from_api(lat, lng):
                     'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
             ix = int((deg + 11.25) / 22.5) % 16
             return dirs[ix]
-        
+
         wind_cardinal = deg_to_cardinal(wind_dir)
-        
+
         return {
             'temp_c': temp_c,
             'condition': condition_text,
@@ -468,12 +478,12 @@ def _fetch_weather_from_api(lat, lng):
             'precip_mm': precip_mm,
             'fetched_at': datetime.utcnow().isoformat() + 'Z',
         }
-    except Exception as e:
+    except Exception:
         # Log silently; return None so frontend shows "unavailable"
         return None
 
 
-@app.route('/api/weather/<city>')
+@bp.route('/api/weather/<city>')
 def api_get_weather(city):
     """Fetch current weather for a city by name (short name like 'Sydney').
     Returns cached data if available and fresh; otherwise fetches from Open-Meteo.
@@ -481,19 +491,19 @@ def api_get_weather(city):
     # Validate city name is in our list
     if city not in CITY_COORDS:
         return jsonify({'error': 'City not found.'}), 404
-    
+
     # Check cache first
     cached = _get_cached_weather(city)
     if cached:
         return jsonify(cached)
-    
+
     # Fetch from API
     lat, lng = CITY_COORDS[city]
     weather_data = _fetch_weather_from_api(lat, lng)
-    
+
     if weather_data is None:
         return jsonify({'error': 'Unable to fetch weather data.'}), 503
-    
+
     # Cache and return
     _set_cached_weather(city, weather_data)
     return jsonify(weather_data)

@@ -81,7 +81,7 @@
 				<span class="stat-card-star" aria-hidden="true">⭐</span>
 			</a>
 		{% else %}
-			<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
+			<a href="{{ url_for('main.favourites_page') }}" class="stat-card stat-card-fav">
 				<div class="stat-label">Watching · favourites</div>
 				<div class="stat-num">Saved places</div>
 				<div class="stat-trend">Star a report to follow it</div>
@@ -128,7 +128,7 @@
 
 <script>
 	const CITY_IDS_BY_NAME = JSON.parse(document.getElementById("city-ids-data").textContent);
-	const LIVE_WEATHER_URL = "{{ url_for('live_weather_page') }}";
+	const LIVE_WEATHER_URL = "{{ url_for('main.live_weather_page') }}";
 	const cityData = JSON.parse(document.getElementById("map-cities-data").textContent);
 	const searchBar = document.getElementById("searchBar");
 	const searchButton = document.getElementById("searchButton");

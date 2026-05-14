@@ -53,14 +53,14 @@ BIO_MAX_LENGTH = 500
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
  
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         flash('Invalid username or password.', 'error')
  
     return render_template('login.html', form=form)
@@ -69,7 +69,7 @@ def login():
 @bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
  
     form = SignupForm()
     if form.validate_on_submit():
@@ -78,7 +78,7 @@ def signup():
         db.session.add(user)
         db.session.commit()
         login_user(user)
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
  
     return render_template('signup.html', form=form)
  
@@ -86,14 +86,14 @@ def signup():
 @bp.route('/login/email', methods=['GET', 'POST'])
 def login_email():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
  
     form = EmailLoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         flash('Invalid email or password.', 'error')
  
     return render_template('login_email.html', form=form)
@@ -361,5 +361,5 @@ def settings_delete_account():
  
     logout_user()
     flash('Your account and all your data have been deleted.', 'success')
-    return redirect(url_for('home_intro'))
+    return redirect(url_for('main.home_intro'))
  

@@ -9,6 +9,7 @@ from .blueprints.auth import bp as auth_bp
 from .blueprints.reports import bp as reports_bp
 from .blueprints.users import bp as users_bp
 from .blueprints.api import bp as api_bp
+from .blueprints.main import bp as main_bp
 
  
 login_manager = LoginManager()
@@ -32,9 +33,9 @@ LOGIN_REQUIRED_ACTIONS = {
     'users.search_users_page':         'search for users',
     'auth.settings_page':              'open settings',
     'auth.profile_edit_page':          'edit your profile',
-    'favourites_page':                 'view your saved locations',
-    'favourite_reports_page':          'view your saved reports',
-    'messages_page':                   'open your messages',
+    'main.favourites_page':            'view your saved locations',
+    'main.favourite_reports_page':     'view your saved reports',
+    'main.messages_page':              'open your messages',
 }
 
 
@@ -56,7 +57,7 @@ def _unauthorized():
         Markup(f'<a href="{url_for("auth.login")}" class="alert-link">Log in</a> to {action}.'),
         'warning'
     )
-    return redirect(request.referrer or url_for('home_intro'))
+    return redirect(request.referrer or url_for('main.home_intro'))
  
 # the 5 report categories + marker colour for each
 DEFAULT_CATEGORIES = [
@@ -195,27 +196,16 @@ def create_app(test_config=None):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
  
-    # Register the four route groups. Each blueprint owns one slice of
-    # the URL map (auth flows, report pages, user / profile pages, JSON API).
+    # Register the five route groups. Each blueprint owns one slice of
+    # the URL map (top-level pages, auth flows, report pages, user /
+    # profile pages, JSON API).
+    app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(api_bp)
 
-
- 
     with app.app_context():
-        # Each create_app() call must (re)register routes.py on the new app.
-        # Plain `import` is a no-op after the first call because Python caches
-        # the module; reload re-runs the @app.route decorators against the
-        # fresh current_app. Matters mainly for tests that build many apps.
-        import importlib
-        import sys
-        routes_module_name = f'{__name__}.routes'
-        if routes_module_name in sys.modules:
-            importlib.reload(sys.modules[routes_module_name])
-        else:
-            from . import routes  # noqa: F401  (decorators register routes)
         # Schema is owned by Flask-Migrate — fresh checkouts must run
         # `flask db upgrade` once before booting. The seeders below skip
         # silently if (a) the tables don't exist yet, or (b) the schema
