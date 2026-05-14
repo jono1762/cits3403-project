@@ -6,9 +6,9 @@
 
 {% block content %}
 <section class="fav-page">
-    <header class="fav-header">
-        <h1 class="fav-title">Favourite Locations</h1>
-        <p class="fav-subtitle">Cities you watch.</p>
+    <header class="page-header fav-header">
+        <h1 class="page-title fav-title">Favourite Locations</h1>
+        <p class="page-subtitle fav-subtitle">Cities you watch.</p>
     </header>
 
     {# ============== Saved cities (persisted) ============== #}
@@ -45,7 +45,7 @@
 
                         <div class="fav-panel-actions d-flex flex-column gap-2">
                             <a class="btn btn-ghost" href="{{ url_for('reports.listing_page') }}?city_id={{ s.id }}">View Reports</a>
-                            <a class="btn btn-ghost" href="{{ url_for('live_weather_page') }}?city={{ s.name | urlencode }}">View Weather</a>
+                            <a class="btn btn-ghost" href="{{ url_for('main.live_weather_page') }}?city={{ s.name | urlencode }}">View Weather</a>
                         </div>
                     </div>
                 </article>

@@ -41,16 +41,63 @@
 }
 
 .app-sidebar-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
     margin: 14px 4px 6px;
+    padding: 6px 8px;
     font-size: 0.75rem;
-    letter-spacing: 0.16em;            /* wider tracking so it reads as a label, not a link */
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #a5b4fc;                    /* light indigo — ties to the brand */
+    color: #a5b4fc;
     font-weight: 700;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: color 0.18s ease;
 }
 
 .app-sidebar-group-header:first-child {
     margin-top: 2px;
+}
+
+.app-sidebar-group-header:hover {
+    color: #c7d2fe;
+}
+
+.app-sidebar-toggle-icon {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.app-sidebar-group.collapsed .app-sidebar-toggle-icon,
+.sidebar-section-collapsed-locations .app-sidebar-group[data-section="locations"] .app-sidebar-toggle-icon,
+.sidebar-section-collapsed-reports .app-sidebar-group[data-section="reports"] .app-sidebar-toggle-icon,
+.sidebar-section-collapsed-live .app-sidebar-group[data-section="live"] .app-sidebar-toggle-icon,
+.sidebar-section-collapsed-favourites .app-sidebar-group[data-section="favourites"] .app-sidebar-toggle-icon,
+.sidebar-section-collapsed-support .app-sidebar-group[data-section="support"] .app-sidebar-toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.app-sidebar-group-content {
+    display: flex;
+    flex-direction: column;
+    transition: max-height 0.2s ease, opacity 0.2s ease;
+    max-height: 500px;
+    opacity: 1;
+    overflow: hidden;
+}
+
+.app-sidebar-group.collapsed .app-sidebar-group-content,
+.sidebar-section-collapsed-locations .app-sidebar-group[data-section="locations"] .app-sidebar-group-content,
+.sidebar-section-collapsed-reports .app-sidebar-group[data-section="reports"] .app-sidebar-group-content,
+.sidebar-section-collapsed-live .app-sidebar-group[data-section="live"] .app-sidebar-group-content,
+.sidebar-section-collapsed-favourites .app-sidebar-group[data-section="favourites"] .app-sidebar-group-content,
+.sidebar-section-collapsed-support .app-sidebar-group[data-section="support"] .app-sidebar-group-content {
+    max-height: 0;
+    opacity: 0;
 }
 
 .app-sidebar-link {

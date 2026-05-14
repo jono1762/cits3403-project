@@ -2,13 +2,15 @@
 
 {% block styles %}
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css', v='2') }}">
 {% endblock %}
 
 {% block content %}
 <div class="container" id="mapPage">
-	<h1>Map</h1>
-	<p>Explore situation reports across Australia</p>
+	<header class="page-header map-header">
+		<h1 class="page-title map-title">Map</h1>
+		<p class="page-subtitle map-subtitle">Explore situation reports across Australia</p>
+	</header>
 
 	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
 	   Card 3 links to the user's favourites page (stub for now). #}
@@ -79,7 +81,7 @@
 				<span class="stat-card-star" aria-hidden="true">⭐</span>
 			</a>
 		{% else %}
-			<a href="{{ url_for('favourites_page') }}" class="stat-card stat-card-fav">
+			<a href="{{ url_for('main.favourites_page') }}" class="stat-card stat-card-fav">
 				<div class="stat-label">Watching · favourites</div>
 				<div class="stat-num">Saved places</div>
 				<div class="stat-trend">Star a report to follow it</div>
@@ -96,8 +98,6 @@
 			</div>
 			{# "Search" zooms the map to the matched city's pin and opens its popup #}
 			<button type="button" id="searchButton">Search</button>
-			{# "View Reports" navigates to the filtered listing for that city #}
-			<button type="button" id="viewReportsButton">View Reports</button>
 		</div>
 	</div>
 
@@ -128,7 +128,7 @@
 
 <script>
 	const CITY_IDS_BY_NAME = JSON.parse(document.getElementById("city-ids-data").textContent);
-	const LIVE_WEATHER_URL = "{{ url_for('live_weather_page') }}";
+	const LIVE_WEATHER_URL = "{{ url_for('main.live_weather_page') }}";
 	const cityData = JSON.parse(document.getElementById("map-cities-data").textContent);
 	const searchBar = document.getElementById("searchBar");
 	const searchButton = document.getElementById("searchButton");
@@ -139,12 +139,14 @@
 	const westBound = australiaBounds[0][1];
 	const northBound = australiaBounds[1][0];
 	const eastBound = australiaBounds[1][1];
-	const defaultView = { center: [-27.0, 133.7751], zoom: 4 };
+	const defaultView = { center: [-27.0, 133.7751], zoom: 3.5 };
 	const map = L.map("map", {
 		center: defaultView.center,
 		zoom: defaultView.zoom,
 		minZoom: defaultView.zoom,
 		maxZoom: 8,
+		zoomSnap: 0.5,
+		zoomDelta: 0.5,
 		zoomControl: false,
 		worldCopyJump: true
 	});
@@ -152,9 +154,17 @@
 	let suggestionsOpen = false;
 	// set of city_ids (strings) the current user has saved as favourites
 	let SAVED_CITY_IDS = new Set();
-	// Guest gate — used to render the popup "Save location" button as
+	// Guest gate — used to render the popup save button as
 	// disabled (matches the verify/dispute pattern elsewhere).
 	const IS_GUEST = {{ (not current_user.is_authenticated) | tojson }};
+
+	function getSaveButtonLabel(isSaved) {
+		return isSaved ? '★ Saved' : '☆ Save';
+	}
+
+	function getSaveButtonTitle(isSaved) {
+		return isSaved ? 'Click to unsave' : '';
+	}
 
 	// OpenStreetMap default tiles — colorful base (greens for land, blues for water)
 	// then we tint the whole pane via CSS filter to push the palette toward purple-green
@@ -187,11 +197,11 @@
 				: `{{ url_for('reports.listing_page') }}`;
 
 			// Guests see the button greyed out (matches verify/dispute pattern).
-			// Already-saved cities also show the disabled "Saved ✓" state.
+			// Saved cities render in the filled-star state and can be toggled off.
 			const isSaved = cityId && (SAVED_CITY_IDS.has(String(cityId)) || SAVED_CITY_IDS.has(Number(cityId)));
-			const disabled = IS_GUEST || isSaved;
-			const guestTitle = IS_GUEST ? ' title="Please log in to save locations"' : '';
-			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button"${disabled ? ' disabled' : ''}${guestTitle}>${isSaved ? 'Saved ✓' : 'Save location'}</button>` : '';
+			const disabled = IS_GUEST;
+			const buttonTitle = IS_GUEST ? 'Please log in to save locations' : getSaveButtonTitle(isSaved);
+			const popupSaveButton = cityId ? `<button class="popup-save-location" data-city-id="${cityId}" type="button"${disabled ? ' disabled' : ''}${buttonTitle ? ` title="${buttonTitle}"` : ''}>${getSaveButtonLabel(isSaved)}</button>` : '';
 
 			marker.bindPopup(`
 				<div class="popup-content">
@@ -342,18 +352,7 @@
 		if (selectedCity.marker) selectedCity.marker.openPopup();
 	}
 
-	// "View Reports" — navigate to the listing filtered by this city
-	function onViewReportsSubmit(event) {
-		event.stopPropagation();
-		const selectedCity = findCityFromQuery();
-		if (!selectedCity) return;
-		const shortName = selectedCity.name.split(",")[0].trim();
-		const cityId = CITY_IDS_BY_NAME[shortName];
-		const url = cityId
-			? `{{ url_for('reports.listing_page') }}?city_id=${cityId}`
-			: `{{ url_for('reports.listing_page') }}`;
-		window.location = url;
-	}
+	// (removed: View Reports button handler — navigation now available via listing links)
 
 	function onSearchBarKeyDown(event) {
 		if (event.key === "Enter") {
@@ -370,13 +369,11 @@
 		map.setView(defaultView.center, defaultView.zoom);
 	}
 
-	const viewReportsButton = document.getElementById("viewReportsButton");
-
 	searchBar.addEventListener("click", onSearchBarClick);
 	searchBar.addEventListener("input", search);
 	searchBar.addEventListener("keydown", onSearchBarKeyDown);
 	searchButton.addEventListener("click", onSearchSubmit);
-	viewReportsButton.addEventListener("click", onViewReportsSubmit);
+	// viewReportsButton removed
 
 	// Handle Save Location clicks inside marker popups (delegated)
 	document.addEventListener('click', function (ev) {
@@ -388,19 +385,26 @@
 			alert('This location cannot be saved because it is not in the database.');
 			return;
 		}
-		fetch(`/api/favourites/location/${cityId}`, { method: 'POST' })
+		const cityKey = String(cityId);
+		const wasSaved = SAVED_CITY_IDS.has(cityKey);
+		const method = wasSaved ? 'DELETE' : 'POST';
+		fetch(`/api/favourites/location/${cityId}`, { method })
 			.then(r => {
 				if (!r.ok) throw new Error('Network error');
 				return r.json();
 			})
 			.then(() => {
-				// small visual feedback
-				btn.textContent = 'Saved ✓';
-				btn.disabled = true;
-				// persist state so popups recreated later show Saved
-				SAVED_CITY_IDS.add(String(cityId));
+				if (wasSaved) {
+					btn.textContent = getSaveButtonLabel(false);
+					btn.title = getSaveButtonTitle(false);
+					SAVED_CITY_IDS.delete(cityKey);
+				} else {
+					btn.textContent = getSaveButtonLabel(true);
+					btn.title = getSaveButtonTitle(true);
+					SAVED_CITY_IDS.add(cityKey);
+				}
 			})
-			.catch(() => alert('Could not save location.'));
+			.catch(() => alert(`Could not ${wasSaved ? 'unsave' : 'save'} location.`));
 	});
 	document.body.addEventListener("click", minimise);
 	suggestions.addEventListener("click", autocomplete);

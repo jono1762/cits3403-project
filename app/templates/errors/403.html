@@ -1,0 +1,20 @@
+{% extends "errors/_layout.html" %}
+
+{% block title %}403 – Forbidden{% endblock %}
+
+{% block styles %}
+    <style>.error-container { --error-accent: #e74c3c; }</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-code">403</div>
+    <div class="error-icon" aria-hidden="true">🔒</div>
+    <h1 class="error-title">Access Forbidden</h1>
+    <p class="error-message">
+        You don't have permission to access this page.<br>
+        If you think this is a mistake, please contact the site administrator.
+    </p>
+    <a href="{{ url_for('main.index') }}" class="error-btn">← Back to Home</a>
+</div>
+{% endblock %}

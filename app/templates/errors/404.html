@@ -1,0 +1,20 @@
+{% extends "errors/_layout.html" %}
+
+{% block title %}404 – Page Not Found{% endblock %}
+
+{% block styles %}
+    <style>.error-container { --error-accent: #3498db; }</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-code">404</div>
+    <div class="error-icon" aria-hidden="true">🔍</div>
+    <h1 class="error-title">Page Not Found</h1>
+    <p class="error-message">
+        The page you're looking for doesn't exist or has been moved.<br>
+        Double-check the URL, or head back home.
+    </p>
+    <a href="{{ url_for('main.index') }}" class="error-btn">← Back to Home</a>
+</div>
+{% endblock %}
