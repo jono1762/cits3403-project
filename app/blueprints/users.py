@@ -147,6 +147,8 @@ def api_search_users():
             'user_id': u.id,
             'username': u.username,
             'avatar_initial': u.username[:1].upper(),
+            'avatar_url': (url_for('static', filename=f'uploads/{u.avatar_filename}')
+                           if u.avatar_filename else None),
             'profile_url': url_for('users.user_profile_page', username=u.username),
         }
         for u in users
@@ -238,6 +240,8 @@ def api_list_blocked_users():
             'user_id': u.id,
             'username': u.username,
             'avatar_initial': u.username[:1].upper(),
+            'avatar_url': (url_for('static', filename=f'uploads/{u.avatar_filename}')
+                           if u.avatar_filename else None),
             'profile_url': url_for('users.user_profile_page', username=u.username),
         })
     return jsonify(out)

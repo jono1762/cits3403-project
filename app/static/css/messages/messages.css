@@ -95,6 +95,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
+    overflow: hidden;
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
     color: #fff;
     font-weight: 700;
@@ -105,6 +106,13 @@
     justify-content: center;
     text-decoration: none;
     text-transform: uppercase;
+}
+
+.blocked-list-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
  
 .blocked-list-name {

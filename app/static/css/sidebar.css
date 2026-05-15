@@ -31,6 +31,15 @@
     flex-direction: column;
 }
 
+/* keep the mobile offcanvas below the fixed navbar so the "Navigation"
+   header (and the first group "Locations") isn't covered on phones */
+@media (max-width: 767.98px) {
+    #mobileSidebar.offcanvas {
+        top: var(--navbar-height);
+        height: calc(100% - var(--navbar-height));
+    }
+}
+
 .app-sidebar-nav {
     display: flex;
     flex-direction: column;
