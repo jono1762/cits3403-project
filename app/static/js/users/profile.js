@@ -118,7 +118,7 @@ document.addEventListener('click', async (event) => {
     btn.disabled = true;
     try {
         const method = isSaved ? 'DELETE' : 'POST';
-        const res = await fetch(`/api/favourites/report/${reportId}`, { method });
+        const res = await csrfFetch(`/api/favourites/report/${reportId}`, { method });
         if (!res.ok) throw new Error('Request failed');
         const nowSaved = !isSaved;
         btn.dataset.saved = nowSaved ? 'true' : 'false';

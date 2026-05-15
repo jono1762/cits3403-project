@@ -83,31 +83,47 @@
 
 .fav-panel-star {
     position: absolute;
-    right: 10px;
-    top: 10px;
+    top: 0.85rem;
+    right: 1rem;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border: 1.5px solid #fde68a;
+    width: 2.15rem;
+    height: 2.15rem;
+    padding: 0;
+    border: 1.5px solid #e2e8f0;
     border-radius: 999px;
     background: #fff;
     color: #f59e0b;
-    font-size: 1.15rem;
-    font-weight: 800;
     line-height: 1;
-    padding: 0;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.14);
-    transition: transform 0.15s ease, box-shadow 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease,
+                box-shadow 0.18s ease;
 }
 
 .fav-panel-star:hover,
 .fav-panel-star:focus {
     transform: translateY(-1px);
-    border-color: #fbbf24;
-    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.22);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    border-color: #fde68a;
+    color: #d97706;
+    outline: none;
+}
+
+.fav-panel-star.is-saved {
+    background: #fff7ed;
+    border-color: #fde68a;
+}
+
+.fav-panel-star.is-saved svg {
+    fill: currentColor;
+}
+
+.fav-panel-star svg {
+    width: 1.15rem;
+    height: 1.15rem;
 }
 
 /* Star button on report cards needs to float ABOVE the stretched link. */
@@ -276,6 +292,54 @@
     color: #64748b;
     font-size: 0.85rem;
     overflow-wrap: anywhere;
+}
+
+/* carousel inside favourite-report cards needs to escape the stretched
+   .fav-report-link so prev/next/indicators are clickable */
+.fav-report-card .carousel {
+    position: relative;
+    z-index: 2;
+}
+
+.fav-report-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.fav-report-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+}
+
+.fav-report-stat-verified { color: #047857; }
+.fav-report-stat-disputed { color: #b91c1c; }
+
+/* clickable comment count — escapes the card's stretched link with z-index,
+   matches profile pattern */
+.fav-report-stat-link {
+    position: relative;
+    z-index: 2;
+    color: #475569;
+    text-decoration: none;
+    padding: 0.2rem 0.55rem;
+    margin: -0.2rem -0.55rem;
+    border-radius: 999px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.fav-report-stat-link:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.fav-report-stat-link:hover svg {
+    stroke: #4f46e5;
 }
 
 
