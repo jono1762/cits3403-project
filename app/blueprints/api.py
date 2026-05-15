@@ -211,6 +211,7 @@ def api_get_messages(user_id):
         return jsonify({
             'messages': [], 'accepted': False, 'is_request': False,
             'is_blocked': _is_blocked(current_user.id, other.id),
+            'blocked_by_them': _is_blocked(other.id, current_user.id),
         })
  
     since = request.args.get('since')
@@ -228,6 +229,7 @@ def api_get_messages(user_id):
         'is_request': conv.is_request_for(current_user),
         'is_blocked': _is_blocked(current_user.id, other.id),
         'messages': [{
+            'blocked_by_them': _is_blocked(other.id, current_user.id),
             'id': m.id,
             'body': m.body,
             'sender_id': m.sender_id,
@@ -362,6 +364,46 @@ def api_mark_read(user_id):
         m.read_at = now
     db.session.commit()
     return jsonify({'ok': True, 'marked': len(rows)})
+ 
+ 
+@bp.route('/api/messages/<int:message_id>', methods=['DELETE'])
+@login_required
+def api_delete_message(message_id):
+    """Sender-only — wipes the chat message and its media (DB rows + files)."""
+    msg = db.get_or_404(ChatMessage, message_id)
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': "You can't delete someone else's message."}), 403
+ 
+    for m in msg.media:
+        disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+        try:
+            os.remove(disk_path)
+        except OSError:
+            pass
+ 
+    db.session.delete(msg)
+    db.session.commit()
+    return jsonify({'ok': True})
+ 
+ 
+@bp.route('/api/messages/<int:message_id>', methods=['PATCH'])
+@login_required
+def api_edit_message(message_id):
+    """Sender-only — update the body of a chat message."""
+    msg = db.get_or_404(ChatMessage, message_id)
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': "You can't edit someone else's message."}), 403
+ 
+    payload = request.get_json(silent=True) or {}
+    body = (payload.get('body') or '').strip()
+    if not body and not msg.media:
+        return jsonify({'error': 'Message cannot be empty.'}), 400
+    if len(body) > CHAT_MESSAGE_MAX_LENGTH:
+        return jsonify({'error': f'Message too long (max {CHAT_MESSAGE_MAX_LENGTH} characters).'}), 400
+ 
+    msg.body = body
+    db.session.commit()
+    return jsonify({'ok': True, 'body': msg.body})
  
  
 # Comments — body stored as plain text and rendered with Jinja's default auto-
@@ -508,5 +550,6 @@ def api_vote_comment(comment_id):
         'dispute_count': CommentVote.query.filter_by(comment_id=comment.id, status='dispute').count(),
         'user_vote': user_vote,
     })
+ 
  
  

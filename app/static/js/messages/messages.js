@@ -1,7 +1,7 @@
 (function () {
     const ROOT = document.getElementById('messages-page');
     const CURRENT_USER_ID = parseInt(ROOT.dataset.currentUserId, 10);
-
+ 
     // -- inbox elements --
     const chatsList = document.getElementById('chats-list');
     const requestsList = document.getElementById('requests-list');
@@ -12,7 +12,7 @@
     const tabButtons = document.querySelectorAll('.messages-tab');
     const panes = document.querySelectorAll('.messages-list-wrap');
     const sidebarBadge = document.querySelector('.sidebar-unread-badge');
-
+ 
     // -- thread elements --
     const threadEmpty = document.getElementById('thread-empty');
     const threadActive = document.getElementById('thread-active');
@@ -29,12 +29,13 @@
     const blockBtn = document.getElementById('thread-block-btn');
     const blockLabel = document.getElementById('thread-block-label');
     const blockedBanner = document.getElementById('thread-blocked-banner');
-
+    const blockedByThemBanner = document.getElementById('thread-blocked-by-them-banner');
+ 
     let activeUserId = null;        // which conversation is open
     let lastMessageAt = null;       // ISO timestamp of latest message we've rendered (for polling)
     let inboxPollTimer = null;
     let threadPollTimer = null;
-
+ 
     // ---- helpers ----
     function updateSidebarBadge(total) {
         if (!sidebarBadge) return;
@@ -46,7 +47,7 @@
             sidebarBadge.textContent = total >= 10 ? '9+' : String(total);
         }
     }
-
+ 
     function formatTime(iso) {
         if (!iso) return '';
         const d = new Date(iso);
@@ -58,7 +59,7 @@
         }
         return d.toLocaleDateString([], {day: '2-digit', month: 'short'});
     }
-
+ 
     // ---- inbox rendering ----
     function buildConversationItem(c) {
         const li = document.createElement('li');
@@ -66,7 +67,7 @@
         li.dataset.userId = c.user_id;
         if (c.user_id === activeUserId) li.classList.add('is-active');
         if (c.unread > 0) li.classList.add('has-unread');
-
+ 
         const avatar = document.createElement('div');
         avatar.className = 'messages-item-avatar';
         if (c.avatar_url) {
@@ -77,10 +78,10 @@
         } else {
             avatar.textContent = c.avatar_initial;
         }
-
+ 
         const body = document.createElement('div');
         body.className = 'messages-item-body';
-
+ 
         const top = document.createElement('div');
         top.className = 'messages-item-top';
         const name = document.createElement('span');
@@ -91,7 +92,7 @@
         time.textContent = formatTime(c.last_at);
         top.appendChild(name);
         top.appendChild(time);
-
+ 
         const previewRow = document.createElement('div');
         previewRow.className = 'messages-item-preview-row';
         const preview = document.createElement('span');
@@ -99,50 +100,51 @@
         const prefix = c.last_sender_is_me ? 'You: ' : '';
         preview.textContent = prefix + (c.last_body || '(no messages yet)');
         previewRow.appendChild(preview);
-
+ 
         if (c.unread > 0) {
             const unreadBadge = document.createElement('span');
             unreadBadge.className = 'messages-item-unread';
             unreadBadge.textContent = c.unread >= 10 ? '9+' : String(c.unread);
             previewRow.appendChild(unreadBadge);
         }
-
+ 
         body.appendChild(top);
         body.appendChild(previewRow);
-
+ 
         li.appendChild(avatar);
         li.appendChild(body);
-
+ 
         li.addEventListener('click', () => openConversation(c));
         return li;
     }
-
+ 
     async function refreshInbox() {
         try {
             const res = await csrfFetch('/api/conversations');
             if (!res.ok) return;
             const data = await res.json();
-
+ 
             chatsList.innerHTML = '';
             requestsList.innerHTML = '';
             data.chats.forEach(c => chatsList.appendChild(buildConversationItem(c)));
             data.requests.forEach(c => requestsList.appendChild(buildConversationItem(c)));
-
+ 
             chatsEmpty.hidden = data.chats.length > 0;
             requestsEmpty.hidden = data.requests.length > 0;
-
+ 
             chatsCount.textContent = data.chats.length;
             requestsCount.textContent = data.requests.length;
-
+ 
             updateSidebarBadge(data.unread_total);
         } catch (err) { /* silent */ }
     }
-
+ 
     // ---- thread rendering ----
     function buildBubble(m) {
         const li = document.createElement('li');
         li.className = 'messages-bubble ' + (m.sender_is_me ? 'is-mine' : 'is-theirs');
-
+        li.dataset.messageId = m.id;
+ 
         // body text — only render if present (media-only messages have empty body)
         if (m.body) {
             const text = document.createElement('p');
@@ -150,7 +152,7 @@
             text.textContent = m.body;  // textContent, not innerHTML — XSS-safe
             li.appendChild(text);
         }
-
+ 
         // attached images / videos in a small grid below the body
         if (m.media && m.media.length) {
             const mediaWrap = document.createElement('div');
@@ -168,21 +170,127 @@
             }
             li.appendChild(mediaWrap);
         }
-
+ 
         const time = document.createElement('span');
         time.className = 'messages-bubble-time';
         time.textContent = formatTime(m.created_at);
         li.appendChild(time);
+ 
+        if (m.sender_is_me) {
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'messages-bubble-delete';
+            del.title = 'Delete message';
+            del.setAttribute('aria-label', 'Delete message');
+            del.textContent = '×';
+            li.appendChild(del);
+ 
+            const edit = document.createElement('button');
+            edit.type = 'button';
+            edit.className = 'messages-bubble-edit';
+            edit.title = 'Edit message';
+            edit.setAttribute('aria-label', 'Edit message');
+            edit.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+            li.appendChild(edit);
+        }
         return li;
     }
-
+ 
+    const deleteModalEl = document.getElementById('delete-message-modal');
+    const deleteConfirmBtn = document.getElementById('delete-message-confirm-btn');
+    let pendingDeleteBubble = null;
+ 
+    threadBubbles.addEventListener('click', (event) => {
+        const btn = event.target.closest('.messages-bubble-delete');
+        if (!btn) return;
+        const bubble = btn.closest('.messages-bubble');
+        if (!bubble || !bubble.dataset.messageId) return;
+        pendingDeleteBubble = bubble;
+        if (deleteModalEl) {
+            bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+        }
+    });
+ 
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', async () => {
+            if (!pendingDeleteBubble) return;
+            const bubble = pendingDeleteBubble;
+            const messageId = bubble.dataset.messageId;
+            deleteConfirmBtn.disabled = true;
+            try {
+                const res = await csrfFetch(`/api/messages/${messageId}`, {method: 'DELETE'});
+                if (res.ok) {
+                    bubble.remove();
+                    refreshInbox();
+                }
+            } catch (err) { /* silent */ }
+            finally {
+                deleteConfirmBtn.disabled = false;
+                pendingDeleteBubble = null;
+                bootstrap.Modal.getInstance(deleteModalEl)?.hide();
+            }
+        });
+    }
+ 
+    const editModalEl = document.getElementById('edit-message-modal');
+    const editSaveBtn = document.getElementById('edit-message-save-btn');
+    const editInput = document.getElementById('edit-message-input');
+    let pendingEditBubble = null;
+ 
+    threadBubbles.addEventListener('click', (event) => {
+        const btn = event.target.closest('.messages-bubble-edit');
+        if (!btn) return;
+        const bubble = btn.closest('.messages-bubble');
+        if (!bubble || !bubble.dataset.messageId) return;
+        pendingEditBubble = bubble;
+        const textEl = bubble.querySelector('.messages-bubble-text');
+        if (editInput) editInput.value = textEl ? textEl.textContent : '';
+        if (editModalEl) {
+            bootstrap.Modal.getOrCreateInstance(editModalEl).show();
+            setTimeout(() => editInput && editInput.focus(), 150);
+        }
+    });
+ 
+    if (editSaveBtn) {
+        editSaveBtn.addEventListener('click', async () => {
+            if (!pendingEditBubble) return;
+            const bubble = pendingEditBubble;
+            const messageId = bubble.dataset.messageId;
+            const newBody = (editInput.value || '').trim();
+            editSaveBtn.disabled = true;
+            try {
+                const res = await csrfFetch(`/api/messages/${messageId}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({body: newBody}),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    let textEl = bubble.querySelector('.messages-bubble-text');
+                    if (!textEl && data.body) {
+                        textEl = document.createElement('p');
+                        textEl.className = 'messages-bubble-text';
+                        bubble.insertBefore(textEl, bubble.firstChild);
+                    }
+                    if (textEl) textEl.textContent = data.body;
+                    refreshInbox();
+                }
+            } catch (err) { /* silent */ }
+            finally {
+                editSaveBtn.disabled = false;
+                pendingEditBubble = null;
+                bootstrap.Modal.getInstance(editModalEl)?.hide();
+            }
+        });
+    }
+ 
     async function openConversation(c) {
         activeUserId = c.user_id;
         lastMessageAt = null;
         threadEmpty.hidden = true;
         threadActive.hidden = false;
         threadBubbles.innerHTML = '';
-
+ 
         threadAvatar.replaceChildren();
         threadAvatar.href = c.profile_url;
         if (c.avatar_url) {
@@ -196,40 +304,42 @@
         threadName.textContent = c.username;
         threadName.href = c.profile_url;
         threadStatus.textContent = c.is_request ? 'Message request' : '';
-
+ 
         // visually mark this row active in the inbox
         document.querySelectorAll('.messages-item').forEach(el => el.classList.remove('is-active'));
         const activeEl = document.querySelector(`.messages-item[data-user-id="${c.user_id}"]`);
         if (activeEl) activeEl.classList.add('is-active');
-
+ 
         await loadMessages(activeUserId);
         await markRead(activeUserId);
         startThreadPolling();
     }
-
-    function applyBlockState(isBlocked) {
-        // updates the block button + composer visibility based on whether
-        // the current user has blocked the OTHER user in this thread
+ 
+    function applyBlockState(isBlocked, blockedByThem) {
+        // updates the block button + banner + composer visibility based on
+        // (a) whether the current user has blocked the OTHER user, and
+        // (b) whether the OTHER user has blocked the current user
         if (blockBtn) {
             blockBtn.dataset.blocked = isBlocked ? 'true' : 'false';
             blockBtn.classList.toggle('is-blocked', isBlocked);
         }
         if (blockLabel) blockLabel.textContent = isBlocked ? 'Unblock' : 'Block';
         if (blockedBanner) blockedBanner.hidden = !isBlocked;
-        if (threadComposer) threadComposer.hidden = isBlocked;
+        if (blockedByThemBanner) blockedByThemBanner.hidden = !blockedByThem;
+        if (threadComposer) threadComposer.hidden = isBlocked || blockedByThem;
     }
-
+ 
     async function loadMessages(userId) {
         try {
             const res = await csrfFetch(`/api/conversations/${userId}/messages`);
             if (!res.ok) return;
             const data = await res.json();
-
+ 
             threadBubbles.innerHTML = '';
             data.messages.forEach(m => threadBubbles.appendChild(buildBubble(m)));
             if (data.messages.length) lastMessageAt = data.messages[data.messages.length - 1].created_at;
             threadBubbles.scrollTop = threadBubbles.scrollHeight;
-
+ 
             // request banner — only when THIS user is the recipient of a still-pending convo
             if (data.is_request) {
                 requestBanner.hidden = false;
@@ -237,12 +347,12 @@
             } else {
                 requestBanner.hidden = true;
             }
-
+ 
             // sync block button + composer visibility with server state
-            applyBlockState(!!data.is_blocked);
+            applyBlockState(!!data.is_blocked, !!data.blocked_by_them);
         } catch (err) { /* silent */ }
     }
-
+ 
     async function pollNewMessages() {
         if (!activeUserId) return;
         try {
@@ -262,54 +372,54 @@
             }
         } catch (err) { /* silent */ }
     }
-
+ 
     async function markRead(userId) {
         try {
             await csrfFetch(`/api/conversations/${userId}/read`, {method: 'POST'});
         } catch (err) { /* silent */ }
     }
-
+ 
     function startThreadPolling() {
         if (threadPollTimer) clearInterval(threadPollTimer);
         threadPollTimer = setInterval(pollNewMessages, 3000);
     }
-
+ 
     // ---- composer ----
     const threadMediaInput = document.getElementById('thread-media');
     const attachStatus = document.getElementById('thread-attach-status');
     const threadMediaPreview = document.getElementById('thread-media-preview');
-
+ 
     // allowed extensions / size mirror the server-side limits in the api blueprint
     const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
     const MAX_FILE_SIZE = 200 * 1024 * 1024;
     const MAX_FILES = 5;
-
+ 
     let attachedThreadFiles = [];
-
+ 
     function showAttachStatus(text, isError) {
         attachStatus.hidden = false;
         attachStatus.textContent = text;
         attachStatus.classList.toggle('is-error', !!isError);
     }
-
+ 
     function clearAttachStatus() {
         attachStatus.hidden = true;
         attachStatus.textContent = '';
         attachStatus.classList.remove('is-error');
     }
-
+ 
     function syncThreadMediaInput() {
         const dt = new DataTransfer();
         attachedThreadFiles.forEach(f => dt.items.add(f));
         threadMediaInput.files = dt.files;
     }
-
+ 
     function setAttachCountStatus() {
         if (attachedThreadFiles.length === 0) clearAttachStatus();
         else if (attachedThreadFiles.length === 1) showAttachStatus('1 file attached', false);
         else showAttachStatus(attachedThreadFiles.length + ' files attached', false);
     }
-
+ 
     function renderThreadMediaPreview() {
         if (!threadMediaPreview) return;
         threadMediaPreview.innerHTML = '';
@@ -332,18 +442,18 @@
             threadMediaPreview.appendChild(thumb);
         });
     }
-
+ 
     function removeThreadMediaAt(index) {
         attachedThreadFiles.splice(index, 1);
         syncThreadMediaInput();
         setAttachCountStatus();
         renderThreadMediaPreview();
     }
-
+ 
     threadMediaInput.addEventListener('change', () => {
         const picked = threadMediaInput.files ? Array.from(threadMediaInput.files) : [];
         if (picked.length === 0) return;
-
+ 
         for (const nf of picked) {
             const dup = attachedThreadFiles.some(f => f.name === nf.name && f.size === nf.size);
             if (dup) continue;
@@ -372,14 +482,14 @@
         setAttachCountStatus();
         renderThreadMediaPreview();
     });
-
+ 
     threadComposer.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = threadInput.value.trim();
         const files = threadMediaInput.files;
         if (!activeUserId) return;
         if (!body && (!files || files.length === 0)) return;
-
+ 
         threadSendBtn.disabled = true;
         try {
             // FormData → multipart so the server can handle text + files in one POST
@@ -412,13 +522,13 @@
             threadInput.focus();
         }
     });
-
+ 
     // auto-grow textarea up to a sensible cap
     threadInput.addEventListener('input', () => {
         threadInput.style.height = 'auto';
         threadInput.style.height = Math.min(threadInput.scrollHeight, 140) + 'px';
     });
-
+ 
     // Enter sends; Shift+Enter inserts a newline
     threadInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
@@ -426,7 +536,7 @@
             threadComposer.requestSubmit();
         }
     });
-
+ 
     // ---- accept-request ----
     acceptBtn.addEventListener('click', async () => {
         if (!activeUserId) return;
@@ -442,17 +552,17 @@
             acceptBtn.disabled = false;
         }
     });
-
+ 
     // ---- blocked-users list modal — fetches /api/blocked-users on open ----
     const openBlockedListBtn = document.getElementById('open-blocked-modal-btn');
     const blockedListModalEl = document.getElementById('blocked-list-modal');
     const blockedListEl = document.getElementById('blocked-list');
     const blockedListEmpty = document.getElementById('blocked-list-empty');
-
+ 
     // pending state shared with the confirm modal — set when the user clicks
     // Unblock on a row in the blocked-users list, consumed when they confirm
     let pendingListUnblock = null;   // { userId, username, li } | null
-
+ 
     async function refreshBlockedList() {
         try {
             const res = await csrfFetch('/api/blocked-users');
@@ -468,17 +578,17 @@
                 const li = document.createElement('li');
                 li.className = 'blocked-list-item';
                 li.dataset.userId = u.user_id;
-
+ 
                 const avatar = document.createElement('a');
                 avatar.className = 'blocked-list-avatar';
                 avatar.href = u.profile_url;
                 avatar.textContent = u.avatar_initial;
-
+ 
                 const name = document.createElement('a');
                 name.className = 'blocked-list-name';
                 name.href = u.profile_url;
                 name.textContent = u.username;
-
+ 
                 const unblockBtn = document.createElement('button');
                 unblockBtn.type = 'button';
                 unblockBtn.className = 'blocked-list-unblock';
@@ -498,7 +608,7 @@
                     bootstrap.Modal.getInstance(blockedListModalEl)?.hide();
                     bootstrap.Modal.getOrCreateInstance(blockModalEl).show();
                 });
-
+ 
                 li.appendChild(avatar);
                 li.appendChild(name);
                 li.appendChild(unblockBtn);
@@ -506,20 +616,20 @@
             }
         } catch (err) { /* silent */ }
     }
-
+ 
     if (openBlockedListBtn && blockedListModalEl) {
         openBlockedListBtn.addEventListener('click', () => {
             refreshBlockedList();
             bootstrap.Modal.getOrCreateInstance(blockedListModalEl).show();
         });
     }
-
+ 
     // ---- block / unblock — opens the confirm modal first, fetch happens on confirm ----
     const blockModalEl = document.getElementById('block-confirm-modal');
     const blockConfirmBtn = document.getElementById('block-confirm-btn');
     const blockConfirmTitle = document.getElementById('block-confirm-title');
     const blockConfirmBody = document.getElementById('block-confirm-body');
-
+ 
     // If the user opened the confirm modal from the blocked-list (pending
     // unblock set) and then dismisses without confirming, take them back to
     // the list rather than dumping them on the empty inbox.
@@ -531,13 +641,13 @@
             }
         });
     }
-
+ 
     if (blockBtn && blockModalEl && blockConfirmBtn) {
         blockBtn.addEventListener('click', () => {
             if (!activeUserId) return;
             const blocked = blockBtn.dataset.blocked === 'true';
             const name = threadName.textContent || 'this user';
-
+ 
             // swap modal text + confirm-button color based on what we're about to do
             // confirm button stays the standard red destructive style for both
             // actions — matches the look of delete-report / delete-comment etc.
@@ -558,7 +668,7 @@
             }
             bootstrap.Modal.getOrCreateInstance(blockModalEl).show();
         });
-
+ 
         blockConfirmBtn.addEventListener('click', async () => {
             blockConfirmBtn.disabled = true;
             try {
@@ -570,7 +680,10 @@
                         target.li.remove();
                         if (blockedListEl.children.length === 0) blockedListEmpty.hidden = false;
                         // if this user's thread is currently open, sync its state too
-                        if (parseInt(activeUserId, 10) === target.userId) applyBlockState(false);
+                        if (parseInt(activeUserId, 10) === target.userId) {
+                            const blockedByThem = blockedByThemBanner ? !blockedByThemBanner.hidden : false;
+                            applyBlockState(false, blockedByThem);
+                        }
                         refreshInbox();
                     }
                     pendingListUnblock = null;
@@ -579,7 +692,7 @@
                     bootstrap.Modal.getOrCreateInstance(blockedListModalEl).show();
                     return;
                 }
-
+ 
                 // Case 2: user is blocking/unblocking from inside the open thread
                 if (!activeUserId) return;
                 const blocked = blockBtn.dataset.blocked === 'true';
@@ -588,7 +701,8 @@
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    applyBlockState(!!data.is_blocked);
+                    const blockedByThem = blockedByThemBanner ? !blockedByThemBanner.hidden : false;
+                    applyBlockState(!!data.is_blocked, blockedByThem);
                     refreshInbox();   // blocking hides the conversation from inbox
                 }
                 bootstrap.Modal.getInstance(blockModalEl)?.hide();
@@ -597,7 +711,7 @@
             }
         });
     }
-
+ 
     // ---- tab switching ----
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -609,7 +723,7 @@
             panes.forEach(p => p.hidden = p.dataset.pane !== target);
         });
     });
-
+ 
     // ---- user search (Instagram-style: type to find someone to chat with) ----
     const searchInput = document.getElementById('messages-search-input');
     const searchClear = document.getElementById('messages-search-clear');
@@ -620,7 +734,7 @@
     const chatsPane = document.querySelector('.messages-list-wrap[data-pane="chats"]');
     const requestsPane = document.querySelector('.messages-list-wrap[data-pane="requests"]');
     let searchTimer;
-
+ 
     function buildSearchResult(u) {
         // shape compatible with openConversation() so clicking just works
         const conv = {
@@ -637,7 +751,7 @@
         };
         const li = document.createElement('li');
         li.className = 'messages-item';
-
+ 
         const avatar = document.createElement('div');
         avatar.className = 'messages-item-avatar';
         if (u.avatar_url) {
@@ -648,7 +762,7 @@
         } else {
             avatar.textContent = u.avatar_initial;
         }
-
+ 
         const body = document.createElement('div');
         body.className = 'messages-item-body';
         const name = document.createElement('span');
@@ -659,7 +773,7 @@
         sub.textContent = '@' + u.username.toLowerCase() + ' · click to message';
         body.appendChild(name);
         body.appendChild(sub);
-
+ 
         li.appendChild(avatar);
         li.appendChild(body);
         li.addEventListener('click', () => {
@@ -672,7 +786,7 @@
         });
         return li;
     }
-
+ 
     function enterSearchMode() {
         if (tabsRow) tabsRow.hidden = true;
         if (chatsPane) chatsPane.hidden = true;
@@ -680,7 +794,7 @@
         if (searchPane) searchPane.hidden = false;
         if (searchClear) searchClear.hidden = false;
     }
-
+ 
     function exitSearchMode() {
         if (tabsRow) tabsRow.hidden = false;
         // restore whichever tab was active when the user started searching
@@ -693,7 +807,7 @@
         searchList.innerHTML = '';
         if (searchEmpty) searchEmpty.hidden = true;
     }
-
+ 
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimer);
@@ -719,7 +833,7 @@
             }, 200);
         });
     }
-
+ 
     if (searchClear) {
         searchClear.addEventListener('click', () => {
             searchInput.value = '';
@@ -727,11 +841,11 @@
             searchInput.focus();
         });
     }
-
+ 
     // ---- boot + inbox polling ----
     refreshInbox().then(maybeOpenFromQuery);
     inboxPollTimer = setInterval(refreshInbox, 5000);
-
+ 
     // /messages?user=<id> → auto-open that conversation. If the user already
     // exists in the inbox, reuse that data; otherwise fetch a brief user
     // record so we can render the empty thread + composer.
@@ -739,10 +853,10 @@
         const params = new URLSearchParams(window.location.search);
         const target = parseInt(params.get('user'), 10);
         if (!target || target === CURRENT_USER_ID) return;
-
+ 
         const existing = document.querySelector(`.messages-item[data-user-id="${target}"]`);
         if (existing) { existing.click(); return; }
-
+ 
         // not in the inbox yet — fetch their public profile snippet to build the header
         try {
             const res = await csrfFetch(`/api/users/${target}`);
@@ -761,10 +875,13 @@
             });
         } catch (err) { /* silent */ }
     }
-
+ 
     // clean up timers when the user leaves the page
     window.addEventListener('beforeunload', () => {
         if (inboxPollTimer) clearInterval(inboxPollTimer);
         if (threadPollTimer) clearInterval(threadPollTimer);
     });
 })();
+ 
+ 
+ 
