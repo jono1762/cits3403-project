@@ -6,12 +6,16 @@ A Flask web app for community-based local condition reporting, letting users sha
 ## Screenshots
 Screenshots of the main application pages are shown below.
 
+Homepage:
 ![Homepage showing the app introduction and entry points](docs/screenshots/homepage.png)
 
+View Reports:
 ![View reports page showing filters and report cards](docs/screenshots/view-reports.png)
 
+Create Report:
 ![Create report page showing the report submission form](docs/screenshots/create-report.png)
 
+Live Weather:
 ![Live weather page showing current conditions and forecast information](docs/screenshots/live-weather.png)
 
 ## Features
@@ -44,11 +48,21 @@ Screenshots of the main application pages are shown below.
 ## Setup
 These instructions assume Python is installed and that commands are run from the project root.
 
+**Step 0: Clone the repository**
+
+```powershell
+git clone <repository-url>
+cd cits3403-project
+```
+
 **Step 1: Create and activate a virtual environment**
 
 ```powershell
 python -m venv venv
-.\venv\Scripts\activate
+.\venv\Scripts\activate  # Windows (PowerShell)
+# macOS / Linux (bash, zsh)
+# source the activation script instead:
+source venv/bin/activate
 ```
 
 **Step 2: Install dependencies**
