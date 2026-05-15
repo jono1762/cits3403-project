@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-
+ 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/users/profile.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reports/report_view.css') }}">
 {% endblock %}
-
+ 
 {% block content %}
 <section class="report-view-page">
     <a href="{{ url_for('reports.listing_page') }}" class="report-view-back">← Back to all reports</a>
-
+ 
     <article class="report-view-card" style="--cat: {{ report.category.marker_color }};">
         <header class="report-view-header">
             <span class="report-view-badge">
@@ -33,13 +33,13 @@
                 {% endif %}
             </div>
         </header>
-
+ 
         <h1 class="page-title report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
-
+ 
         {% if report.address %}
             <p class="report-view-address">{{ report.address }}</p>
         {% endif %}
-
+ 
         <p class="report-view-author">
             Posted by
             {% if report.author %}
@@ -53,11 +53,11 @@
                       data-expires-at="{{ report.expires_at.isoformat() }}Z">⏰ …</span>
             {% endif %}
         </p>
-
+ 
         {% if report.description %}
             <p class="report-view-desc">{{ report.description }}</p>
         {% endif %}
-
+ 
         {# media carousel — same pattern as profile/listing #}
         {% if report.media %}
             <div id="carousel-{{ report.id }}" class="carousel slide mt-3" data-bs-ride="false">
@@ -72,7 +72,7 @@
                         {% endfor %}
                     </div>
                 {% endif %}
-
+ 
                 <div class="carousel-inner rounded border media-frame media-frame-lg">
                     {% for m in report.media %}
                         <div class="carousel-item {{ 'active' if loop.first else '' }}">
@@ -88,7 +88,7 @@
                         </div>
                     {% endfor %}
                 </div>
-
+ 
                 {% if report.media | length > 1 %}
                     <button class="carousel-control-prev" type="button"
                             data-bs-target="#carousel-{{ report.id }}" data-bs-slide="prev">
@@ -103,7 +103,7 @@
                 {% endif %}
             </div>
         {% endif %}
-
+ 
         {# verify / dispute section — own reports show a "Your report" tag instead.
            Buttons disabled for guests with a tooltip prompt to log in. #}
         {% set my_vote = report.vote_by(current_user) %}
@@ -161,7 +161,7 @@
                 </div>
             {% endif %}
         </div>
-
+ 
         {# ============================================================
            Comments thread — body text rendered via {{ … }} which is
            Jinja's default auto-escaped output, so any HTML/JS the user
@@ -171,7 +171,7 @@
             <h2 class="report-view-comments-title">
                 Comments <span class="report-view-comments-count" id="comment-count">{{ report.comment_count }}</span>
             </h2>
-
+ 
             <ul class="comment-list" id="comment-list">
                 {% for c in report.comments %}
                     {% set my_cv = c.vote_by(current_user) %}
@@ -200,7 +200,7 @@
                             {% if c.body %}
                                 <p class="comment-text">{{ c.body }}</p>
                             {% endif %}
-
+ 
                             {% if c.media %}
                                 <div class="comment-media-list">
                                     {% for m in c.media %}
@@ -215,30 +215,33 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-
-                            {# vote bar — own comments don't get vote buttons (you can't vote yourself) #}
-                            {% if not is_own_c %}
-                                {% set cv_disabled = not current_user.is_authenticated %}
-                                {% set cv_tip = 'Please log in to verify or dispute' if cv_disabled else '' %}
-                                <div class="comment-vote-bar" data-comment-id="{{ c.id }}">
-                                    <span title="{{ cv_tip }}">
-                                        <button type="button"
-                                                class="comment-vote-btn comment-vote-verify {{ 'is-active' if my_cv == 'verify' else '' }}"
-                                                data-status="verify"
-                                                {% if cv_disabled %}disabled{% endif %}>
-                                            ✓ <span class="comment-vote-count">{{ c.verify_count }}</span>
-                                        </button>
-                                    </span>
-                                    <span title="{{ cv_tip }}">
-                                        <button type="button"
-                                                class="comment-vote-btn comment-vote-dispute {{ 'is-active' if my_cv == 'dispute' else '' }}"
-                                                data-status="dispute"
-                                                {% if cv_disabled %}disabled{% endif %}>
-                                            ✗ <span class="comment-vote-count">{{ c.dispute_count }}</span>
-                                        </button>
-                                    </span>
-                                </div>
+ 
+                            {% set cv_disabled = (not current_user.is_authenticated) or is_own_c %}
+                            {% if is_own_c %}
+                                {% set cv_tip = "You can't vote on your own comment" %}
+                            {% elif not current_user.is_authenticated %}
+                                {% set cv_tip = 'Please log in to verify or dispute' %}
+                            {% else %}
+                                {% set cv_tip = '' %}
                             {% endif %}
+                            <div class="comment-vote-bar" data-comment-id="{{ c.id }}">
+                                <span title="{{ cv_tip }}">
+                                    <button type="button"
+                                            class="comment-vote-btn comment-vote-verify {{ 'is-active' if my_cv == 'verify' else '' }}"
+                                            data-status="verify"
+                                            {% if cv_disabled %}disabled{% endif %}>
+                                        ✓ <span class="comment-vote-count">{{ c.verify_count }}</span>
+                                    </button>
+                                </span>
+                                <span title="{{ cv_tip }}">
+                                    <button type="button"
+                                            class="comment-vote-btn comment-vote-dispute {{ 'is-active' if my_cv == 'dispute' else '' }}"
+                                            data-status="dispute"
+                                            {% if cv_disabled %}disabled{% endif %}>
+                                        ✗ <span class="comment-vote-count">{{ c.dispute_count }}</span>
+                                    </button>
+                                </span>
+                            </div>
                         </div>
                         {% if is_own_c %}
                             <button type="button" class="comment-delete-btn" data-comment-id="{{ c.id }}" aria-label="Delete your comment">×</button>
@@ -246,11 +249,11 @@
                     </li>
                 {% endfor %}
             </ul>
-
+ 
             {% if not report.comments %}
                 <p class="comment-empty" id="comment-empty">No comments yet — be the first to weigh in.</p>
             {% endif %}
-
+ 
             {% if current_user.is_authenticated %}
                 <form id="comment-form" class="comment-form" enctype="multipart/form-data" novalidate>
                     <label for="comment-body" class="comment-form-label">Add a comment</label>
@@ -285,10 +288,10 @@
                 </p>
             {% endif %}
         </section>
-
+ 
     </article>
 </section>
-
+ 
 {# Delete-confirmation modal — only rendered for the author. Uses Bootstrap's
    modal so we don't have to ship our own focus-trap / overlay logic. #}
 {% if current_user.is_authenticated and report.user_id == current_user.id %}
@@ -313,7 +316,7 @@
     </div>
 </div>
 {% endif %}
-
+ 
 {# Delete-comment confirmation modal — same Bootstrap pattern as the report
    delete modal so the two destructive actions feel consistent. Only rendered
    when there's at least one comment the current user can delete (cheap to
@@ -340,5 +343,7 @@
 </div>
 {% endif %}
 {% endblock %}
-
+ 
 {% block scripts %}<script src="{{ url_for('static', filename='js/reports/report_view.js') }}"></script>{% endblock %}
+ 
+ 
