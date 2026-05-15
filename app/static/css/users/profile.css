@@ -717,6 +717,11 @@
     font-weight: 600;
 }
 
+.profile-post-stat-disputed {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
 /* clickable comment count — escapes the card's stretched link with z-index,
    styled like a small pill on hover so it visibly invites a click */
 .profile-post-stat-link {
@@ -939,28 +944,49 @@
     font-size: 0.78rem;
 }
 
-/* Save-report star on profile post cards. Same look as the listing page. */
+/* Save-report star on profile post cards. Inline with the vote-bar /
+   own-report-actions cluster (which use position: relative), so it sits
+   beside them rather than absolutely floating over them. */
 .profile-post-card .listing-fav-btn {
-    position: absolute;
-    bottom: 0.75rem;
-    right: 1rem;
+    position: relative;
     z-index: 2;
-    border: 0;
-    background: transparent;
-    padding: 0 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.15rem;
+    height: 2.15rem;
+    padding: 0;
+    margin-left: 0.4rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
     color: #f59e0b;
     line-height: 1;
     cursor: pointer;
-    transition: transform 0.15s ease, color 0.18s ease;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease,
+                box-shadow 0.18s ease;
 }
 
 .profile-post-card .listing-fav-btn:hover,
 .profile-post-card .listing-fav-btn:focus {
-    transform: scale(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    border-color: #fde68a;
     color: #d97706;
     outline: none;
 }
 
+.profile-post-card .listing-fav-btn.is-saved {
+    background: #fff7ed;
+    border-color: #fde68a;
+}
+
 .profile-post-card .listing-fav-btn.is-saved svg {
     fill: currentColor;
+}
+
+.profile-post-card .listing-fav-btn svg {
+    width: 1.15rem;
+    height: 1.15rem;
 }

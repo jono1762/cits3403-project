@@ -193,6 +193,17 @@ def favourite_reports_page():
             'created_at': report.created_at.strftime('%d %b %Y · %H:%M') if report.created_at else '—',
             'description': report.description or '',
             'token': _encode_report_id(report.id),
+            'verify_count': report.verify_count,
+            'dispute_count': report.dispute_count,
+            'comment_count': len(report.comments),
+            'media': [
+                {
+                    'type': m.media_type,
+                    'url': url_for('static', filename='uploads/' + m.filename),
+                    'name': m.original_name,
+                }
+                for m in report.media
+            ],
         })
 
     return render_template('favourites/favourite_reports.html', fav_reports=fav_reports)
