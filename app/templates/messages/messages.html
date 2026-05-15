@@ -97,6 +97,11 @@
                 You've blocked this user. They can't message you, and you can't message them. Click <strong>Unblock</strong> above to lift it.
             </div>
 
+            {# Banner when the OTHER user has blocked the current user. Composer hides. #}
+            <div class="messages-blocked-banner" id="thread-blocked-by-them-banner" hidden>
+                This user has blocked you. You can't message them.
+            </div>
+
             {# request banner — only shown when this conversation is a pending request #}
             <div class="messages-request-banner" id="thread-request-banner" hidden>
                 <p class="messages-request-text">

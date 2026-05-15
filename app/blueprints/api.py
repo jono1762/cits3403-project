@@ -211,6 +211,7 @@ def api_get_messages(user_id):
         return jsonify({
             'messages': [], 'accepted': False, 'is_request': False,
             'is_blocked': _is_blocked(current_user.id, other.id),
+            'blocked_by_them': _is_blocked(other.id, current_user.id),
         })
  
     since = request.args.get('since')
@@ -228,6 +229,7 @@ def api_get_messages(user_id):
         'is_request': conv.is_request_for(current_user),
         'is_blocked': _is_blocked(current_user.id, other.id),
         'messages': [{
+            'blocked_by_them': _is_blocked(other.id, current_user.id),
             'id': m.id,
             'body': m.body,
             'sender_id': m.sender_id,
