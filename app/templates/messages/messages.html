@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-
+ 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/messages/messages.css') }}">
 {% endblock %}
-
+ 
 {% block content %}
 <section class="messages-page" id="messages-page" data-current-user-id="{{ current_user.id }}">
     {# ============== Left column — conversation list with two tabs ============== #}
@@ -22,7 +22,7 @@
                     </svg>
                 </button>
             </div>
-
+ 
             {# user search — type to find someone to message even if you've never
                talked to them before. Replaces the tab pane while a query is active. #}
             <div class="messages-search-wrap">
@@ -38,7 +38,7 @@
                         id="messages-search-clear" hidden aria-label="Clear search">×</button>
             </div>
         </header>
-
+ 
         <div class="messages-tabs" role="tablist">
             <button type="button" class="messages-tab is-active" data-tab="chats" id="chats-tab" role="tab" aria-selected="true" aria-controls="chats-panel">
                 Chats <span class="messages-tab-count" id="chats-count">0</span>
@@ -47,25 +47,25 @@
                 Requests <span class="messages-tab-count messages-tab-count-warn" id="requests-count">0</span>
             </button>
         </div>
-
+ 
         {# tab panes — only one visible at a time #}
         <div class="messages-list-wrap" data-pane="chats" id="chats-panel" role="tabpanel" aria-labelledby="chats-tab">
             <ul class="messages-list" id="chats-list"></ul>
             <p class="messages-empty" id="chats-empty" hidden>No chats yet — start one from someone's profile.</p>
         </div>
-
+ 
         <div class="messages-list-wrap" data-pane="requests" id="requests-panel" role="tabpanel" aria-labelledby="requests-tab" hidden>
             <ul class="messages-list" id="requests-list"></ul>
             <p class="messages-empty" id="requests-empty" hidden>No message requests.</p>
         </div>
-
+ 
         {# search-results pane — only visible while the search input has text #}
         <div class="messages-list-wrap" data-pane="search" hidden>
             <ul class="messages-list" id="search-results-list"></ul>
             <p class="messages-empty" id="search-empty" hidden>No users match.</p>
         </div>
     </aside>
-
+ 
     {# ============== Right column — active conversation thread ============== #}
     <section class="messages-thread" id="messages-thread">
         {# default state: nothing selected #}
@@ -73,7 +73,7 @@
             <div class="messages-thread-empty-icon" aria-hidden="true">💬</div>
             <p>Select a conversation to start messaging.</p>
         </div>
-
+ 
         {# active state, populated by JS when a conversation is opened #}
         <div class="messages-thread-active" id="thread-active" hidden>
             <header class="messages-thread-header">
@@ -91,17 +91,17 @@
                     <span id="thread-block-label">Block</span>
                 </button>
             </header>
-
+ 
             {# Banner when the OTHER user is currently blocked — composer hides too. #}
             <div class="messages-blocked-banner" id="thread-blocked-banner" hidden>
                 You've blocked this user. They can't message you, and you can't message them. Click <strong>Unblock</strong> above to lift it.
             </div>
-
+ 
             {# Banner when the OTHER user has blocked the current user. Composer hides. #}
             <div class="messages-blocked-banner" id="thread-blocked-by-them-banner" hidden>
                 This user has blocked you. You can't message them.
             </div>
-
+ 
             {# request banner — only shown when this conversation is a pending request #}
             <div class="messages-request-banner" id="thread-request-banner" hidden>
                 <p class="messages-request-text">
@@ -113,9 +113,9 @@
                     <span class="messages-request-hint">Replying also accepts the request.</span>
                 </div>
             </div>
-
+ 
             <ul class="messages-bubbles" id="thread-bubbles"></ul>
-
+ 
             <form class="messages-composer" id="thread-composer" enctype="multipart/form-data" autocomplete="off">
                 {# attach button — paperclip icon triggers the hidden file input #}
                 <label for="thread-media" class="messages-composer-attach" title="Attach images / videos">
@@ -126,7 +126,7 @@
                 </label>
                 <input id="thread-media" type="file" class="visually-hidden-input"
                        accept="image/*,video/*" multiple>
-
+ 
                 <div class="messages-composer-fields">
                     <span class="messages-composer-attach-status" id="thread-attach-status" hidden></span>
                     <div class="messages-composer-preview attachment-grid" id="thread-media-preview"></div>
@@ -135,7 +135,7 @@
                               maxlength="2000"
                               rows="1"></textarea>
                 </div>
-
+ 
                 <button type="submit" class="messages-composer-send" id="thread-send-btn" aria-label="Send">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <line x1="22" y1="2" x2="11" y2="13"/>
@@ -146,7 +146,7 @@
         </div>
     </section>
 </section>
-
+ 
 {# Blocked-users list modal — opened by the small icon next to "Messages" in
    the sidebar header. Shows everyone the current user has blocked + a quick
    Unblock button next to each entry. Empty state shown when nobody's blocked. #}
@@ -167,7 +167,7 @@
         </div>
     </div>
 </div>
-
+ 
 {# Block / Unblock confirmation modal — JS swaps the title, body, and confirm
    button based on the current block state when it's opened. Same Bootstrap
    pattern as the delete-report and unfollow modals so the design language is
@@ -189,7 +189,27 @@
         </div>
     </div>
 </div>
-
+ 
+<div class="modal fade" id="delete-message-modal" tabindex="-1" aria-labelledby="delete-message-title" aria-hidden="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="delete-message-title">Delete this message?</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                This message will be permanently removed. This can't be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-message-confirm-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+ 
 {% endblock %}
-
+ 
 {% block scripts %}<script src="{{ url_for('static', filename='js/messages/messages.js') }}"></script>{% endblock %}
+ 
+ 

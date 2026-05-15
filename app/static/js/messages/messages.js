@@ -188,27 +188,41 @@
         return li;
     }
  
-    threadBubbles.addEventListener('click', async (event) => {
+    const deleteModalEl = document.getElementById('delete-message-modal');
+    const deleteConfirmBtn = document.getElementById('delete-message-confirm-btn');
+    let pendingDeleteBubble = null;
+ 
+    threadBubbles.addEventListener('click', (event) => {
         const btn = event.target.closest('.messages-bubble-delete');
         if (!btn) return;
         const bubble = btn.closest('.messages-bubble');
-        if (!bubble) return;
-        const messageId = bubble.dataset.messageId;
-        if (!messageId) return;
-        if (!window.confirm('Delete this message?')) return;
-        btn.disabled = true;
-        try {
-            const res = await csrfFetch(`/api/messages/${messageId}`, {method: 'DELETE'});
-            if (res.ok) {
-                bubble.remove();
-                refreshInbox();
-            } else {
-                btn.disabled = false;
-            }
-        } catch (err) {
-            btn.disabled = false;
+        if (!bubble || !bubble.dataset.messageId) return;
+        pendingDeleteBubble = bubble;
+        if (deleteModalEl) {
+            bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
         }
     });
+ 
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', async () => {
+            if (!pendingDeleteBubble) return;
+            const bubble = pendingDeleteBubble;
+            const messageId = bubble.dataset.messageId;
+            deleteConfirmBtn.disabled = true;
+            try {
+                const res = await csrfFetch(`/api/messages/${messageId}`, {method: 'DELETE'});
+                if (res.ok) {
+                    bubble.remove();
+                    refreshInbox();
+                }
+            } catch (err) { /* silent */ }
+            finally {
+                deleteConfirmBtn.disabled = false;
+                pendingDeleteBubble = null;
+                bootstrap.Modal.getInstance(deleteModalEl)?.hide();
+            }
+        });
+    }
  
     async function openConversation(c) {
         activeUserId = c.user_id;
