@@ -118,6 +118,9 @@
             </a>
         {% endfor %}
     </div>
+    <p class="listing-count">
+        {{ pagination.total }} report{{ '' if pagination.total == 1 else 's' }}
+    </p>
     {% if pagination.items %}
         <ul class="listing-feed">
             {% for r in pagination.items %}
