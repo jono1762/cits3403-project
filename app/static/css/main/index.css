@@ -869,3 +869,14 @@ a.stat-card-fav:visited {
 .leaflet-popup-close-button:hover {
     color: #1e293b !important;
 }
+
+
+@media (max-width: 767.98px) {
+    #mapPage {
+        height: auto;
+    }
+    .map-wrapper {
+        flex: none;
+        height: 60vh;
+    }
+}

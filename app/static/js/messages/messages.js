@@ -582,7 +582,14 @@
                 const avatar = document.createElement('a');
                 avatar.className = 'blocked-list-avatar';
                 avatar.href = u.profile_url;
-                avatar.textContent = u.avatar_initial;
+                if (u.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = u.avatar_url;
+                    img.alt = '';
+                    avatar.appendChild(img);
+                } else {
+                    avatar.textContent = u.avatar_initial;
+                }
  
                 const name = document.createElement('a');
                 name.className = 'blocked-list-name';

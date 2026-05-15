@@ -90,7 +90,7 @@ function initializeCityMarkers() {
                     ${popupSaveButton}
                 </div>
             </div>
-        `);
+        `, { autoPanPadding: L.point(20, 60), keepInView: true });
 
         marker.on('click', function () {
             searchBar.value = city.name;

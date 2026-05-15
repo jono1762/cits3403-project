@@ -335,15 +335,6 @@
     padding-right: 14rem;
 }
 
-@media (max-width: 600px) {
-    /* on narrow screens the corner cluster wraps below the meta row */
-    .listing-item-top { padding-right: 0; }
-    .vote-bar,
-    .own-report-actions {
-        position: static;
-        margin-top: 0.6rem;
-    }
-}
 
 .listing-item-meta {
     display: flex;
@@ -735,4 +726,18 @@
 
 .listing-item-stat-link:hover svg {
     stroke: #4f46e5;
+}
+
+
+@media (max-width: 600px) {
+    .listing-item-top { padding-right: 0; }
+    .vote-bar,
+    .own-report-actions,
+    .listing-fav-btn {
+        position: static;
+        margin-top: 0.6rem;
+    }
+    .vote-bar {
+        flex-wrap: wrap;
+    }
 }

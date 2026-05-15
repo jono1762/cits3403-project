@@ -1006,3 +1006,19 @@
     width: 1.15rem;
     height: 1.15rem;
 }
+
+
+@media (max-width: 600px) {
+    .profile-post-header {
+        flex-wrap: wrap;
+    }
+    .profile-post-titles {
+        flex-basis: 100%;
+    }
+    .profile-post-card .vote-bar,
+    .profile-post-card .own-report-actions,
+    .profile-post-card .listing-fav-btn {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+}
