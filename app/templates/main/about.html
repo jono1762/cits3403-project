@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main/info.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="info-page">
+    <header class="page-header info-header">
+        <h1 class="page-title info-title">About Australia Explorer</h1>
+        <p class="page-subtitle info-subtitle">A community-driven map of real-time situation reports.</p>
+    </header>
+
+    <article class="info-block">
+        <h2>What we do</h2>
+        <p>
+            Australia Explorer surfaces real-time situation reports — weather,
+            hazards, traffic, noisiness, and emergencies — across every state and
+            territory. Locals post what they see, the community verifies it, and
+            everyone benefits from a clearer picture of what's happening right now.
+        </p>
+    </article>
+
+    <article class="info-block">
+        <h2>The team</h2>
+        <ul class="info-team">
+            <li><strong>Jonathan Abraham</strong></li>
+            <li><strong>Zi Hao Chan</strong></li>
+            <li><strong>Tyler Yeoh</strong></li>
+        </ul>
+    </article>
+
+</section>
+{% endblock %}

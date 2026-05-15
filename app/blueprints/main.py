@@ -5,11 +5,15 @@ way as auth / reports / users / api."""
 import requests
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
-from datetime import datetime
-from ..models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport
+from ..models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport, utcnow
 # Report-related helpers live in the reports blueprint now. The favourites
 # and map pages here still call a couple, so we re-import them.
 from .reports import _active_reports_q, _encode_report_id, TRENDING_LIMIT
+from ..config import (
+    WEATHER_CACHE_TTL_MIN,
+    WEATHER_API_TIMEOUT_S,
+    FAVOURITES_TRENDING_THRESHOLD,
+)
 
 bp = Blueprint('main', __name__)
 
@@ -53,7 +57,7 @@ CITY_TO_STATE = {
     'Sydney': 'nsw', 'Newcastle': 'nsw', 'Wollongong': 'nsw', 'Central Coast': 'nsw',
     'Melbourne': 'vic', 'Geelong': 'vic', 'Ballarat': 'vic',
     'Brisbane': 'qld', 'Gold Coast': 'qld', 'Sunshine Coast': 'qld', 'Cairns': 'qld', 'Townsville': 'qld',
-    'Perth': 'wa', 'Fremantle': 'wa', 'Mandurah': 'wa', 'Bunbury': 'wa',
+    'Perth': 'wa', 'Mandurah': 'wa', 'Bunbury': 'wa',
     'Adelaide': 'sa', 'Mount Gambier': 'sa',
     'Hobart': 'tas', 'Launceston': 'tas',
     'Canberra': 'act',
@@ -107,17 +111,31 @@ CITY_COORDS = {
 def favourites_page():
     # load saved city favourites for the current user
     fav_rows = FavouriteLocation.query.filter_by(user_id=current_user.id).all()
+
+    # Pull every active report across all favourited cities in one query,
+    # then group by city in Python to avoid running 2 queries per city.
+    fav_city_ids = [f.city_id for f in fav_rows if f.city_id]
+    reports_by_city = {}
+    if fav_city_ids:
+        all_active_reports = (
+            _active_reports_q()
+            .filter(Report.city_id.in_(fav_city_ids))
+            .order_by(Report.created_at.desc())
+            .all()
+        )
+        for r in all_active_reports:
+            reports_by_city.setdefault(r.city_id, []).append(r)
+
     saved_cities = []
     for f in fav_rows:
         city = f.city
         if not city:
             continue
-        # small convenience stat: how many non-expired reports exist for this city
-        reports_today = _active_reports_q().filter(Report.city_id == city.id).count()
-        # latest non-expired report time (for "Last Update")
-        last_report = _active_reports_q().filter(Report.city_id == city.id).order_by(Report.created_at.desc()).first()
+        city_reports = reports_by_city.get(city.id, [])
+        active_reports = len(city_reports)
+        last_report = city_reports[0] if city_reports else None
         if last_report and last_report.created_at:
-            delta = datetime.utcnow() - last_report.created_at
+            delta = utcnow() - last_report.created_at
             minutes = int(delta.total_seconds() // 60)
             if minutes < 1:
                 last_update = 'just now'
@@ -132,21 +150,22 @@ def favourites_page():
         else:
             last_update = '—'
 
-        # trending heuristic: many reports today
-        trending = reports_today >= 20
+        # trending heuristic: many active reports for this city
+        trending = active_reports >= FAVOURITES_TRENDING_THRESHOLD
+
 
         saved_cities.append({
             'id': city.id,
             'name': city.name,
             'country': 'Australia',
             'state_code': city.state.code if getattr(city, 'state', None) else '',
-            'reports_today': reports_today,
+            'active_reports': active_reports,
             'last_update': last_update,
             'trending': trending,
         })
 
     # locations-only page (report favourites are on /favourites/reports)
-    return render_template('favourites.html', saved_cities=saved_cities)
+    return render_template('favourites/favourites.html', saved_cities=saved_cities)
 
 
 @bp.route('/favourites/reports')
@@ -176,31 +195,31 @@ def favourite_reports_page():
             'token': _encode_report_id(report.id),
         })
 
-    return render_template('favourite_reports.html', fav_reports=fav_reports)
+    return render_template('favourites/favourite_reports.html', fav_reports=fav_reports)
 
 
 # /help — static FAQ page, public
 @bp.route('/help')
 def help_page():
-    return render_template('help.html')
+    return render_template('main/help.html')
 
 
 # /about — static team / project info page, public
 @bp.route('/about')
 def about_page():
-    return render_template('about.html')
+    return render_template('main/about.html')
 
 
 @bp.route('/map')
 def map_page():
     # public map view — used by the "Start as guest" button on the home page
-    return render_template('map.html', **_map_page_context())
+    return render_template('main/map.html', **_map_page_context())
 
 
 def _map_page_context():
     city_ids = {s.name: s.id for s in City.query.all()}
     category_ids = {c.name: c.id for c in Category.query.all()}
-    now = datetime.utcnow()
+    now = utcnow()
 
     # Top trending city / category derived from the global Trending top N.
     # Group the top-N reports by city (or category), and rank groups by:
@@ -249,7 +268,7 @@ def _map_page_context():
     city_pick = _top_group(lambda r: r.city_id)
     if city_pick:
         cid, cnt = city_pick
-        c = City.query.get(cid)
+        c = db.session.get(City, cid)
         if c:
             top_city = {'name': c.name, 'count': cnt, 'total': total_in_top}
 
@@ -257,7 +276,7 @@ def _map_page_context():
     cat_pick = _top_group(lambda r: r.category_id)
     if cat_pick:
         cat_id, cnt = cat_pick
-        cat = Category.query.get(cat_id)
+        cat = db.session.get(Category, cat_id)
         if cat:
             top_category = {'name': cat.name, 'count': cnt, 'total': total_in_top}
 
@@ -328,7 +347,7 @@ def _top_pinned_report_for(user):
         .order_by(score_expr.desc(), Report.created_at.desc())
         .first()
     )
-    return Report.query.get(row[0]) if row else None
+    return db.session.get(Report, row[0]) if row else None
 
 
 # /intro — same content as / but always rendered in the marketing/intro
@@ -336,7 +355,7 @@ def _top_pinned_report_for(user):
 # home page (linked from the navbar home icon).
 @bp.route('/intro')
 def home_intro():
-    return render_template('index.html')
+    return render_template('main/index.html')
 
 
 # login / signup / login_email / logout moved to app/blueprints/auth.py
@@ -347,7 +366,7 @@ def home_intro():
 @login_required
 def messages_page():
     # ?user=<id> → JS auto-opens that conversation on page load
-    return render_template('messages.html')
+    return render_template('messages/messages.html')
 
 
 @bp.route('/reports/weather')
@@ -379,13 +398,11 @@ def live_weather_page():
         if match:
             selected_city = match
 
-    return render_template('live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
+    return render_template('main/live_weather.html', weather_cities=weather_cities_data, selected_city=selected_city)
 
 
-# ---- Weather API Caching ----
-# Simple in-memory cache with 10-minute TTL per city
+# Simple in-memory cache, TTL configured via config.WEATHER_CACHE_TTL_MIN
 _WEATHER_CACHE = {}  # {city_name: {'data': {...}, 'cached_at': datetime, ...}}
-_WEATHER_CACHE_TTL_MIN = 10
 
 
 def _get_cached_weather(city_name):
@@ -393,8 +410,8 @@ def _get_cached_weather(city_name):
     if city_name not in _WEATHER_CACHE:
         return None
     cache_entry = _WEATHER_CACHE[city_name]
-    age = (datetime.utcnow() - cache_entry['cached_at']).total_seconds() / 60
-    if age < _WEATHER_CACHE_TTL_MIN:
+    age = (utcnow() - cache_entry['cached_at']).total_seconds() / 60
+    if age < WEATHER_CACHE_TTL_MIN:
         return cache_entry['data']
     return None
 
@@ -403,7 +420,7 @@ def _set_cached_weather(city_name, data):
     """Store weather data in cache with current timestamp."""
     _WEATHER_CACHE[city_name] = {
         'data': data,
-        'cached_at': datetime.utcnow(),
+        'cached_at': utcnow(),
     }
 
 
@@ -418,7 +435,7 @@ def _fetch_weather_from_api(lat, lng):
             'longitude': lng,
             'current': 'temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation',
         }
-        resp = requests.get(url, params=params, timeout=5)
+        resp = requests.get(url, params=params, timeout=WEATHER_API_TIMEOUT_S)
         resp.raise_for_status()
         data = resp.json()
 
@@ -476,7 +493,7 @@ def _fetch_weather_from_api(lat, lng):
             'wind_kph': wind_kph,
             'wind_direction': wind_cardinal,
             'precip_mm': precip_mm,
-            'fetched_at': datetime.utcnow().isoformat() + 'Z',
+            'fetched_at': utcnow().isoformat() + 'Z',
         }
     except Exception:
         # Log silently; return None so frontend shows "unavailable"

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/favourites/favourites.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="fav-page">
+    <header class="page-header fav-header">
+        <h1 class="page-title fav-title">Favourite Reports</h1>
+        <p class="page-subtitle fav-subtitle">Reports you saved.</p>
+    </header>
+
+    <h2 class="fav-section-title">Saved Reports</h2>
+    {% if fav_reports and fav_reports|length > 0 %}
+        <ul class="fav-report-list">
+            {% for r in fav_reports %}
+                <li class="fav-report-card" style="--cat: {{ r.category_color }};" data-report-id="{{ r.id }}">
+                    <a class="fav-report-link" href="{{ url_for('reports.view_report', token=r.token) }}" aria-label="View report"></a>
+                    <button class="fav-panel-star" aria-label="Unsave report" title="Unsave">⭐</button>
+                    <div class="fav-report-meta">
+                        <span class="fav-report-badge">{{ CATEGORY_EMOJI.get(r.category, '') }} {{ r.category }}</span>
+                    </div>
+                    <h3 class="fav-report-title">{{ r.city }}{% if r.state %}, {{ r.state }}{% endif %}</h3>
+                    <p class="fav-report-where">Posted by {{ r.author }} on {{ r.created_at }}</p>
+                    {% if r.description %}
+                        <p class="fav-report-where">{{ r.description[:120] }}{% if r.description|length > 120 %}...{% endif %}</p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="fav-empty">No saved reports yet. Save a report from its report view page.</div>
+    {% endif %}
+
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/favourites/favourite_reports.js') }}"></script>{% endblock %}

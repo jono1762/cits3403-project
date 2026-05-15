@@ -1,0 +1,672 @@
+/* ============================================================
+   reports_listing.css — All Reports listing page
+   Loaded via {% block styles %} on reports_listing.html
+   (alongside profile.css which provides the carousel arrow styling).
+   ============================================================ */
+
+.listing-page {
+    max-width: 1000px;
+    margin: 1rem auto 3rem;
+    padding: 0 1rem;
+}
+
+
+/* ============================================================
+   Header — gradient title + "New Report" CTA
+   ============================================================ */
+.listing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.listing-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.listing-new-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    border: none;
+    padding: 0.55rem 1.15rem;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.listing-new-btn:hover,
+.listing-new-btn:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.42);
+    color: #fff;
+}
+
+
+/* ============================================================
+   Filter card — frosted background with branded form fields
+   ============================================================ */
+.listing-filters {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    margin-bottom: 1.5rem;
+}
+
+.listing-filters .form-label {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3rem;
+    display: block;
+}
+
+.listing-filters .form-select {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 14px 10px;
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.listing-filters .form-select:hover:not(:disabled),
+.listing-filters .form-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    outline: none;
+}
+
+.listing-filters .form-select:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.listing-filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.listing-filter-apply {
+    flex: 1;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.listing-filter-apply:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.40);
+}
+
+.listing-filter-clear {
+    flex: 1;
+    background: #fff;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.listing-filter-clear:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+.listing-feed-dropdown {
+    width: 100%;
+}
+
+.listing-feed-button {
+    width: 100%;
+    text-align: left;
+    background-color: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    color: #1e293b;
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 14px 10px;
+}
+
+.listing-feed-button.dropdown-toggle::after {
+    display: none;
+}
+
+.listing-feed-button:hover,
+.listing-feed-button:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    color: #1e293b;
+}
+
+.listing-feed-menu {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    padding: 0.35rem 0;
+}
+
+.listing-feed-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 0.98rem;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+.listing-feed-row input {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.listing-feed-row input:checked {
+    background-color: #6366f1;
+    border-color: #6366f1;
+}
+
+
+/* ============================================================
+   Category filter chips — clickable colored pills (replaces the dropdown)
+   ============================================================ */
+.listing-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.listing-cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 1.35rem;
+    border-radius: 999px;
+    /* lighter gradient so the text contrast is stronger */
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat, #94a3b8) 12%, white) 100%);
+    border: 1.5px solid var(--cat, #cbd5e1);
+    /* darken the category color for the text — original colour is too pale on a tinted bg */
+    color: color-mix(in srgb, var(--cat, #475569) 70%, black);
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: background 0.18s ease, color 0.18s ease,
+                transform 0.15s ease, box-shadow 0.18s ease;
+}
+
+.listing-cat-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.10);
+}
+
+/* selected chip — fills with the category color, white text */
+.listing-cat-chip.is-active {
+    background: linear-gradient(135deg, var(--cat) 0%, color-mix(in srgb, var(--cat) 75%, black) 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--cat) 35%, transparent);
+}
+
+/* the "All categories" chip uses indigo since it has no per-category color */
+.listing-cat-chip-all {
+    --cat: #4f46e5;
+}
+
+
+/* ============================================================
+   Report cards — frosted, with a category color stripe on the left
+   ============================================================ */
+.listing-feed {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.listing-item {
+    position: relative;
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--cat, #cbd5e1);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.listing-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+/* the wrapper that the stretched-link sits inside — only the text part of
+   the card is clickable, the carousel below it stays interactive */
+.listing-item-text {
+    position: relative;
+    cursor: pointer;
+}
+
+/* invisible <a> covering the text area — clicking anywhere here navigates
+   to the single-report view */
+.listing-item-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+/* author link inside the meta sits above the stretched link.
+   The Edit button now lives inside .own-report-actions which already has
+   z-index: 2, so it doesn't need its own here. */
+.listing-item-author a {
+    position: relative;
+    z-index: 2;
+}
+
+.listing-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    /* leave room on the right for the absolutely-positioned vote-bar */
+    padding-right: 14rem;
+}
+
+@media (max-width: 600px) {
+    /* on narrow screens the corner cluster wraps below the meta row */
+    .listing-item-top { padding-right: 0; }
+    .vote-bar,
+    .own-report-actions {
+        position: static;
+        margin-top: 0.6rem;
+    }
+}
+
+.listing-item-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: #475569;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+/* category badge — same gradient-shaded pill as the home page categories.
+   White-to-tint gradient + colored border + colored text */
+.listing-item-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffffff 0%, color-mix(in srgb, var(--cat) 22%, white) 100%);
+    border: 1.5px solid var(--cat);
+    color: var(--cat);
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Top-trending-in-city badge — orange gradient pill, sits next to the
+   category badge. Awarded to one report per city based on the engagement
+   score (verifies − disputes − days_old). */
+.listing-item-trending {
+    display: inline-block;
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+    border: 1.5px solid #f97316;
+    color: #9a3412;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 2px rgba(249, 115, 22, 0.18);
+}
+
+.listing-item-author {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.listing-item-author a {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.listing-item-author a:hover {
+    text-decoration: underline;
+}
+
+.listing-item-edit {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+/* hover — slate/near-black so the icon + text darken together via currentColor */
+.listing-item-edit:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+
+.listing-item-edit svg {
+    flex-shrink: 0;
+}
+
+.listing-item-address {
+    margin: 0.5rem 0 0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+}
+
+.listing-item-desc {
+    margin: 0.5rem 0 0;
+    color: #1e293b;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   Pagination — pills with branded active state
+   ============================================================ */
+.listing-pagination {
+    margin-top: 1.5rem;
+}
+
+.listing-pagination .pagination {
+    gap: 4px;
+}
+
+.listing-pagination .page-link {
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.listing-pagination .page-link:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+    border-color: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.listing-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    border-color: #4f46e5;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.30);
+}
+
+.listing-pagination .page-item.disabled .page-link {
+    opacity: 0.5;
+}
+
+
+/* ============================================================
+   Empty state
+   ============================================================ */
+.listing-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 12px;
+}
+
+.listing-empty a {
+    color: #4f46e5;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.listing-empty a:hover {
+    text-decoration: underline;
+}
+
+
+/* ============================================================
+   Verify / Dispute vote bar — pinned to the top-right of each card.
+   Absolute + z-index so it sits above the stretched-link click target
+   on .listing-item-text (otherwise the link swallows the click).
+   ============================================================ */
+.vote-bar {
+    position: absolute;
+    top: 0.85rem;
+    right: 1rem;
+    z-index: 2;
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* Own-report top-right cluster — replaces the vote-bar for the report's author.
+   Holds the "Your report" tag and the Edit button side-by-side. */
+.own-report-actions {
+    position: absolute;
+    top: 0.85rem;
+    right: 1rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+/* "Your report" tag — grey pill that links to the single-report view.
+   Styled like a button so it visually reads as clickable. */
+.own-report-tag {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease;
+}
+
+.own-report-tag:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+/* wrapping span carries the title-tooltip even when the button is disabled
+   (some browsers don't show <button title> when disabled, but a <span> does).
+   `cursor: help` is the small "?" pointer so guests can see the wrap is hover-aware. */
+.vote-wrap {
+    display: inline-block;
+    cursor: help;
+}
+
+.vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease,
+                border-color 0.18s ease, transform 0.15s ease;
+}
+
+.vote-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+/* small filled count chip on the right side of each button. Tinted
+   green/red by default so the count is legible at a glance without the
+   user having to vote first. The .is-active overrides further down keep
+   their translucent-white-on-color treatment when the user has voted. */
+.vote-count {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    min-width: 1.2rem;
+    text-align: center;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.vote-verify .vote-count {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.vote-dispute .vote-count {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* ----- Verify (green) ----- */
+.vote-verify:hover:not(:disabled) {
+    border-color: #10b981;
+    color: #047857;
+}
+
+.vote-verify.is-active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.vote-verify.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+/* ----- Dispute (red) ----- */
+.vote-dispute:hover:not(:disabled) {
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.vote-dispute.is-active {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.vote-dispute.is-active .vote-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+/* ----- Disabled (guest or own-report) ----- */
+.vote-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.listing-fav-btn {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 1rem;
+    z-index: 2;
+    border: 0;
+    background: transparent;
+    padding: 0 0.25rem;
+    color: #f59e0b;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.15s ease, color 0.18s ease;
+}
+
+.listing-fav-btn:hover,
+.listing-fav-btn:focus {
+    transform: scale(1.1);
+    color: #d97706;
+    outline: none;
+}
+
+.listing-fav-btn.is-saved svg {
+    fill: currentColor;
+}

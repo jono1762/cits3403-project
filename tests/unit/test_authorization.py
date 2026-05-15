@@ -35,7 +35,7 @@ def test_cant_delete_others_comment(client, make_user, login, db):
     login('bob')
     response = client.delete(f'/api/comments/{comment_id}')
     assert response.status_code == 403
-    assert Comment.query.get(comment_id) is not None   # still in DB
+    assert db.session.get(Comment, comment_id) is not None   # still in DB
 
 
 def test_cant_vote_on_own_report(client, make_user, login, db):

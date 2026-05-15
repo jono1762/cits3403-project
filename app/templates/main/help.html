@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main/info.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="info-page">
+    <header class="page-header info-header">
+        <h1 class="page-title info-title">Help &amp; FAQ</h1>
+        <p class="page-subtitle info-subtitle">Common questions about Australia Explorer.</p>
+    </header>
+
+    <div class="info-faq">
+        <details class="info-q" open>
+            <summary>What is Australia Explorer?</summary>
+            <p>A community-driven map of real-time situation reports across Australia — weather, hazards, traffic, noise, and emergencies, posted by your neighbours and verified by your community.</p>
+        </details>
+
+        <h2 class="info-section-title">For everyone (no account needed)</h2>
+
+        <details class="info-q">
+            <summary>Search a city on the map</summary>
+            <p>Open the <strong>Map</strong> page, type a city into the search bar, click the pin, and you'll see options to view live weather, browse reports for that city, or save it as a favourite (saving requires an account).</p>
+        </details>
+
+        <details class="info-q">
+            <summary>See what's trending across Australia</summary>
+            <p>On the map page, the top stats show the <strong>trending city</strong> (the city with the most reports in the current trending top-10), the <strong>trending category</strong> (most-reported category in the trending top-10), and <strong>from your saves</strong> (the highest-scoring report across your saved cities and reports — logged-in only).</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Browse and filter reports</summary>
+            <p>Click <strong>View Reports</strong> to see every active report. Filter by state, city, sort by Latest / Most verifications / Most disputes / Most comments, and toggle the <strong>Trending</strong> or <strong>From Following</strong> feeds. Hit <strong>Clear</strong> to reset all filters.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Check live weather</summary>
+            <p>Open the <strong>Weather</strong> page and pick a city to see current temperature, conditions, wind, and precipitation. Data refreshes from Open-Meteo.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Look at someone's profile</summary>
+            <p>Use the search bar in the navbar (top of the page) to find users by name. Their profile shows their reports, their credibility score, and their follower / following counts.</p>
+        </details>
+
+        <h2 class="info-section-title">After you log in</h2>
+
+        <details class="info-q">
+            <summary>Create a report</summary>
+            <p>Click <strong>Create Report</strong> in the sidebar. Pick a state, city, category, write a short description, and attach up to 5 images or videos (max 200 MB total).</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Verify, dispute, or save a report</summary>
+            <p>On any report card you don't own, tap <strong>✓ Verify</strong> if you can confirm it, or <strong>✗ Dispute</strong> if you can't. Tap the <strong>⭐</strong> to save the report to your favourites for later.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Save favourite cities and reports</summary>
+            <p>Click <strong>Favourites</strong> in the sidebar to see your saved locations and saved reports. Save a city from its map pin popup, and save a report from its card star button.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Edit your profile picture and bio</summary>
+            <p>Open <strong>Profile</strong> from the navbar dropdown and click <strong>Edit profile</strong>. You can upload a new avatar (image preview included) and update your short bio.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Follow and unfollow other users</summary>
+            <p>On someone's profile page, click <strong>Follow</strong> to subscribe to their reports. They'll appear in your <strong>From Following</strong> feed. Click again to unfollow.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Check your credibility and your follower / following counts</summary>
+            <p>Your <strong>credibility score</strong> rises with each report of yours that others verify. The follower / following counters on your profile are clickable to see the actual lists (assuming you've left them public — see below).</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Hide your follower or following list</summary>
+            <p>On your own profile, each list has a small toggle that flips it between public and private. Private means other users see the count but can't open the list.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Message another user</summary>
+            <p>From someone's profile click <strong>Message</strong>, or open the <strong>Messages</strong> icon in the navbar. You can send text, images, and videos. New conversations from people you don't follow back land in your <strong>Requests</strong> tab until you reply or accept.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Block or unblock a user</summary>
+            <p>Inside any chat, click the <strong>Block</strong> button next to that user's name to stop further messages from them — they can't reach you and you can't reach them until you unblock. To see and unblock everyone you've blocked, click the small <strong>blocked-users icon</strong> next to the "Messages" title at the top of the Messages page.</p>
+        </details>
+
+        <h2 class="info-section-title">More</h2>
+
+        <details class="info-q">
+            <summary>What are the categories?</summary>
+            <p>Five categories: <strong>☁️ Weather</strong>, <strong>🔊 Noisiness</strong>, <strong>⚠️ Hazards</strong>, <strong>🚦 Traffic</strong>, and <strong>🚨 Emergency</strong>. Pick whichever best matches what you're reporting.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>How does credibility work?</summary>
+            <p>Each verified report you post adds to your credibility. Higher credibility indicates users whose reports are most often confirmed by others.</p>
+        </details>
+
+        <details class="info-q">
+            <summary>Can I browse without an account?</summary>
+            <p>Yes — click <strong>Continue as guest</strong> on the home page. Guests can view the map and the reports listing, but need to sign up to post, vote, save favourites, or message users.</p>
+        </details>
+    </div>
+</section>
+{% endblock %}

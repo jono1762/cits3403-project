@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/favourites/favourites.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="fav-page">
+    <header class="page-header fav-header">
+        <h1 class="page-title fav-title">Favourite Locations</h1>
+        <p class="page-subtitle fav-subtitle">Cities you watch.</p>
+    </header>
+
+    {# ============== Saved cities (persisted) ============== #}
+    <h2 class="fav-section-title">Saved Locations</h2>
+    {% if saved_cities and saved_cities|length > 0 %}
+        <div class="fav-grid">
+            {% for s in saved_cities %}
+                <article class="fav-panel" data-city-id="{{ s.id }}">
+                    <button class="fav-panel-star" aria-label="Unstar" title="Remove">
+                        ⭐
+                    </button>
+
+                    <div class="fav-panel-content">
+                        <div class="fav-city-header">
+                            <div>
+                                <div class="fav-city-name">{{ s.name }}</div>
+                                <div class="fav-city-country">{{ s.country }}</div>
+                            </div>
+                        </div>
+
+                        <div class="fav-stats-row">
+                            <div class="fav-stat-label">Active Reports</div>
+                            <div class="fav-stat-value">{{ s.active_reports }}</div>
+                        </div>
+
+                        <div class="fav-stats-row">
+                            <div class="fav-stat-label">Last Update</div>
+                            <div class="fav-stat-value">{{ s.last_update }}</div>
+                        </div>
+
+                        {% if s.trending %}
+                            <div class="fav-trending">📈 Trending</div>
+                        {% endif %}
+
+                        <div class="fav-panel-actions d-flex flex-column gap-2">
+                            <a class="btn btn-ghost" href="{{ url_for('reports.listing_page') }}?city_id={{ s.id }}">View Reports</a>
+                            <a class="btn btn-ghost" href="{{ url_for('main.live_weather_page') }}?city={{ s.name | urlencode }}">View Weather</a>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="fav-empty">
+            No saved locations yet. Use the map search to find a place and save it.
+        </div>
+    {% endif %}
+
+    {# saved reports intentionally omitted — implemented on a separate page later #}
+
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/favourites/favourites.js') }}"></script>{% endblock %}

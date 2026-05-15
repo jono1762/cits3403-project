@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block styles %}
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/main/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container" id="mapPage">
+	<header class="page-header map-header">
+		<h1 class="page-title map-title">Map</h1>
+		<p class="page-subtitle map-subtitle">Explore situation reports across Australia</p>
+	</header>
+
+	{# At-a-glance stats — placeholder values for now, wire up to real DB later.
+	   Card 3 links to the user's favourites page (stub for now). #}
+	<div class="map-stats">
+		{# Top trending cities — pulled from server-side aggregation (no fake numbers) #}
+		{% if top_city %}
+			{% set trending_state = city_to_state.get(top_city.name) %}
+			{% set trending_flag = state_flag_url.get(trending_state) %}
+			<a class="stat-card stat-card-trending"
+			   href="{{ url_for('reports.listing_page', sort='top', city_id=city_ids_by_name.get(top_city.name)) }}"
+			   aria-label="View trending reports in {{ top_city.name }}">
+				<div class="stat-label">Top trending cities</div>
+				<div class="stat-num">
+					{% if trending_flag %}
+						<img class="stat-flag" src="{{ trending_flag }}"
+						     alt="{{ trending_state|upper }} flag"
+						     onerror="this.style.display='none'">
+					{% endif %}
+					{{ top_city.name }}
+				</div>
+				<div class="stat-trend">{{ top_city.count }} of {{ top_city.total }} trending</div>
+				<span class="stat-card-fire" aria-hidden="true">🔥</span>
+			</a>
+		{% else %}
+			<div class="stat-card stat-card-trending">
+				<div class="stat-label">Top trending cities</div>
+				<div class="stat-num">No reports yet</div>
+				<div class="stat-trend">Be the first to post one</div>
+				<span class="stat-card-fire" aria-hidden="true">🔥</span>
+			</div>
+		{% endif %}
+
+		{# Top trending categories — also from server-side aggregation #}
+		{% if top_category %}
+			<a class="stat-card stat-card-trending-cat"
+			   href="{{ url_for('reports.listing_page', sort='top', category_id=category_ids_by_name.get(top_category.name)) }}"
+			   aria-label="View trending reports in {{ top_category.name }}">
+				<div class="stat-label">Top trending categories</div>
+				<div class="stat-num">
+					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_category.name, '') }}</span>
+					{{ top_category.name }}
+				</div>
+				<div class="stat-trend">{{ top_category.count }} of {{ top_category.total }} trending</div>
+				<span class="stat-card-spark" aria-hidden="true">📈</span>
+			</a>
+		{% else %}
+			<div class="stat-card stat-card-trending-cat">
+				<div class="stat-label">Top trending categories</div>
+				<div class="stat-num">No reports yet</div>
+				<div class="stat-trend">Be the first to post one</div>
+				<span class="stat-card-spark" aria-hidden="true">📈</span>
+			</div>
+		{% endif %}
+
+		{# Favourites — surface the user's most-engaged saved report (or the
+		   top report among their saved cities). Falls back to a stub for
+		   guests / users with no saves. #}
+		{% if top_pinned_report %}
+			<a class="stat-card stat-card-fav"
+			   href="{{ url_for('reports.view_report', token=top_pinned_report.id|report_token) }}"
+			   aria-label="Open your top pinned report">
+				<div class="stat-label">From your saves</div>
+				<div class="stat-num">
+					<span class="stat-cat-emoji" aria-hidden="true">{{ CATEGORY_EMOJI.get(top_pinned_report.category.name, '') }}</span>
+					{{ top_pinned_report.city.name }}
+				</div>
+				<div class="stat-trend">{{ top_pinned_report.category.name }} · ✓{{ top_pinned_report.verify_count }} ✗{{ top_pinned_report.dispute_count }}</div>
+				<span class="stat-card-star" aria-hidden="true">⭐</span>
+			</a>
+		{% else %}
+			<a href="{{ url_for('main.favourites_page') }}" class="stat-card stat-card-fav">
+				<div class="stat-label">Watching · favourites</div>
+				<div class="stat-num">Saved places</div>
+				<div class="stat-trend">Star a report to follow it</div>
+				<span class="stat-card-star" aria-hidden="true">⭐</span>
+			</a>
+		{% endif %}
+	</div>
+
+	<div class="search-wrapper">
+		<div class="search-row">
+			<div class="search-input-area">
+				<input type="text" name="searchBar" id="searchBar" placeholder="Search for a city by name or its state...">
+				<ul id="suggestions"></ul>
+			</div>
+			{# "Search" zooms the map to the matched city's pin and opens its popup #}
+			<button type="button" id="searchButton">Search</button>
+		</div>
+	</div>
+
+	{# Attention-grabbing CTA banner — sits above the map so it catches the eye first #}
+	<section class="map-cta">
+		<div class="map-cta-text">
+			<h2 class="map-cta-title">Spotted something? Share it.</h2>
+		</div>
+		<a href="{{ url_for('reports.reports_page') }}" class="map-cta-btn">+ Submit a report</a>
+	</section>
+
+	<div class="map-wrapper">
+		<div id="map" role="region" aria-label="Interactive Australia map"></div>
+		<div class="zoom-controls">
+			<button type="button" onclick="zoom(true)">+</button>
+			<button type="button" onclick="zoom(false)">-</button>
+			<button type="button" onclick="resetMap()">Reset</button>
+		</div>
+	</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+{# server-rendered data — the map pins and city-id lookup all come from the
+   DB so we don't drift between hardcoded JS and the actual cities. #}
+<script type="application/json" id="city-ids-data">{{ city_ids_by_name|tojson }}</script>
+<script type="application/json" id="map-cities-data">{{ map_cities|tojson }}</script>
+<script type="application/json" id="map-config-data">{{ {
+    'live_weather_url': url_for('main.live_weather_page'),
+    'listing_url': url_for('reports.listing_page'),
+    'is_guest': not current_user.is_authenticated,
+} | tojson }}</script>
+
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/main/map.js') }}"></script>{% endblock %}

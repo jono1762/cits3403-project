@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/users/settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="settings-page">
+    <header class="page-header settings-header">
+        <h1 class="page-title settings-title">Settings</h1>
+        <p class="page-subtitle settings-subtitle">Update your account details and security preferences.</p>
+        <a href="{{ url_for('auth.profile_edit_page') }}" class="settings-profile-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit profile (avatar &amp; bio)
+        </a>
+    </header>
+
+    {# Account info — username + email. Both required + must stay unique.
+       Profile picture lives on /profile/edit (public-facing identity stuff
+       is separated from account / security settings). #}
+    <form method="POST" action="{{ url_for('auth.settings_update_account') }}" class="settings-card">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2 class="settings-section-title">Account</h2>
+        <div class="settings-field">
+            <label for="settings-username" class="form-label">Username <span class="text-danger">*</span></label>
+            <input id="settings-username" name="username" type="text" class="form-control"
+                   value="{{ current_user.username }}" maxlength="80" required>
+        </div>
+        <div class="settings-field">
+            <label for="settings-email" class="form-label">Email <span class="text-danger">*</span></label>
+            <input id="settings-email" name="email" type="email" class="form-control"
+                   value="{{ current_user.email }}" maxlength="120" required>
+        </div>
+        <button type="submit" class="settings-save">Save account</button>
+    </form>
+
+    {# Password — current + new + confirm. The new + confirm fields are
+       disabled until the current password is verified via AJAX. Server
+       still re-checks on submit (defence in depth). #}
+    <form method="POST" action="{{ url_for('auth.settings_update_password') }}" class="settings-card" id="password-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2 class="settings-section-title">Password</h2>
+        <div class="settings-field">
+            <label for="settings-current-pw" class="form-label">Current password <span class="text-danger">*</span></label>
+            <input id="settings-current-pw" name="current_password" type="password"
+                   class="form-control" autocomplete="current-password" required>
+            <p class="settings-field-hint" id="current-pw-status"></p>
+        </div>
+        <div class="settings-field">
+            <label for="settings-new-pw" class="form-label">New password <span class="text-danger">*</span></label>
+            <input id="settings-new-pw" name="new_password" type="password"
+                   class="form-control" autocomplete="new-password" minlength="8" required disabled>
+            <p class="settings-field-hint">At least 8 characters.</p>
+        </div>
+        <div class="settings-field">
+            <label for="settings-confirm-pw" class="form-label">Confirm new password <span class="text-danger">*</span></label>
+            <input id="settings-confirm-pw" name="confirm_password" type="password"
+                   class="form-control" autocomplete="new-password" minlength="8" required disabled>
+        </div>
+        <button type="submit" class="settings-save" id="password-submit" disabled>Update password</button>
+    </form>
+
+    {# Danger zone — opens a Bootstrap modal that asks for the user's
+       password as a final guard, then permanently wipes the account. #}
+    <div class="settings-card settings-card-danger">
+        <h2 class="settings-section-title">Danger zone</h2>
+        <p class="settings-danger-desc">
+            Permanently delete your account and everything you've posted —
+            reports, comments, votes, follows, and conversations. This cannot
+            be undone.
+        </p>
+        <button type="button" class="settings-danger-btn"
+                data-bs-toggle="modal" data-bs-target="#delete-account-modal">
+            Delete my account
+        </button>
+    </div>
+</section>
+
+{# Delete-account confirmation modal — same Bootstrap pattern as the report /
+   comment delete modals, but with a password field as the final safety check. #}
+<div class="modal fade" id="delete-account-modal" tabindex="-1"
+     aria-labelledby="delete-account-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <form method="POST" action="{{ url_for('auth.settings_delete_account') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="delete-account-modal-label">Delete your account?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>This permanently removes <strong>everything</strong>: your reports, comments, votes, follows, message history, and uploaded media. There's no recovery.</p>
+                    <p>Enter your password to confirm:</p>
+                    <input type="password" name="password" class="form-control"
+                           autocomplete="current-password" required
+                           placeholder="Your current password">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete forever</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/users/settings.js') }}"></script>{% endblock %}

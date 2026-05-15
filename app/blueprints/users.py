@@ -15,10 +15,11 @@ def _following_users_for(user):
         .order_by(Follow.created_at.desc())
         .all()
     )
-    # Resolve each Follow row to the actual followed-User object
-    return [User.query.get(r.followed_id) for r in rows if User.query.get(r.followed_id)]
- 
- 
+    # Resolve each Follow row to the followed-User object, skipping deleted users.
+    users = [db.session.get(User, r.followed_id) for r in rows]
+    return [u for u in users if u is not None]
+
+
 def _follower_users_for(user):
     """Return the User rows that follow this profile-user (newest follow first)."""
     rows = (
@@ -27,7 +28,8 @@ def _follower_users_for(user):
         .order_by(Follow.created_at.desc())
         .all()
     )
-    return [User.query.get(r.follower_id) for r in rows if User.query.get(r.follower_id)]
+    users = [db.session.get(User, r.follower_id) for r in rows]
+    return [u for u in users if u is not None]
  
  
 # /profile — show the logged-in user's own basic info
@@ -46,7 +48,7 @@ def profile_page():
         for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
     }
     return render_template(
-        'profile.html',
+        'users/profile.html',
         user=current_user,
         recent_reports=recent_reports,
         is_own_profile=True,
@@ -73,7 +75,7 @@ def user_profile_page(username):
         for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()
     }
     return render_template(
-        'profile.html',
+        'users/profile.html',
         user=user,
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
@@ -118,7 +120,7 @@ def search_users_page():
             .limit(20)
             .all()
         )
-    return render_template('search.html', q=q, users=users)
+    return render_template('users/search.html', q=q, users=users)
  
  
 # /api/search-users — JSON endpoint for the sidebar search panel.
@@ -148,7 +150,6 @@ def api_search_users():
     ])
  
  
-# ---------------- Follow / Unfollow ----------------
 # POST creates the edge (idempotent — re-following is a no-op).
 # DELETE removes it. Self-follow is rejected at the API; the UI hides the
 # button on own profiles, but defence-in-depth never hurts.
@@ -158,7 +159,7 @@ def api_search_users():
 def api_follow_user(user_id):
     if user_id == current_user.id:
         return jsonify({'error': "You can't follow yourself."}), 400
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     existing = Follow.query.filter_by(
         follower_id=current_user.id, followed_id=target.id
     ).first()
@@ -175,7 +176,7 @@ def api_follow_user(user_id):
 @bp.route('/api/follow/<int:user_id>', methods=['DELETE'])
 @login_required
 def api_unfollow_user(user_id):
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     existing = Follow.query.filter_by(
         follower_id=current_user.id, followed_id=target.id
     ).first()
@@ -189,7 +190,6 @@ def api_unfollow_user(user_id):
     })
  
  
-# ---------------- Block / Unblock (chat-only) ----------------
 # When user A blocks user B:
 #   - B can no longer send messages to A (server returns 403 in api_send_message)
 #   - B's existing conversations with A are filtered out of A's inbox
@@ -208,7 +208,7 @@ def _is_blocked(blocker_id, blocked_id):
 def api_block_user(user_id):
     if user_id == current_user.id:
         return jsonify({'error': "You can't block yourself."}), 400
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     if not _is_blocked(current_user.id, target.id):
         db.session.add(BlockedUser(blocker_id=current_user.id, blocked_id=target.id))
         db.session.commit()
@@ -228,7 +228,7 @@ def api_list_blocked_users():
     )
     out = []
     for row in rows:
-        u = User.query.get(row.blocked_id)
+        u = db.session.get(User, row.blocked_id)
         if not u:
             continue
         out.append({
@@ -243,7 +243,7 @@ def api_list_blocked_users():
 @bp.route('/api/block/<int:user_id>', methods=['DELETE'])
 @login_required
 def api_unblock_user(user_id):
-    target = User.query.get_or_404(user_id)
+    target = db.get_or_404(User, user_id)
     row = BlockedUser.query.filter_by(
         blocker_id=current_user.id, blocked_id=target.id
     ).first()

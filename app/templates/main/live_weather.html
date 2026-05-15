@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main/live_weather.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="weather-page">
+    <div class="weather-card">
+        <header class="page-header weather-header">
+            <h1 class="page-title weather-title">Weather</h1>
+            <p class="page-subtitle weather-subtitle">Search for a city to view current weather conditions.</p>
+        </header>
+
+        <div class="weather-search-section mb-4">
+            <div class="weather-search-wrapper">
+                <input
+                    id="weatherSearchInput"
+                    type="text"
+                    class="form-control weather-search-input"
+                    placeholder="Search for a city to see live weather"
+                    autocomplete="off"
+                />
+                <ul id="weatherSuggestions" class="weather-suggestions"></ul>
+            </div>
+        </div>
+
+        <div id="weatherDisplay" class="weather-display text-center">
+            <p class="mb-0 text-muted">Select a city to view weather</p>
+        </div>
+    </div>
+</section>
+
+<script type="application/json" id="weather-cities-data">{{ weather_cities|tojson }}</script>
+
+<script>
+(function () {
+    const WEATHER_CITIES = JSON.parse(document.getElementById("weather-cities-data").textContent);
+    const searchInput = document.getElementById('weatherSearchInput');
+    const suggestionsList = document.getElementById('weatherSuggestions');
+    const display = document.getElementById('weatherDisplay');
+    if (!searchInput || !suggestionsList || !display) return;
+
+    const initialCity = {{ selected_city|tojson }};
+
+    if (initialCity) {
+        searchInput.value = initialCity.name;
+    }
+
+    let suggestionsOpen = false;
+
+    function setCity(cityObj) {
+        display.innerHTML = `
+            <div class="weather-data">
+                <h2 class="weather-city">${cityObj.name}</h2>
+                <p class="text-muted mb-0">Loading weather...</p>
+            </div>
+        `;
+        searchInput.value = cityObj.name;
+        suggestionsList.innerHTML = '';
+        suggestionsOpen = false;
+        try { localStorage.setItem('liveWeatherCity', cityObj.short_name); } catch (e) { }
+        // update URL without reload
+        window.history.replaceState({}, '', `?city=${encodeURIComponent(cityObj.short_name)}`);
+        
+        // Fetch weather data from API
+        csrfFetch(`/api/weather/${encodeURIComponent(cityObj.short_name)}`)
+            .then(r => {
+                if (!r.ok) throw new Error('Weather fetch failed');
+                return r.json();
+            })
+            .then(weather => {
+                const temp = weather.temp_c !== null ? Math.round(weather.temp_c) : '—';
+                const condition = weather.condition || 'Unknown';
+                const wind = weather.wind_kph !== null ? `${Math.round(weather.wind_kph)} km/h ${weather.wind_direction}` : '—';
+                const precip = weather.precip_mm !== null ? `${weather.precip_mm.toFixed(1)} mm` : '—';
+                const fetchedAt = new Date(weather.fetched_at);
+
+                function formatFreshness(timestamp) {
+                    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - timestamp.getTime()) / 1000));
+                    if (elapsedSeconds < 60) return 'just now';
+                    const minutes = Math.floor(elapsedSeconds / 60);
+                    if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`;
+                    const hours = Math.floor(minutes / 60);
+                    return `${hours} hr${hours === 1 ? '' : 's'} ago`;
+                }
+                
+                display.innerHTML = `
+                    <div class="weather-data">
+                        <h2 class="weather-city">${cityObj.name}</h2>
+                        <div class="weather-grid">
+                            <div class="weather-item">
+                                <div class="weather-label">Temperature</div>
+                                <div class="weather-value">${temp}°C</div>
+                            </div>
+                            <div class="weather-item">
+                                <div class="weather-label">Condition</div>
+                                <div class="weather-value">${condition}</div>
+                            </div>
+                            <div class="weather-item">
+                                <div class="weather-label">Wind</div>
+                                <div class="weather-value">${wind}</div>
+                            </div>
+                            <div class="weather-item">
+                                <div class="weather-label">Precipitation</div>
+                                <div class="weather-value">${precip}</div>
+                            </div>
+                        </div>
+                        <div class="weather-footer">
+                            <small class="text-muted">Updated: ${formatFreshness(fetchedAt)} | Data: Open-Meteo</small>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(err => {
+                display.innerHTML = `
+                    <div class="weather-data">
+                        <h2 class="weather-city">${cityObj.name}</h2>
+                        <p class="text-muted">Weather data unavailable. Please try again later.</p>
+                    </div>
+                `;
+            });
+    }
+
+    function search() {
+        const query = searchInput.value.toLowerCase().trim();
+        let filteredCities = [];
+        
+        if (query) {
+            // Only show suggestions if there's input
+            filteredCities = WEATHER_CITIES.filter((item) => (
+                item.name.toLowerCase().includes(query) || item.state.toLowerCase().includes(query)
+            ));
+        }
+
+        suggestionsList.innerHTML = '';
+        const toShow = filteredCities.slice(0, 5);
+        toShow.forEach(city => {
+            const li = document.createElement('li');
+            li.className = 'suggestion-item';
+            li.textContent = city.name;
+            li.addEventListener('click', () => setCity(city));
+            suggestionsList.appendChild(li);
+        });
+        suggestionsOpen = toShow.length > 0;
+    }
+
+    function clearSuggestions() {
+        suggestionsList.innerHTML = '';
+        suggestionsOpen = false;
+    }
+
+    if (initialCity) {
+        setCity(initialCity);
+    }
+
+    searchInput.addEventListener('input', search);
+
+    searchInput.addEventListener('focus', () => {
+        const query = searchInput.value.toLowerCase().trim();
+        let filteredCities = [];
+        
+        if (!query) {
+            // Show first 5 when empty and focused
+            filteredCities = WEATHER_CITIES.slice(0, 5);
+        } else {
+            filteredCities = WEATHER_CITIES.filter((item) => (
+                item.name.toLowerCase().includes(query) || item.state.toLowerCase().includes(query)
+            ));
+        }
+
+        suggestionsList.innerHTML = '';
+        const toShow = filteredCities.slice(0, 5);
+        toShow.forEach(city => {
+            const li = document.createElement('li');
+            li.className = 'suggestion-item';
+            li.textContent = city.name;
+            li.addEventListener('click', () => setCity(city));
+            suggestionsList.appendChild(li);
+        });
+        suggestionsOpen = toShow.length > 0;
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.weather-search-wrapper')) {
+            clearSuggestions();
+        }
+    });
+})();
+</script>
+
+{% endblock %}
+

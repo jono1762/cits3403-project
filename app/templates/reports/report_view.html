@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/users/profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports/report_view.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="report-view-page">
+    <a href="{{ url_for('reports.listing_page') }}" class="report-view-back">← Back to all reports</a>
+
+    <article class="report-view-card" style="--cat: {{ report.category.marker_color }};">
+        <header class="report-view-header">
+            <span class="report-view-badge">
+                {{ CATEGORY_EMOJI.get(report.category.name, '') }} {{ report.category.name }}
+            </span>
+            {% if is_trending %}
+                <span class="report-view-trending" title="Currently in the Trending top 10">🔥 Trending</span>
+            {% endif %}
+            <div class="report-view-header-right">
+                {% if current_user.is_authenticated %}
+                    <button type="button"
+                            id="report-fav-btn"
+                            class="report-fav-btn {{ 'is-saved' if is_report_favourited else '' }}"
+                            data-report-id="{{ report.id }}"
+                            data-saved="{{ 'true' if is_report_favourited else 'false' }}"
+                            aria-label="{{ 'Unsave report' if is_report_favourited else 'Save report' }}"
+                            title="{{ 'Unsave' if is_report_favourited else 'Save' }}">
+                        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                    </button>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="report-fav-login-link">Log in to save</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <h1 class="page-title report-view-title">{{ report.city.name }}, {{ report.city.state.name }}</h1>
+
+        {% if report.address %}
+            <p class="report-view-address">{{ report.address }}</p>
+        {% endif %}
+
+        <p class="report-view-author">
+            Posted by
+            {% if report.author %}
+                <a href="{{ url_for('users.user_profile_page', username=report.author.username) }}">{{ report.author.username }}</a>
+            {% else %}
+                <span class="deleted-user">deleted_user</span>
+            {% endif %}
+            on {{ report.created_at.strftime('%d %b %Y · %H:%M') }}
+            {% if report.expires_at %}
+                <span class="report-expiry {{ 'is-urgent' if report.is_expiring_soon else '' }}"
+                      data-expires-at="{{ report.expires_at.isoformat() }}Z">⏰ …</span>
+            {% endif %}
+        </p>
+
+        {% if report.description %}
+            <p class="report-view-desc">{{ report.description }}</p>
+        {% endif %}
+
+        {# media carousel — same pattern as profile/listing #}
+        {% if report.media %}
+            <div id="carousel-{{ report.id }}" class="carousel slide mt-3" data-bs-ride="false">
+                {% if report.media | length > 1 %}
+                    <div class="carousel-indicators">
+                        {% for m in report.media %}
+                            <button type="button"
+                                    data-bs-target="#carousel-{{ report.id }}"
+                                    data-bs-slide-to="{{ loop.index0 }}"
+                                    class="{{ 'active' if loop.first else '' }}"
+                                    aria-label="Slide {{ loop.index }}"></button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="carousel-inner rounded border media-frame media-frame-lg">
+                    {% for m in report.media %}
+                        <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                            {% if m.media_type == 'image' %}
+                                <img src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                     class="d-block w-100"
+                                     alt="{{ m.original_name }}">
+                            {% else %}
+                                <video src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                       controls
+                                       class="d-block w-100"></video>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if report.media | length > 1 %}
+                    <button class="carousel-control-prev" type="button"
+                            data-bs-target="#carousel-{{ report.id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button"
+                            data-bs-target="#carousel-{{ report.id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {# verify / dispute section — own reports show a "Your report" tag instead.
+           Buttons disabled for guests with a tooltip prompt to log in. #}
+        {% set my_vote = report.vote_by(current_user) %}
+        {% set is_own = current_user.is_authenticated and report.user_id == current_user.id %}
+        <div class="report-view-vote-section">
+            {% if is_own %}
+                <div class="own-report-actions">
+                    <span class="own-report-tag">Your report</span>
+                    <a href="{{ url_for('reports.edit_report_page', report_id=report.id) }}" class="report-view-edit-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit
+                    </a>
+                    <button type="button" class="report-view-delete-btn"
+                            data-bs-toggle="modal" data-bs-target="#delete-report-modal"
+                            aria-label="Delete report">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+                <div class="report-view-vote-counts">
+                    <span class="report-view-vote-stat report-view-vote-stat-verify">
+                        ✓ {{ report.verify_count }} verified
+                    </span>
+                    <span class="report-view-vote-stat report-view-vote-stat-dispute">
+                        ✗ {{ report.dispute_count }} disputed
+                    </span>
+                </div>
+            {% else %}
+                {% set vote_disabled = not current_user.is_authenticated %}
+                {% set vote_tip = 'Please log in to verify or dispute reports' if vote_disabled else '' %}
+                <h2 class="report-view-vote-prompt">Is this report accurate?</h2>
+                <div class="vote-bar report-view-vote-bar" data-report-id="{{ report.id }}">
+                    <span class="vote-wrap" title="{{ vote_tip }}">
+                        <button type="button"
+                                class="vote-btn vote-verify {{ 'is-active' if my_vote == 'verify' else '' }}"
+                                data-status="verify"
+                                {% if vote_disabled %}disabled{% endif %}>
+                            ✓ Verify <span class="vote-count">{{ report.verify_count }}</span>
+                        </button>
+                    </span>
+                    <span class="vote-wrap" title="{{ vote_tip }}">
+                        <button type="button"
+                                class="vote-btn vote-dispute {{ 'is-active' if my_vote == 'dispute' else '' }}"
+                                data-status="dispute"
+                                {% if vote_disabled %}disabled{% endif %}>
+                            ✗ Dispute <span class="vote-count">{{ report.dispute_count }}</span>
+                        </button>
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+
+        {# ============================================================
+           Comments thread — body text rendered via {{ … }} which is
+           Jinja's default auto-escaped output, so any HTML/JS the user
+           types becomes inert plain text (XSS-safe).
+           ============================================================ #}
+        <section class="report-view-comments" id="comments" aria-label="Comments" data-report-id="{{ report.id }}">
+            <h2 class="report-view-comments-title">
+                Comments <span class="report-view-comments-count" id="comment-count">{{ report.comment_count }}</span>
+            </h2>
+
+            <ul class="comment-list" id="comment-list">
+                {% for c in report.comments %}
+                    {% set my_cv = c.vote_by(current_user) %}
+                    {% set is_own_c = current_user.is_authenticated and c.user_id == current_user.id %}
+                    <li class="comment-item" data-comment-id="{{ c.id }}">
+                        {% if c.author %}
+                            <a class="comment-avatar" href="{{ url_for('users.user_profile_page', username=c.author.username) }}" aria-hidden="true">
+                                {% if c.author.avatar_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + c.author.avatar_filename) }}" alt="">
+                                {% else %}
+                                    {{ c.author.username[0]|upper }}
+                                {% endif %}
+                            </a>
+                        {% else %}
+                            <span class="comment-avatar comment-avatar-deleted" aria-hidden="true">?</span>
+                        {% endif %}
+                        <div class="comment-body">
+                            <div class="comment-meta">
+                                {% if c.author %}
+                                    <a class="comment-author" href="{{ url_for('users.user_profile_page', username=c.author.username) }}">{{ c.author.username }}</a>
+                                {% else %}
+                                    <span class="comment-author deleted-user">deleted_user</span>
+                                {% endif %}
+                                <span class="comment-time">· {{ c.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                            </div>
+                            {% if c.body %}
+                                <p class="comment-text">{{ c.body }}</p>
+                            {% endif %}
+
+                            {% if c.media %}
+                                <div class="comment-media-list">
+                                    {% for m in c.media %}
+                                        {% if m.media_type == 'image' %}
+                                            <img class="comment-media-item"
+                                                 src="{{ url_for('static', filename='uploads/' + m.filename) }}"
+                                                 alt="{{ m.original_name }}">
+                                        {% else %}
+                                            <video class="comment-media-item" controls
+                                                   src="{{ url_for('static', filename='uploads/' + m.filename) }}"></video>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {# vote bar — own comments don't get vote buttons (you can't vote yourself) #}
+                            {% if not is_own_c %}
+                                {% set cv_disabled = not current_user.is_authenticated %}
+                                {% set cv_tip = 'Please log in to verify or dispute' if cv_disabled else '' %}
+                                <div class="comment-vote-bar" data-comment-id="{{ c.id }}">
+                                    <span title="{{ cv_tip }}">
+                                        <button type="button"
+                                                class="comment-vote-btn comment-vote-verify {{ 'is-active' if my_cv == 'verify' else '' }}"
+                                                data-status="verify"
+                                                {% if cv_disabled %}disabled{% endif %}>
+                                            ✓ <span class="comment-vote-count">{{ c.verify_count }}</span>
+                                        </button>
+                                    </span>
+                                    <span title="{{ cv_tip }}">
+                                        <button type="button"
+                                                class="comment-vote-btn comment-vote-dispute {{ 'is-active' if my_cv == 'dispute' else '' }}"
+                                                data-status="dispute"
+                                                {% if cv_disabled %}disabled{% endif %}>
+                                            ✗ <span class="comment-vote-count">{{ c.dispute_count }}</span>
+                                        </button>
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if is_own_c %}
+                            <button type="button" class="comment-delete-btn" data-comment-id="{{ c.id }}" aria-label="Delete your comment">×</button>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% if not report.comments %}
+                <p class="comment-empty" id="comment-empty">No comments yet — be the first to weigh in.</p>
+            {% endif %}
+
+            {% if current_user.is_authenticated %}
+                <form id="comment-form" class="comment-form" enctype="multipart/form-data" novalidate>
+                    <label for="comment-body" class="comment-form-label">Add a comment</label>
+                    <textarea id="comment-body" class="comment-input"
+                              placeholder="Share your thoughts..."
+                              maxlength="{{ comment_max_length }}"
+                              rows="3"></textarea>
+                    <div class="comment-attach-row">
+                        <label for="comment-media" class="comment-attach-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                            </svg>
+                            Attach images / videos
+                        </label>
+                        {# native file input — visually hidden so we don't show the
+                           browser's locale-specific "choose file" chrome. The label
+                           above triggers it via for=, and the status span shows what
+                           was picked. #}
+                        <input id="comment-media" name="media" type="file"
+                               accept="image/*,video/*" multiple class="comment-media-input visually-hidden-input">
+                        <span class="comment-attach-status" id="comment-attach-status"></span>
+                    </div>
+                    <div class="attachment-grid" id="comment-media-preview"></div>
+                    <div class="comment-form-row">
+                        <span class="comment-form-hint" id="comment-form-hint">Plain text up to {{ comment_max_length }} chars. At least text or one attachment required.</span>
+                        <button type="submit" class="comment-submit">Add comment</button>
+                    </div>
+                </form>
+            {% else %}
+                <p class="comment-login-prompt">
+                    <a href="{{ url_for('auth.login') }}">Log in</a> to add a comment.
+                </p>
+            {% endif %}
+        </section>
+
+    </article>
+</section>
+
+{# Delete-confirmation modal — only rendered for the author. Uses Bootstrap's
+   modal so we don't have to ship our own focus-trap / overlay logic. #}
+{% if current_user.is_authenticated and report.user_id == current_user.id %}
+<div class="modal fade" id="delete-report-modal" tabindex="-1" aria-labelledby="delete-report-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delete-report-modal-label">Delete this report?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                This will permanently delete your report and any attached photos or videos. This can't be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-report-confirm"
+                        data-report-id="{{ report.id }}">
+                    Delete report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Delete-comment confirmation modal — same Bootstrap pattern as the report
+   delete modal so the two destructive actions feel consistent. Only rendered
+   when there's at least one comment the current user can delete (cheap to
+   render unconditionally for auth users — JS handler is what wires it up). #}
+{% if current_user.is_authenticated %}
+<div class="modal fade" id="delete-comment-modal" tabindex="-1" aria-labelledby="delete-comment-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delete-comment-modal-label">Delete this comment?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                This will permanently delete your comment and any photos or videos attached to it. This can't be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-comment-confirm">
+                    Delete comment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/reports/report_view.js') }}"></script>{% endblock %}

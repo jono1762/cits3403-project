@@ -5,6 +5,7 @@ flask-login
 flask-wtf
 email-validator
 requests
+python-dotenv
 pytest
 pytest-flask
 selenium

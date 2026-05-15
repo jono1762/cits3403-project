@@ -1,0 +1,861 @@
+/* ============================================================
+   messages.css — chat / inbox page (messages.html)
+   Two-column split: conversation list on the left, thread on the right.
+   Messenger-style bubbles, mine on the right, theirs on the left.
+   ============================================================ */
+
+.messages-page {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 1rem;
+    max-width: 1100px;
+    margin: 1rem auto 2rem;
+    padding: 0 1rem;
+    height: calc(100vh - 8rem);  /* room for the navbar; thread scrolls inside */
+    min-height: 500px;
+}
+
+@media (max-width: 800px) {
+    .messages-page {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+
+/* ============================================================
+   Left column — conversation list
+   ============================================================ */
+.messages-sidebar {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.messages-sidebar-header {
+    padding: 1rem 1.15rem 0.6rem;
+}
+
+/* row holding the "Messages" title + the small "manage blocked" icon */
+.messages-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.messages-blocked-icon {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 50%;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.messages-blocked-icon:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+/* blocked-list modal — one row per blocked user, with an Unblock pill on the right */
+.blocked-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.blocked-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.blocked-list-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.blocked-list-name {
+    flex: 1;
+    color: #1e293b;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.blocked-list-name:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.blocked-list-unblock {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    color: #475569;
+    padding: 0.32rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.blocked-list-unblock:hover:not(:disabled) {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}
+
+.blocked-list-unblock:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.blocked-list-empty {
+    margin: 0.5rem 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* user-search input — sits below the title, above the tabs.
+   Magnifying-glass icon pinned left, clear-x pinned right. */
+.messages-search-wrap {
+    position: relative;
+    margin-top: 0.7rem;
+}
+
+.messages-search-icon {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.messages-search-input {
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 2.1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 0.88rem;
+    color: #1e293b;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.messages-search-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    outline: none;
+}
+
+.messages-search-input::-webkit-search-cancel-button {
+    /* hide native browser X — we render our own to match the design */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.messages-search-clear {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.messages-search-clear:hover {
+    background: #cbd5e1;
+    color: #1e293b;
+}
+
+.messages-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* tab strip — Chats / Requests */
+.messages-tabs {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.25rem 1rem 0.6rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.messages-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 0.6rem 0.5rem;
+    border-radius: 8px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.messages-tab:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.messages-tab.is-active {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.messages-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.messages-tab.is-active .messages-tab-count {
+    background: #4f46e5;
+    color: #fff;
+}
+
+.messages-tab-count-warn {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.messages-tab.is-active .messages-tab-count-warn {
+    background: #ef4444;
+    color: #fff;
+}
+
+
+/* the actual list */
+.messages-list-wrap {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.messages-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.messages-empty {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.88rem;
+}
+
+.messages-item {
+    display: flex;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0.6rem 0.7rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.messages-item:hover {
+    background: #f1f5f9;
+}
+
+.messages-item.is-active {
+    background: #eef2ff;
+}
+
+.messages-item.has-unread .messages-item-name,
+.messages-item.has-unread .messages-item-preview {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.messages-item-avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #06b6d4 130%);
+    color: #fff;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+}
+
+.messages-item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.messages-item-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.messages-item-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.messages-item-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.92rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.messages-item-time {
+    color: #94a3b8;
+    font-size: 0.74rem;
+    flex-shrink: 0;
+}
+
+.messages-item-preview-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.messages-item-preview {
+    color: #64748b;
+    font-size: 0.84rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.messages-item-unread {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+
+/* ============================================================
+   Right column — active thread
+   ============================================================ */
+.messages-thread {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 500px;
+}
+
+.messages-thread-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    color: #94a3b8;
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.messages-thread-empty-icon {
+    font-size: 2.5rem;
+}
+
+.messages-thread-active {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;  /* lets the bubbles container actually scroll */
+}
+
+.messages-thread-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.messages-thread-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 130%);
+    color: #fff;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.messages-thread-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.messages-thread-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.messages-thread-name {
+    font-weight: 700;
+    color: #1e293b;
+    text-decoration: none;
+    font-size: 0.98rem;
+}
+
+.messages-thread-name:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.messages-thread-status {
+    color: #94a3b8;
+    font-size: 0.78rem;
+}
+
+/* Block / Unblock button — sits at the right end of the thread header.
+   Quiet slate by default, red-tinted when the user is currently blocking. */
+.messages-thread-block-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    color: #64748b;
+    padding: 0.35rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.messages-thread-block-btn:hover:not(:disabled) {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.messages-thread-block-btn.is-blocked {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.messages-thread-block-btn.is-blocked:hover:not(:disabled) {
+    background: #ef4444;
+    color: #fff;
+}
+
+.messages-thread-block-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* "you've blocked this user" banner — sits between header and bubbles when
+   the current user has blocked the other party. Composer is hidden behind it. */
+.messages-blocked-banner {
+    margin: 0;
+    padding: 0.85rem 1.1rem;
+    background: #fef2f2;
+    border-bottom: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+
+/* request banner — yellow-tinted, sits above the bubbles */
+.messages-request-banner {
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    padding: 0.85rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.messages-request-text {
+    margin: 0;
+    color: #92400e;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.messages-request-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+.btn-accept {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(16, 185, 129, 0.30);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-accept:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.40);
+}
+
+.btn-accept:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.messages-request-hint {
+    color: #92400e;
+    font-size: 0.78rem;
+}
+
+
+/* the bubble list — scroll-locked column, newest at the bottom */
+.messages-bubbles {
+    list-style: none;
+    margin: 0;
+    padding: 1rem 1.1rem;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.messages-bubble {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+    padding: 0.5rem 0.85rem;
+    border-radius: 16px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.messages-bubble-text {
+    margin: 0;
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;  /* break long URLs / strings instead of overflowing */
+}
+
+.messages-bubble-time {
+    font-size: 0.7rem;
+    margin-top: 0.2rem;
+    opacity: 0.7;
+}
+
+/* their messages — left aligned, light grey */
+.messages-bubble.is-theirs {
+    align-self: flex-start;
+    background: #f1f5f9;
+    color: #1e293b;
+    border-bottom-left-radius: 4px;
+}
+
+.messages-bubble.is-theirs .messages-bubble-time {
+    color: #64748b;
+}
+
+/* my messages — right aligned, indigo gradient */
+.messages-bubble.is-mine {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.messages-bubble.is-mine .messages-bubble-time {
+    color: rgba(255, 255, 255, 0.85);
+    text-align: right;
+}
+
+
+/* media grid inside a bubble — small thumbnails laid out under the text */
+.messages-bubble-media {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    max-width: 100%;
+}
+
+.messages-bubble-media-item {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #000;
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.messages-bubble.is-mine .messages-bubble-media-item {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* composer at the bottom */
+.messages-composer {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.45rem;
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* circular paperclip attach button — same size as the send button */
+.messages-composer-attach {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.messages-composer-attach:hover {
+    background: #eef2ff;
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+
+/* wrapper holding the optional attach-status caption + the textarea, stacked */
+.messages-composer-fields {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.messages-composer-attach-status {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    align-self: flex-start;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.messages-composer-attach-status.is-error {
+    color: #b91c1c;
+    background: #fee2e2;
+}
+
+.messages-composer-input {
+    width: 100%;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.92rem;
+    font-family: inherit;
+    color: #1e293b;
+    background: #fff;
+    resize: none;
+    line-height: 1.4;
+    max-height: 140px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.messages-composer-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    outline: none;
+}
+
+.messages-composer-send {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.30);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.messages-composer-send:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(79, 70, 229, 0.45);
+}
+
+.messages-composer-send:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.messages-composer-preview.attachment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.messages-composer-preview.attachment-grid:empty {
+    display: none;
+}
+
+.messages-composer-preview .attachment-thumb {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid #e2e8f0;
+    background: #000;
+}
+
+.messages-composer-preview .attachment-thumb img,
+.messages-composer-preview .attachment-thumb video {
+    display: block;
+    width: 100%;
+    height: 90px;
+    object-fit: cover;
+}
+
+.messages-composer-preview .attachment-thumb .remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15, 23, 42, 0.72);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.messages-composer-preview .attachment-thumb .remove-btn:hover {
+    background: #b91c1c;
+    transform: scale(1.08);
+}

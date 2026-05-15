@@ -8,19 +8,15 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeSerializer, BadSignature
 from markupsafe import Markup
-from datetime import datetime, timedelta
+from datetime import timedelta
  
 from ..models import (
     db, User, Category, Report, State, City, ReportMedia, Verification,
-    Comment, CommentVote, Follow, FavouriteReport,
+    Comment, CommentVote, Follow, FavouriteReport, utcnow,
 )
  
 bp = Blueprint('reports', __name__)
  
- 
-# ============================================================
-# Constants
-# ============================================================
  
 MAX_MEDIA_FILES = 5
  
@@ -43,22 +39,18 @@ _LAST_REPORT_CLEANUP = None
 _REPORT_CLEANUP_INTERVAL_MIN = 5
  
  
-# ============================================================
-# Helpers — query, expiry cleanup, trending score, token encoding
-# ============================================================
- 
 def _active_reports_q():
     """Base query for reports still within their expiry window. Use this
     everywhere reports are rendered to a guest or non-author audience so
     expired stuff doesn't leak."""
-    return Report.query.filter(Report.expires_at > datetime.utcnow())
+    return Report.query.filter(Report.expires_at > utcnow())
  
  
 def _cleanup_expired_reports():
     """Hard-delete reports whose expiry has lapsed (plus their on-disk media).
     Throttled so a burst of listing-page hits doesn't run this every request."""
     global _LAST_REPORT_CLEANUP
-    now = datetime.utcnow()
+    now = utcnow()
     if _LAST_REPORT_CLEANUP and (now - _LAST_REPORT_CLEANUP) < timedelta(minutes=_REPORT_CLEANUP_INTERVAL_MIN):
         return
     _LAST_REPORT_CLEANUP = now
@@ -160,8 +152,16 @@ def _validate_uploads(files):
             return None, f'"{f.filename}" is not a valid image or video.'
         sniffs.append(s)
     return sniffs, None
- 
- 
+
+
+def _to_int(v):
+    """Parse a form/JSON value to int, returning None for empty / invalid input."""
+    try:
+        return int(v) if v not in (None, '') else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _trending_score_components():
     """SQLAlchemy expressions for the trending score, factored out so
     _trending_report_ids() and the listing page sort agree on the formula.
@@ -186,7 +186,7 @@ def _trending_report_ids():
     _, _, _, score_expr = _trending_score_components()
     rows = (
         db.session.query(Report.id)
-        .filter(Report.expires_at > datetime.utcnow())
+        .filter(Report.expires_at > utcnow())
         .outerjoin(Verification, Verification.report_id == Report.id)
         .outerjoin(User, User.id == Verification.user_id)
         .group_by(Report.id)
@@ -197,10 +197,6 @@ def _trending_report_ids():
     return {row[0] for row in rows}
  
  
-# ============================================================
-# Context processor — site-wide expiry banner
-# ============================================================
- 
 @bp.app_context_processor
 def inject_expiring_reports():
     """Surface the count of the user's own reports expiring in the next 24h
@@ -208,7 +204,7 @@ def inject_expiring_reports():
     re-post the content if they want to keep it."""
     if not current_user.is_authenticated:
         return {'expiring_soon_count': 0}
-    now = datetime.utcnow()
+    now = utcnow()
     soon = now + timedelta(hours=24)
     count = Report.query.filter(
         Report.user_id == current_user.id,
@@ -218,20 +214,16 @@ def inject_expiring_reports():
     return {'expiring_soon_count': count}
  
  
-# ============================================================
-# Routes — view, vote, edit
-# ============================================================
- 
 @bp.route('/reports/<string:token>')
 def view_report(token):
     try:
         report_id = _report_serializer().loads(token)
     except BadSignature:
         abort(404)
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
     # expired reports get hidden until cleanup deletes them — 404 the URL too
     # so direct links don't leak content scheduled for deletion
-    if report.expires_at and report.expires_at <= datetime.utcnow():
+    if report.expires_at and report.expires_at <= utcnow():
         abort(404)
     is_report_favourited = False
     if current_user.is_authenticated:
@@ -242,7 +234,7 @@ def view_report(token):
     # is this report currently in the global Trending top 10?
     is_trending = report.id in _trending_report_ids()
     return render_template(
-        'report_view.html',
+        'reports/report_view.html',
         report=report,
         comment_max_length=COMMENT_MAX_LENGTH,
         is_report_favourited=is_report_favourited,
@@ -256,7 +248,7 @@ def view_report(token):
 @bp.route('/api/reports/<int:report_id>/vote', methods=['POST'])
 @login_required
 def api_vote_report(report_id):
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
  
     if report.user_id == current_user.id:
         return jsonify({'error': "You can't vote on your own report."}), 400
@@ -308,7 +300,7 @@ def api_vote_report(report_id):
 @bp.route('/reports/<int:report_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_report_page(report_id):
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
     if report.user_id != current_user.id:
         abort(403)
  
@@ -330,9 +322,9 @@ def edit_report_page(report_id):
  
         # same validation rules as create — category + city required, address optional
         errors = {}
-        if not category_id or not Category.query.get(category_id):
+        if not category_id or not db.session.get(Category, category_id):
             errors['category_id'] = 'Invalid or missing category.'
-        if not city_id or not City.query.get(city_id):
+        if not city_id or not db.session.get(City, city_id):
             errors['city_id'] = 'Invalid or missing location.'
         if address and len(address) > 200:
             errors['address'] = 'Address must be 200 characters or fewer.'
@@ -397,11 +389,11 @@ def edit_report_page(report_id):
     # JS-side lookup: { state_id: [{id, name}, ...] } so the city dropdown
     # can repopulate when the user changes state without a server round-trip
     cities_by_state = {
-        s.id: [{'id': c.id, 'name': c.name} for c in s.cities if c.name != 'Fremantle']
+        s.id: [{'id': c.id, 'name': c.name} for c in s.cities]
         for s in states
     }
     return render_template(
-        'report_edit.html',
+        'reports/report_edit.html',
         report=report,
         categories=categories,
         states=states,
@@ -409,28 +401,69 @@ def edit_report_page(report_id):
     )
  
  
-# ============================================================
-# Listing page + From-Following feed (shared handler)
-# ============================================================
- 
 # /listing — list all reports.
 # Public — guests can browse without an account.
-# Default sort = newest first. ?sort=top is the Trending page.
+# Default sort = newest first. ?sort=top is the legacy Trending URL,
+# kept working via the feed_trending toggle on this consolidated page.
+def _apply_basic_filters(query, state_id, city_id, category_id):
+    """state / city / category dropdown filters. State goes through City
+    because Report only stores city_id."""
+    if state_id:
+        query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
+    if city_id:
+        query = query.filter(Report.city_id == city_id)
+    if category_id:
+        query = query.filter(Report.category_id == category_id)
+    return query
+
+
+def _apply_listing_sort(query, sort):
+    """Apply ORDER BY for the chosen sort mode. The outer-joins keep
+    reports with zero votes / comments visible (at the bottom) rather
+    than dropping them."""
+    if sort == 'verifies':
+        from sqlalchemy import case
+        verify_count = db.func.count(case((Verification.status == 'verify', 1)))
+        return (
+            query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(verify_count.desc(), Report.created_at.desc())
+        )
+    if sort == 'disputes':
+        from sqlalchemy import case
+        dispute_count = db.func.count(case((Verification.status == 'dispute', 1)))
+        return (
+            query.outerjoin(Verification, Verification.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(dispute_count.desc(), Report.created_at.desc())
+        )
+    if sort == 'comments':
+        comment_count = db.func.count(Comment.id)
+        return (
+            query.outerjoin(Comment, Comment.report_id == Report.id)
+                 .group_by(Report.id)
+                 .order_by(comment_count.desc(), Report.created_at.desc())
+        )
+    if sort == 'oldest':
+        return query.order_by(Report.created_at.asc())
+    return query.order_by(Report.created_at.desc())
+
+
 def _build_listing_response(base_query, feed_mode=None):
     """Shared listing-page handler. base_query is the starting Report.query
-    (already pre-filtered by /listing/following if applicable). feed_mode is
+    (already pre-filtered if /listing/following routes here). feed_mode is
     'following' for the From Following page, None for the regular listing —
     template uses it to render the right title.
- 
+
     Also runs the throttled lazy cleanup of expired reports — this is the
     main public listing endpoint so it's a natural place to garbage-collect."""
     _cleanup_expired_reports()
- 
+
     page = request.args.get('page', 1, type=int)
     state_id = request.args.get('state_id', type=int)
     city_id = request.args.get('city_id', type=int)
     category_id = request.args.get('category_id', type=int)
-    sort = request.args.get('sort', 'recent')   # 'recent' or 'top'
+    sort = request.args.get('sort', 'recent')
     feed_trending = request.args.get('feed_trending') in {'1', 'true', 'on'}
     feed_following = request.args.get('feed_following') in {'1', 'true', 'on'}
 
@@ -438,7 +471,7 @@ def _build_listing_response(base_query, feed_mode=None):
     categories = Category.query.order_by(Category.id).all()
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': c.id, 'name': c.name} for c in s.cities if c.name != 'Fremantle']
+        s.id: [{'id': c.id, 'name': c.name} for c in s.cities]
         for s in states
     }
     fav_report_ids = {row.report_id for row in FavouriteReport.query.filter_by(user_id=current_user.id).all()} if current_user.is_authenticated else set()
@@ -451,64 +484,23 @@ def _build_listing_response(base_query, feed_mode=None):
 
     if feed_following and not current_user.is_authenticated:
         feed_following = False
- 
+
     if city_id and not state_id:
-        selected_city = City.query.get(city_id)
+        selected_city = db.session.get(City, city_id)
         if selected_city:
             state_id = selected_city.state_id
- 
-    # Wrap base_query with the active-reports filter so expired posts never
-    # show up on the listing (regardless of which feed it was called from).
-    query = base_query.filter(Report.expires_at > datetime.utcnow())
+
+    # Active reports only — expired posts never show up regardless of feed.
+    query = base_query.filter(Report.expires_at > utcnow())
     if feed_following:
-        query = _following_reports_query().filter(Report.expires_at > datetime.utcnow())
+        query = _following_reports_query().filter(Report.expires_at > utcnow())
 
     if feed_trending:
         trending_ids = _trending_report_ids()
         query = query.filter(Report.id.in_(trending_ids)) if trending_ids else query.filter(db.literal(False))
 
-    # state filter has to go through City because Report only stores city_id, not state_id
-    if state_id:
-        query = query.join(City, City.id == Report.city_id).filter(City.state_id == state_id)
-    if city_id:
-        query = query.filter(Report.city_id == city_id)
-    if category_id:
-        query = query.filter(Report.category_id == category_id)
-
-    if sort == 'verifies':
-        # Most-verified first — count of verify rows per report. outer-join so
-        # reports with zero verifies still appear (just at the bottom).
-        from sqlalchemy import case
-        verify_count = db.func.count(case((Verification.status == 'verify', 1)))
-        query = (
-            query.outerjoin(Verification, Verification.report_id == Report.id)
-                 .group_by(Report.id)
-                 .order_by(verify_count.desc(), Report.created_at.desc())
-        )
-    elif sort == 'disputes':
-        # Most-disputed first — same shape as verifies but counts dispute rows.
-        from sqlalchemy import case
-        dispute_count = db.func.count(case((Verification.status == 'dispute', 1)))
-        query = (
-            query.outerjoin(Verification, Verification.report_id == Report.id)
-                 .group_by(Report.id)
-                 .order_by(dispute_count.desc(), Report.created_at.desc())
-        )
-    elif sort == 'comments':
-        # Most-discussed first — count of comments per report. outer-join so
-        # reports with zero comments still show up (just at the bottom).
-        comment_count = db.func.count(Comment.id)
-        query = (
-            query.outerjoin(Comment, Comment.report_id == Report.id)
-                 .group_by(Report.id)
-                 .order_by(comment_count.desc(), Report.created_at.desc())
-        )
-    elif sort == 'oldest':
-        # Oldest first — inverse of the default Recent sort. Useful for users
-        # who want to scroll back through historical reports in order.
-        query = query.order_by(Report.created_at.asc())
-    else:
-        query = query.order_by(Report.created_at.desc())
+    query = _apply_basic_filters(query, state_id, city_id, category_id)
+    query = _apply_listing_sort(query, sort)
 
     pagination = query.paginate(page=page, per_page=20, error_out=False)
 
@@ -518,9 +510,9 @@ def _build_listing_response(base_query, feed_mode=None):
         feed_query_args['feed_trending'] = 1
     if feed_following:
         feed_query_args['feed_following'] = 1
- 
+
     return render_template(
-        'reports_listing.html',
+        'reports/reports_listing.html',
         pagination=pagination,
         states=states,
         cities_by_state=cities_by_state,
@@ -563,11 +555,11 @@ def reports_page():
     categories = Category.query.order_by(Category.id).all()
     states = State.query.order_by(State.name).all()
     cities_by_state = {
-        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities if sub.name != 'Fremantle']
+        s.id: [{'id': sub.id, 'name': sub.name} for sub in s.cities]
         for s in states
     }
     return render_template(
-        'reports.html',
+        'reports/reports.html',
         categories=categories,
         states=states,
         cities_by_state=cities_by_state,
@@ -587,13 +579,7 @@ def api_create_report():
         # plain JSON body, no files
         data = request.get_json(silent=True) or {}
         files = []
- 
-    def _to_int(v):
-        try:
-            return int(v) if v not in (None, '') else None
-        except (TypeError, ValueError):
-            return None
- 
+
     category_id = _to_int(data.get('category_id'))
     city_id = _to_int(data.get('city_id'))
     description = (data.get('description') or '').strip()
@@ -601,9 +587,9 @@ def api_create_report():
  
     # server-side validation — description, address, media are optional; category and city are required
     errors = {}
-    if not category_id or not Category.query.get(category_id):
+    if not category_id or not db.session.get(Category, category_id):
         errors['category_id'] = 'Invalid or missing category.'
-    if not city_id or not City.query.get(city_id):
+    if not city_id or not db.session.get(City, city_id):
         errors['city_id'] = 'Invalid or missing location.'
     if address and len(address) > 200:
         errors['address'] = 'Address must be 200 characters or fewer.'
@@ -686,7 +672,7 @@ def api_create_report():
 @login_required
 def api_delete_report(report_id):
     """Author-only — wipes the report, its media (DB rows + disk files), and any votes."""
-    report = Report.query.get_or_404(report_id)
+    report = db.get_or_404(Report, report_id)
     if report.user_id != current_user.id:
         return jsonify({'error': "You can't delete someone else's report."}), 403
  

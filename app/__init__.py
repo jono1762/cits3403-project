@@ -1,9 +1,17 @@
 import os
+from dotenv import load_dotenv
+
+# Load .env BEFORE importing Config so os.environ.get inside Config sees the
+# values. Falls through silently if .env doesn't exist.
+load_dotenv()
+
 from flask import Flask, flash, redirect, request, url_for, jsonify, render_template
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from markupsafe import Markup
 from sqlalchemy import inspect
+from .config import Config
 from .models import db, User, Category, State, City, Report, Comment
 from .blueprints.auth import bp as auth_bp
 from .blueprints.reports import bp as reports_bp
@@ -11,16 +19,19 @@ from .blueprints.users import bp as users_bp
 from .blueprints.api import bp as api_bp
 from .blueprints.main import bp as main_bp
 
- 
 login_manager = LoginManager()
 # Schema-versioning helper. Tracks every model change as a script in
 # migrations/versions/. Teammates run `flask db upgrade` after pulling
 # instead of deleting their local DB.
 migrate = Migrate()
+# CSRF protection on all POST/PUT/PATCH/DELETE — applies to both WTForms-
+# rendered forms (auto-included via {{ form.hidden_tag() }}) and JSON-API
+# calls (header X-CSRFToken, supplied by the csrfFetch wrapper in base.html).
+csrf = CSRFProtect()
  
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 
 # Per-endpoint friendly labels for the unauthorized flash — names the action
@@ -101,7 +112,7 @@ def seed_locations():
     db.session.commit()
  
 # a few arbitrary test users so the search feature has something to find
-# password for all of them is 'Test@1234' — move this to a real fixture later
+# (password for all of them is 'Test@1234')
 DEFAULT_TEST_USERS = [
     ('alice',   'alice@test.com'),
     ('bob',     'bob@test.com'),
@@ -176,13 +187,8 @@ def seed_test_comments():
 def create_app(test_config=None):
     app = Flask(__name__)
 
-    app.config['SECRET_KEY'] = 'dev-secret-key-change-later'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    # media upload config
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
-    app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024   # 20 MB max per request
+    # All config lives in app/config.py — env vars feed into it from .env.
+    app.config.from_object(Config)
 
     # Test hook — pytest passes an override dict to swap the DB to in-memory
     # and disable CSRF. Skips the dev-data seeders below.
@@ -190,11 +196,12 @@ def create_app(test_config=None):
         app.config.update(test_config)
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
- 
+
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
+    csrf.init_app(app)
  
     # Register the five route groups. Each blueprint owns one slice of
     # the URL map (top-level pages, auth flows, report pages, user /
