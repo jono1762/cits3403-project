@@ -208,6 +208,26 @@
     </div>
 </div>
  
+<div class="modal fade" id="edit-message-modal" tabindex="-1" aria-labelledby="edit-message-title" aria-hidden="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="edit-message-title">Edit message</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="edit-message-input" class="messages-composer-input"
+                          maxlength="2000" rows="3"
+                          placeholder="Edit your message..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="edit-message-save-btn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+ 
 {% endblock %}
  
 {% block scripts %}<script src="{{ url_for('static', filename='js/messages/messages.js') }}"></script>{% endblock %}

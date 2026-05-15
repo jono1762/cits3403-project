@@ -184,6 +184,14 @@
             del.setAttribute('aria-label', 'Delete message');
             del.textContent = '×';
             li.appendChild(del);
+ 
+            const edit = document.createElement('button');
+            edit.type = 'button';
+            edit.className = 'messages-bubble-edit';
+            edit.title = 'Edit message';
+            edit.setAttribute('aria-label', 'Edit message');
+            edit.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+            li.appendChild(edit);
         }
         return li;
     }
@@ -220,6 +228,58 @@
                 deleteConfirmBtn.disabled = false;
                 pendingDeleteBubble = null;
                 bootstrap.Modal.getInstance(deleteModalEl)?.hide();
+            }
+        });
+    }
+ 
+    const editModalEl = document.getElementById('edit-message-modal');
+    const editSaveBtn = document.getElementById('edit-message-save-btn');
+    const editInput = document.getElementById('edit-message-input');
+    let pendingEditBubble = null;
+ 
+    threadBubbles.addEventListener('click', (event) => {
+        const btn = event.target.closest('.messages-bubble-edit');
+        if (!btn) return;
+        const bubble = btn.closest('.messages-bubble');
+        if (!bubble || !bubble.dataset.messageId) return;
+        pendingEditBubble = bubble;
+        const textEl = bubble.querySelector('.messages-bubble-text');
+        if (editInput) editInput.value = textEl ? textEl.textContent : '';
+        if (editModalEl) {
+            bootstrap.Modal.getOrCreateInstance(editModalEl).show();
+            setTimeout(() => editInput && editInput.focus(), 150);
+        }
+    });
+ 
+    if (editSaveBtn) {
+        editSaveBtn.addEventListener('click', async () => {
+            if (!pendingEditBubble) return;
+            const bubble = pendingEditBubble;
+            const messageId = bubble.dataset.messageId;
+            const newBody = (editInput.value || '').trim();
+            editSaveBtn.disabled = true;
+            try {
+                const res = await csrfFetch(`/api/messages/${messageId}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({body: newBody}),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    let textEl = bubble.querySelector('.messages-bubble-text');
+                    if (!textEl && data.body) {
+                        textEl = document.createElement('p');
+                        textEl.className = 'messages-bubble-text';
+                        bubble.insertBefore(textEl, bubble.firstChild);
+                    }
+                    if (textEl) textEl.textContent = data.body;
+                    refreshInbox();
+                }
+            } catch (err) { /* silent */ }
+            finally {
+                editSaveBtn.disabled = false;
+                pendingEditBubble = null;
+                bootstrap.Modal.getInstance(editModalEl)?.hide();
             }
         });
     }

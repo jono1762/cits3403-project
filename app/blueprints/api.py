@@ -386,6 +386,26 @@ def api_delete_message(message_id):
     return jsonify({'ok': True})
  
  
+@bp.route('/api/messages/<int:message_id>', methods=['PATCH'])
+@login_required
+def api_edit_message(message_id):
+    """Sender-only — update the body of a chat message."""
+    msg = db.get_or_404(ChatMessage, message_id)
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': "You can't edit someone else's message."}), 403
+ 
+    payload = request.get_json(silent=True) or {}
+    body = (payload.get('body') or '').strip()
+    if not body and not msg.media:
+        return jsonify({'error': 'Message cannot be empty.'}), 400
+    if len(body) > CHAT_MESSAGE_MAX_LENGTH:
+        return jsonify({'error': f'Message too long (max {CHAT_MESSAGE_MAX_LENGTH} characters).'}), 400
+ 
+    msg.body = body
+    db.session.commit()
+    return jsonify({'ok': True, 'body': msg.body})
+ 
+ 
 # Comments — body stored as plain text and rendered with Jinja's default auto-
 # escape, so HTML/JS in user input becomes inert text (XSS-safe). The frontend
 # uses textContent (not innerHTML) when injecting new comments without reload.
