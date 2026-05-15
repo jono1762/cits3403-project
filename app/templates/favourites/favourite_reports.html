@@ -17,15 +17,72 @@
             {% for r in fav_reports %}
                 <li class="fav-report-card" style="--cat: {{ r.category_color }};" data-report-id="{{ r.id }}">
                     <a class="fav-report-link" href="{{ url_for('reports.view_report', token=r.token) }}" aria-label="View report"></a>
-                    <button class="fav-panel-star" aria-label="Unsave report" title="Unsave">⭐</button>
+                    <button class="fav-panel-star is-saved" aria-label="Unsave report" title="Unsave">
+                        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                    </button>
                     <div class="fav-report-meta">
                         <span class="fav-report-badge">{{ CATEGORY_EMOJI.get(r.category, '') }} {{ r.category }}</span>
+                        {% if r.is_trending %}
+                            <span class="fav-report-trending" title="Trending report">🔥 Trending</span>
+                        {% endif %}
                     </div>
                     <h3 class="fav-report-title">{{ r.city }}{% if r.state %}, {{ r.state }}{% endif %}</h3>
                     <p class="fav-report-where">Posted by {{ r.author }} on {{ r.created_at }}</p>
                     {% if r.description %}
                         <p class="fav-report-where">{{ r.description[:120] }}{% if r.description|length > 120 %}...{% endif %}</p>
                     {% endif %}
+                    {% if r.media %}
+                        <div id="fav-carousel-{{ r.id }}" class="carousel slide mt-2" data-bs-ride="false">
+                            {% if r.media | length > 1 %}
+                                <div class="carousel-indicators">
+                                    {% for m in r.media %}
+                                        <button type="button"
+                                                data-bs-target="#fav-carousel-{{ r.id }}"
+                                                data-bs-slide-to="{{ loop.index0 }}"
+                                                class="{{ 'active' if loop.first else '' }}"
+                                                aria-label="Slide {{ loop.index }}"></button>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="carousel-inner rounded border media-frame">
+                                {% for m in r.media %}
+                                    <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                                        {% if m.type == 'image' %}
+                                            <img src="{{ m.url }}" class="d-block w-100" alt="{{ m.name }}">
+                                        {% else %}
+                                            <video src="{{ m.url }}" controls class="d-block w-100"></video>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            {% if r.media | length > 1 %}
+                                <button class="carousel-control-prev" type="button"
+                                        data-bs-target="#fav-carousel-{{ r.id }}" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button"
+                                        data-bs-target="#fav-carousel-{{ r.id }}" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <div class="fav-report-stats">
+                        <a class="fav-report-stat fav-report-stat-link"
+                           href="{{ url_for('reports.view_report', token=r.token) }}#comments"
+                           title="View comments">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Comment {{ r.comment_count }}
+                        </a>
+                        <span class="fav-report-stat fav-report-stat-verified">✓ {{ r.verify_count }} verified</span>
+                        <span class="fav-report-stat fav-report-stat-disputed">✗ {{ r.dispute_count }} disputed</span>
+                    </div>
                 </li>
             {% endfor %}
         </ul>

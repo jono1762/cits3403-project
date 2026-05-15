@@ -18,8 +18,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from werkzeug.serving import make_server
 
-from app import create_app, DEFAULT_CATEGORIES, DEFAULT_LOCATIONS
+from app import create_app
 from app.models import db as _db, Category, State, City, User
+from seed.initial_data import DEFAULT_CATEGORIES, DEFAULT_LOCATIONS
 
 
 @pytest.fixture(scope='session')
