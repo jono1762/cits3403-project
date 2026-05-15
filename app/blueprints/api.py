@@ -366,6 +366,26 @@ def api_mark_read(user_id):
     return jsonify({'ok': True, 'marked': len(rows)})
  
  
+@bp.route('/api/messages/<int:message_id>', methods=['DELETE'])
+@login_required
+def api_delete_message(message_id):
+    """Sender-only — wipes the chat message and its media (DB rows + files)."""
+    msg = db.get_or_404(ChatMessage, message_id)
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': "You can't delete someone else's message."}), 403
+ 
+    for m in msg.media:
+        disk_path = os.path.join(app.config['UPLOAD_FOLDER'], m.filename)
+        try:
+            os.remove(disk_path)
+        except OSError:
+            pass
+ 
+    db.session.delete(msg)
+    db.session.commit()
+    return jsonify({'ok': True})
+ 
+ 
 # Comments — body stored as plain text and rendered with Jinja's default auto-
 # escape, so HTML/JS in user input becomes inert text (XSS-safe). The frontend
 # uses textContent (not innerHTML) when injecting new comments without reload.
@@ -510,5 +530,6 @@ def api_vote_comment(comment_id):
         'dispute_count': CommentVote.query.filter_by(comment_id=comment.id, status='dispute').count(),
         'user_vote': user_vote,
     })
+ 
  
  

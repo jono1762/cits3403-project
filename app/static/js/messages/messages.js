@@ -143,6 +143,7 @@
     function buildBubble(m) {
         const li = document.createElement('li');
         li.className = 'messages-bubble ' + (m.sender_is_me ? 'is-mine' : 'is-theirs');
+        li.dataset.messageId = m.id;
  
         // body text — only render if present (media-only messages have empty body)
         if (m.body) {
@@ -174,8 +175,40 @@
         time.className = 'messages-bubble-time';
         time.textContent = formatTime(m.created_at);
         li.appendChild(time);
+ 
+        if (m.sender_is_me) {
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'messages-bubble-delete';
+            del.title = 'Delete message';
+            del.setAttribute('aria-label', 'Delete message');
+            del.textContent = '×';
+            li.appendChild(del);
+        }
         return li;
     }
+ 
+    threadBubbles.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.messages-bubble-delete');
+        if (!btn) return;
+        const bubble = btn.closest('.messages-bubble');
+        if (!bubble) return;
+        const messageId = bubble.dataset.messageId;
+        if (!messageId) return;
+        if (!window.confirm('Delete this message?')) return;
+        btn.disabled = true;
+        try {
+            const res = await csrfFetch(`/api/messages/${messageId}`, {method: 'DELETE'});
+            if (res.ok) {
+                bubble.remove();
+                refreshInbox();
+            } else {
+                btn.disabled = false;
+            }
+        } catch (err) {
+            btn.disabled = false;
+        }
+    });
  
     async function openConversation(c) {
         activeUserId = c.user_id;
@@ -775,5 +808,6 @@
         if (threadPollTimer) clearInterval(threadPollTimer);
     });
 })();
+ 
  
  
