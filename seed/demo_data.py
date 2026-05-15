@@ -26,12 +26,15 @@ import os
 import random
 import shutil
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+
+import requests
 
 from app import create_app
 from app.models import (
     db, User, Category, City, State, Report, ReportMedia, Verification,
-    Comment, Follow, utcnow,
+    Comment, CommentVote, Follow, utcnow,
 )
 
 
@@ -40,6 +43,8 @@ NUM_USERS = 150
 NUM_REPORTS = 25
 
 MEDIA_SRC_IMAGES = os.path.join('seed', 'media', 'images')
+MEDIA_SRC_VIDEOS = os.path.join('seed', 'media', 'videos')
+VIDEO_EXTS = {'mp4', 'webm', 'mov', 'm4v'}
 
 
 # ============================================================
@@ -146,6 +151,8 @@ CURATED_REPORTS = [
 
     # --- General AU protest ---
     ('random', 'Brisbane', 'Noisiness', 'Climate protest moving down Queen St Mall, traffic redirected.', 'aus_protest.png'),
+    ('random', 'Sydney',   'Noisiness', 'Crowd swelling on Macquarie St — chants getting louder, video shows the front of the march.', 'protest.mp4'),
+    ('random', 'Melbourne','Weather',   'Rain absolutely hammering down on Spencer St — drains overflowing, sharing a clip.', 'raining.mp4'),
 
     # --- Random fill, no images, varied cities ---
     ('random', 'Brisbane', 'Traffic',   'Roadworks on Roma St eating up two lanes, expect delays.', None),
@@ -201,11 +208,15 @@ def generate_usernames(n):
 
 
 def copy_media_to_uploads(filename, upload_dir):
-    """Copy seed image file into app/static/uploads/ with a UUID name.
+    """Copy seed image/video into app/static/uploads/ with a UUID name.
     Returns (stored_filename, media_type) or (None, None) if missing."""
-    src = os.path.join(MEDIA_SRC_IMAGES, filename)
-    media_type = 'image'
-    ext = filename.rsplit('.', 1)[1]
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext in VIDEO_EXTS:
+        src = os.path.join(MEDIA_SRC_VIDEOS, filename)
+        media_type = 'video'
+    else:
+        src = os.path.join(MEDIA_SRC_IMAGES, filename)
+        media_type = 'image'
     if not os.path.exists(src):
         print(f'  WARNING: media file not found: {src}')
         return None, None
@@ -214,10 +225,48 @@ def copy_media_to_uploads(filename, upload_dir):
     return stored, media_type
 
 
+AVATAR_STYLES = ['avataaars', 'bottts', 'fun-emoji', 'thumbs', 'lorelei', 'micah', 'adventurer', 'big-smile', 'open-peeps', 'pixel-art']
+
+
+def _fetch_avatar(username):
+    style = random.choice(AVATAR_STYLES)
+    url = f'https://api.dicebear.com/7.x/{style}/png?seed={username}&size=240'
+    try:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code == 200 and resp.content:
+            return resp.content
+    except Exception:
+        pass
+    return None
+
+
+def assign_random_avatars(upload_dir):
+    """Download a random DiceBear avatar for every user without one and
+    save it under static/uploads/ as a UUID png."""
+    users = User.query.filter(User.avatar_filename.is_(None)).all()
+    if not users:
+        return
+    print(f'Downloading {len(users)} avatars from DiceBear...')
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        results = list(pool.map(lambda u: (u, _fetch_avatar(u.username)), users))
+    saved = 0
+    for user, data in results:
+        if not data:
+            continue
+        filename = f'{uuid.uuid4().hex}.png'
+        with open(os.path.join(upload_dir, filename), 'wb') as f:
+            f.write(data)
+        user.avatar_filename = filename
+        saved += 1
+    db.session.commit()
+    print(f'  -> assigned {saved} avatars')
+
+
 def wipe_demo_data():
     """Remove everything except categories, states, cities, and alice.
     Keeping alice means the trending-demo voter survives across runs."""
     Verification.query.delete()
+    CommentVote.query.delete()
     Comment.query.delete()
     ReportMedia.query.delete()
     Follow.query.delete()
@@ -397,17 +446,36 @@ def seed_votes(reports):
 
 
 def seed_comments(reports):
-    """Drop 0-4 random comments on each report (not from the author)."""
+    """Drop 0-4 random comments on each report (not from the author).
+    ~60% of comments get 1-12 votes from other users (verify-heavy mix)."""
     all_users = User.query.all()
+    created_comments = []
     for report in reports:
         n = random.randint(0, 4)
         candidates = [u for u in all_users if u.id != report.user_id]
         random.shuffle(candidates)
         for commenter in candidates[:n]:
-            db.session.add(Comment(
+            c = Comment(
                 report_id=report.id,
                 user_id=commenter.id,
                 body=random.choice(COMMENT_LINES),
+            )
+            db.session.add(c)
+            created_comments.append(c)
+    db.session.commit()
+
+    for comment in created_comments:
+        if random.random() > 0.6:
+            continue
+        voters = [u for u in all_users if u.id != comment.user_id]
+        random.shuffle(voters)
+        n_votes = random.randint(1, min(12, len(voters)))
+        for v in voters[:n_votes]:
+            status = 'verify' if random.random() < 0.7 else 'dispute'
+            db.session.add(CommentVote(
+                comment_id=comment.id,
+                user_id=v.id,
+                status=status,
             ))
     db.session.commit()
 
@@ -441,6 +509,8 @@ def main():
         seed_users()
         print(f'  -> {User.query.count()} users in DB')
 
+        assign_random_avatars(upload_dir)
+
         print(f'Seeding {NUM_REPORTS} reports + media...')
         reports = seed_reports(upload_dir)
         print(f'  -> {len(reports)} reports created')
@@ -453,7 +523,7 @@ def main():
 
         print('Seeding comments...')
         seed_comments(reports)
-        print(f'  -> {Comment.query.count()} comments')
+        print(f'  -> {Comment.query.count()} comments, {CommentVote.query.count()} comment votes')
 
         print('Seeding follow graph...')
         seed_follows()

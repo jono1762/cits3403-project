@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, jsonif
 from flask_login import login_required, current_user
  
 from ..models import db, User, Report, Follow, BlockedUser, FavouriteReport
+from .reports import _trending_report_ids
  
 bp = Blueprint('users', __name__)
  
@@ -53,6 +54,7 @@ def profile_page():
         recent_reports=recent_reports,
         is_own_profile=True,
         fav_report_ids=fav_report_ids,
+        trending_ids=_trending_report_ids(),
         following_users=_following_users_for(current_user),
         follower_users=_follower_users_for(current_user),
     )
@@ -80,6 +82,7 @@ def user_profile_page(username):
         recent_reports=recent_reports,
         is_own_profile=(user.id == current_user.id),
         fav_report_ids=fav_report_ids,
+        trending_ids=_trending_report_ids(),
         following_users=_following_users_for(user),
         follower_users=_follower_users_for(user),
     )

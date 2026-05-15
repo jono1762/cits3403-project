@@ -5,10 +5,10 @@ way as auth / reports / users / api."""
 import requests
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
-from ..models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport, utcnow
+from ..models import db, Category, Report, City, Verification, FavouriteLocation, FavouriteReport, User, utcnow
 # Report-related helpers live in the reports blueprint now. The favourites
 # and map pages here still call a couple, so we re-import them.
-from .reports import _active_reports_q, _encode_report_id, TRENDING_LIMIT
+from .reports import _active_reports_q, _encode_report_id, TRENDING_LIMIT, _trending_score_components, _trending_report_ids
 from ..config import (
     WEATHER_CACHE_TTL_MIN,
     WEATHER_API_TIMEOUT_S,
@@ -178,6 +178,7 @@ def favourite_reports_page():
         .all()
     )
 
+    trending_ids = _trending_report_ids()
     fav_reports = []
     for row in fav_rows:
         report = row.report
@@ -196,6 +197,7 @@ def favourite_reports_page():
             'verify_count': report.verify_count,
             'dispute_count': report.dispute_count,
             'comment_count': len(report.comments),
+            'is_trending': report.id in trending_ids,
             'media': [
                 {
                     'type': m.media_type,
@@ -236,20 +238,16 @@ def _map_page_context():
     # Group the top-N reports by city (or category), and rank groups by:
     #   1. how many of the top-N are in that city (descending)
     #   2. the highest-scoring single report within that city (tiebreaker)
-    # Only non-expired reports are considered (Report.expires_at > now).
-    from sqlalchemy import case
-    verify_sum = db.func.coalesce(
-        db.func.sum(case((Verification.status == 'verify', 1), else_=0)), 0)
-    dispute_sum = db.func.coalesce(
-        db.func.sum(case((Verification.status == 'dispute', 1), else_=0)), 0)
-    days_old_expr = db.func.julianday('now') - db.func.julianday(Report.created_at)
-    score_expr = (verify_sum - dispute_sum - days_old_expr).label('score')
+    # Uses the same score formula as the listing-page 🔥 badge so the
+    # numbers here always match the badges on /reports.
+    _, _, _, score_expr = _trending_score_components()
     trending_rows = (
         db.session.query(
             Report.id, Report.city_id, Report.category_id, score_expr,
         )
         .filter(Report.expires_at > now)
         .outerjoin(Verification, Verification.report_id == Report.id)
+        .outerjoin(User, User.id == Verification.user_id)
         .group_by(Report.id)
         .order_by(score_expr.desc(), Report.created_at.desc())
         .limit(TRENDING_LIMIT)

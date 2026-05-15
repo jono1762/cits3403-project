@@ -173,7 +173,12 @@
                     <div class="profile-post-header">
                         <span class="profile-post-icon" aria-hidden="true">{{ CATEGORY_EMOJI.get(r.category.name, '📝') }}</span>
                         <div class="profile-post-titles">
-                            <h2 class="profile-post-title">{{ r.category.name }} in {{ r.city.name }}</h2>
+                            <h2 class="profile-post-title">
+                                {{ r.category.name }} in {{ r.city.name }}
+                                {% if trending_ids and r.id in trending_ids %}
+                                    <span class="profile-post-trending" title="Trending report">🔥 Trending</span>
+                                {% endif %}
+                            </h2>
                             <div class="profile-post-sub">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>

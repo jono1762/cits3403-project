@@ -256,10 +256,11 @@
 
 .fav-report-meta {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.5rem;
     margin-bottom: 0.4rem;
+    padding-right: 3.5rem;
 }
 
 .fav-report-badge {
@@ -294,11 +295,23 @@
     overflow-wrap: anywhere;
 }
 
-/* carousel inside favourite-report cards needs to escape the stretched
-   .fav-report-link so prev/next/indicators are clickable */
 .fav-report-card .carousel {
     position: relative;
     z-index: 2;
+}
+
+.fav-report-trending {
+    display: inline-block;
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+    border: 1.5px solid #f97316;
+    color: #9a3412;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-left: 0.4rem;
+    vertical-align: middle;
 }
 
 .fav-report-stats {
@@ -320,8 +333,6 @@
 .fav-report-stat-verified { color: #047857; }
 .fav-report-stat-disputed { color: #b91c1c; }
 
-/* clickable comment count — escapes the card's stretched link with z-index,
-   matches profile pattern */
 .fav-report-stat-link {
     position: relative;
     z-index: 2;
